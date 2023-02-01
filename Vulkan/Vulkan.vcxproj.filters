@@ -22,6 +22,12 @@
     <Filter Include="Fichiers sources\Externals">
       <UniqueIdentifier>{b03daea1-ff94-4810-94b2-b35247200790}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers sources\Core">
+      <UniqueIdentifier>{d4f8fa83-7803-4227-a98c-b068c26bf8e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Core">
+      <UniqueIdentifier>{755925dc-e909-4c87-9a14-f6ee88877c4f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Sources\main.cpp">
@@ -69,6 +75,9 @@
     <ClCompile Include="Externals\Sources\imgui\imgui_impl_glfw.cpp">
       <Filter>Fichiers sources\Externals</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Core\Window.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">
@@ -106,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="Includes\Maths\Maths.h">
       <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\Window.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
