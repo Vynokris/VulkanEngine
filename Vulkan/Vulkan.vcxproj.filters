@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Fichiers sources">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Fichiers de ressources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Fichiers sources\Maths">
+      <UniqueIdentifier>{2f560af1-4769-4628-9f03-d3e95ac5ee7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Maths">
+      <UniqueIdentifier>{908d6787-adce-43bc-bedc-8dd3773a33ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Externals">
+      <UniqueIdentifier>{b03daea1-ff94-4810-94b2-b35247200790}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Sources\main.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Quaternion.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Transform.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Vector2.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Vector3.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Vector4.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\AngleAxis.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Arithmetic.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Maths\Color.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
+    </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui_impl_vulkan.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui_tables.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui_widgets.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui_draw.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui_impl_glfw.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Includes\Maths\Matrix.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Quaternion.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Transform.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Vector2.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Vector3.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Vector4.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Vertex.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\AngleAxis.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Arithmetic.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Color.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\MathConstants.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Maths\Maths.h">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Includes\Maths\Matrix.inl">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </None>
+    <None Include="Includes\Maths\Quaternion.inl">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </None>
+    <None Include="Includes\Maths\Vector2.inl">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </None>
+    <None Include="Includes\Maths\Vector3.inl">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </None>
+    <None Include="Includes\Maths\Vector4.inl">
+      <Filter>Fichiers d%27en-tête\Maths</Filter>
+    </None>
+  </ItemGroup>
+</Project>
