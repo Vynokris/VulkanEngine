@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "Window.h"
+#include "Renderer.h"
+#include "UserInterface.h"
 
 namespace Core
 {
@@ -9,7 +11,9 @@ namespace Core
     private:
         inline static Application* instance = nullptr;
         
-        Window* window = nullptr;
+        Window*        window   = nullptr;
+        Renderer*      renderer = nullptr;
+        UserInterface* ui       = nullptr;
         
     public:
         static Application* Create();
@@ -20,6 +24,10 @@ namespace Core
         void Run();
         void Quit();
         void Release();
+
+        Window*        GetWindow()   const { return window; }
+        Renderer*      GetRenderer() const { return renderer; }
+        UserInterface* GetUi()       const { return ui; }
 
     private:
         void Update();
