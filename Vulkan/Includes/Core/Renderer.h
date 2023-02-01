@@ -37,7 +37,7 @@ namespace Core
         ~Renderer();
 
     private:
-        void CheckValidationLayers();
+        void CheckValidationLayers() const;
         void CreateVkInstance(const char* appName, const char* engineName);
         void PickPhysicalDevice();
         void CreateLogicalDevice();
