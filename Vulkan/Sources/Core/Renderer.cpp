@@ -28,6 +28,7 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CheckValidationLayers();
     CreateVkInstance(appName, engineName);
     PickPhysicalDevice();
+    CreateLogicalDevice();
 }
 
 Renderer::~Renderer()
@@ -36,7 +37,7 @@ Renderer::~Renderer()
     vkDestroyInstance(vkInstance, nullptr);
 }
 
-void Renderer::CheckValidationLayers()
+void Renderer::CheckValidationLayers() const
 {
     // Get the number of vulkan layers on the machine.
     uint32_t layerCount;
