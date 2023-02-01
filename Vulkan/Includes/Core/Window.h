@@ -1,4 +1,6 @@
 ﻿#pragma once
+
+// Forward declaration of GLFW types to avoid include.
 typedef struct GLFWwindow GLFWwindow;
 
 namespace Core
@@ -39,11 +41,12 @@ namespace Core
         void SetExitKey(const int& windowExitKey) { params.exitKey = windowExitKey; }
         void RemoveExitKey()                      { params.exitKey = -1; }
 
-        const char* GetName()     const { return params.name;   }
-        int         GetWidth()    const { return params.width;  }
-        int         GetHeight()   const { return params.height; }
-        int         GetPosX()     const { return params.posX;   }
-        int         GetPosY()     const { return params.posY;   }
+        const char* GetName()       const { return params.name;   }
+        int         GetWidth()      const { return params.width;  }
+        int         GetHeight()     const { return params.height; }
+        int         GetPosX()       const { return params.posX;   }
+        int         GetPosY()       const { return params.posY;   }
+        GLFWwindow* GetGlfwWindow() const { return glfwWindow;    }
         bool        ShouldClose() const;
     };
 }
