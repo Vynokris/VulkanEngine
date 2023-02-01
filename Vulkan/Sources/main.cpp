@@ -1,15 +1,15 @@
-#include "Core/Window.h"
+#include "Core/Application.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+using namespace Core;
 
 int main()
 {	
-	Core::Window* window = new Core::Window("Vulkan");
-	while (!window->ShouldClose())
-	{
-		window->Update();
-		window->EndFrame();
-	}
+	Application* app = Application::Create();
+	app->Init({ "Vulkan" });
+	app->Run();
+	app->Release();
+	Application::Destroy();
 	
 	return 0;
 }
