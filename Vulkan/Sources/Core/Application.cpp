@@ -1,4 +1,6 @@
 ﻿#include "Core/Application.h"
+#include <GLFW/glfw3.h>
+#include <iostream>
 using namespace Core;
 
 Application* Application::Create()
@@ -20,7 +22,13 @@ void Application::Destroy()
 
 void Application::Init(const WindowParams& windowParams)
 {
-    window = new Window(windowParams);
+    if (!glfwInit()) {
+        std::cout << "ERROR (GLFW): Unable to initialize GLFW." <<std::endl;
+        throw std::runtime_error("GLFW_INIT_ERROR");
+    }
+    window   = new Window(windowParams);
+    renderer = new Renderer(windowParams.name);
+    ui       = new UserInterface();
 }
 
 void Application::Run()
@@ -33,6 +41,7 @@ void Application::Run()
         window->Update();
         Update();
         Render();
+        ui->Render();
         window->EndFrame();
     }
 }
@@ -44,7 +53,10 @@ void Application::Quit()
 
 void Application::Release()
 {
+    delete ui;
+    delete renderer;
     delete window;
+    glfwTerminate();
 }
 
 void Application::Update()

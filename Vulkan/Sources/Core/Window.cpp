@@ -6,11 +6,7 @@ using namespace Core;
 Window::Window(const WindowParams& windowParams)
     : params(windowParams)
 {
-    // Initialize glfw.
-    if (!glfwInit()) {
-        std::cout << "ERROR (GLFW): Unable to initialize GLFW." <<std::endl;
-        return;
-    }
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     // Set the window size to the monitor size if windowWidth and windowHeight are not positive.
     if (params.width < 0 && params.height < 0)

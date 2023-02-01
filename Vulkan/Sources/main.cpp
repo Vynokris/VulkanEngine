@@ -1,6 +1,4 @@
 #include "Core/Application.h"
-#include <GLFW/glfw3.h>
-#include <iostream>
 using namespace Core;
 
 int main()
