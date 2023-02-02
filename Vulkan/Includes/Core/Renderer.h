@@ -13,6 +13,7 @@ typedef struct VkSwapchainKHR_T*        VkSwapchainKHR;
 typedef struct VkImage_T*               VkImage;
 typedef struct VkImageView_T*           VkImageView;
 typedef struct VkShaderModule_T*        VkShaderModule;
+typedef struct VkRenderPass_T*          VkRenderPass;
 typedef struct VkPipelineLayout_T*      VkPipelineLayout;
 typedef struct VkSurfaceCapabilitiesKHR VkSurfaceCapabilitiesKHR;
 typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
@@ -77,6 +78,7 @@ namespace Core
         VkQueue                  vkGraphicsQueue  = nullptr;
         VkQueue                  vkPresentQueue   = nullptr;
         VkSwapchainKHR           vkSwapChain      = nullptr;
+        VkRenderPass             vkRenderPass     = nullptr;
         VkPipelineLayout         vkPipelineLayout = nullptr;
         std::vector<VkImage>     vkSwapChainImages;
         std::vector<VkImageView> vkSwapChainImageViews;
@@ -95,6 +97,7 @@ namespace Core
         void CreateLogicalDevice();
         void CreateSwapChain();
         void CreateImageViews();
+        void CreateRenderPass();
         void CreateGraphicsPipeline();
     };
 }
