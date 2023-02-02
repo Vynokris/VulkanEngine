@@ -249,10 +249,18 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateRenderPass();
     CreateGraphicsPipeline();
     CreateFramebuffers();
+    CreateCommandPool();
+    CreateCommandBuffer();
+    CreateSyncObjects();
 }
 
 Renderer::~Renderer()
 {
+    vkDeviceWaitIdle    (vkDevice);
+    vkDestroyFence      (vkDevice, vkInFlightFence,           nullptr);
+    vkDestroySemaphore  (vkDevice, vkRenderFinishedSemaphore, nullptr);
+    vkDestroySemaphore  (vkDevice, vkImageAvailableSemaphore, nullptr);
+    vkDestroyCommandPool(vkDevice, vkCommandPool,             nullptr);
     for (const VkFramebuffer& framebuffer : vkSwapChainFramebuffers)
         vkDestroyFramebuffer(vkDevice, framebuffer,        nullptr);
     vkDestroyPipeline       (vkDevice, vkGraphicsPipeline, nullptr);
@@ -266,6 +274,55 @@ Renderer::~Renderer()
     vkDestroyInstance     (vkInstance,            nullptr);
 }
 
+void Renderer::DrawFrame()
+{
+    // Wait for the previous frame to finish.
+    vkWaitForFences(vkDevice, 1, &vkInFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences  (vkDevice, 1, &vkInFlightFence);
+
+    // Acquire an image from the swap chain.
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+    // Record the command buffer.
+    vkResetCommandBuffer(vkCommandBuffer, 0);
+    RecordCommandBuffer (vkCommandBuffer, imageIndex);
+
+    // Set the command buffer submit information.
+    const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphore };
+    const VkPipelineStageFlags waitStages      [] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    const VkSemaphore          signalSemaphores[] = { vkRenderFinishedSemaphore };
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount   = 1;
+    submitInfo.pWaitSemaphores      = waitSemaphores;
+    submitInfo.pWaitDstStageMask    = waitStages;
+    submitInfo.commandBufferCount   = 1;
+    submitInfo.pCommandBuffers      = &vkCommandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores    = signalSemaphores;
+
+    // Submit the graphics command queue.
+    if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, vkInFlightFence) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to submit draw command buffer." << std::endl;
+        throw std::runtime_error("VULKAN_SUBMIT_COMMAND_BUFFER_ERROR");
+    }
+
+    // Present the frame.
+    const VkSwapchainKHR swapChains[] = { vkSwapChain };
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores    = signalSemaphores;
+    presentInfo.swapchainCount     = 1;
+    presentInfo.pSwapchains        = swapChains;
+    presentInfo.pImageIndices      = &imageIndex;
+    presentInfo.pResults           = nullptr; // Optional.
+    vkQueuePresentKHR(vkPresentQueue, &presentInfo);
+}
+
+
+#pragma region RendererSetup
 void Renderer::CheckValidationLayers() const
 {
     // Get the number of vulkan layers on the machine.
@@ -560,13 +617,24 @@ void Renderer::CreateRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments    = &colorAttachmentRef;
 
+    // Create a sub-pass dependency.
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass    = 0;
+    dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     // Set the render pass creation information.
     VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.pAttachments    = &colorAttachment;
+    renderPassInfo.subpassCount    = 1;
+    renderPassInfo.pSubpasses      = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies   = &dependency;
 
     // Create the render pass.
     if (vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass) != VK_SUCCESS) {
@@ -751,5 +819,100 @@ void Renderer::CreateFramebuffers()
             std::cout << "ERROR (Vulkan): Failed to create framebuffer." << std::endl;
             throw std::runtime_error("VULKAN_FRAMEBUFFER_ERROR");
         }
+    }
+}
+
+void Renderer::CreateCommandPool()
+{
+    const QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(vkPhysicalDevice, vkSurface);
+
+    // Set the command pool creation information.
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+    // Create the command pool.
+    if (vkCreateCommandPool(vkDevice, &poolInfo, nullptr, &vkCommandPool) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to create command pool." << std::endl;
+        throw std::runtime_error("VULKAN_COMMAND_POOL_ERROR");
+    }
+}
+
+void Renderer::CreateCommandBuffer()
+{
+    // Set the command buffer allocation information.
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool        = vkCommandPool;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    // Allocate the command buffer.
+    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, &vkCommandBuffer) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to allocate command buffers." << std::endl;
+        throw std::runtime_error("VULKAN_COMMAND_BUFFER_ERROR");
+    }
+}
+
+void Renderer::CreateSyncObjects()
+{
+    // Set the semaphore and fence creation information.
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    // Create the semaphores and fence.
+    if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphore) != VK_SUCCESS ||
+        vkCreateFence    (vkDevice, &fenceInfo,     nullptr, &vkInFlightFence          ) != VK_SUCCESS)
+    {
+        std::cout << "ERROR (Vulkan): Failed to create semaphores." << std::endl;
+        throw std::runtime_error("VULKAN_SEMAPHORE_ERROR");
+    }
+}
+#pragma endregion
+
+void Renderer::RecordCommandBuffer(const VkCommandBuffer& commandBuffer, const uint32_t& imageIndex)
+{
+    // Begin recording the command buffer.
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags            = 0;       // Optional.
+    beginInfo.pInheritanceInfo = nullptr; // Optional.
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to begin recording command buffer." << std::endl;
+        throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
+    }
+
+    // Define the clear color.
+    const VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+
+    // Begin the render pass.
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass        = vkRenderPass;
+    renderPassInfo.framebuffer       = vkSwapChainFramebuffers[imageIndex];
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = { vkSwapChainWidth, vkSwapChainHeight };
+    renderPassInfo.clearValueCount   = 1;
+    renderPassInfo.pClearValues      = &clearColor;
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // Bind the graphics pipeline.
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
+
+    // Issue the command to draw the triangle.
+    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+    // End the render pass.
+    vkCmdEndRenderPass(commandBuffer);
+
+    // Stop recording the command buffer.
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to record command buffer." << std::endl;
+        throw std::runtime_error("VULKAN_RECORD_COMMAND_BUFFER_ERROR");
     }
 }
