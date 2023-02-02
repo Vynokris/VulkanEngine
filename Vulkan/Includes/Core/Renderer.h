@@ -15,6 +15,7 @@ typedef struct VkImageView_T*           VkImageView;
 typedef struct VkShaderModule_T*        VkShaderModule;
 typedef struct VkRenderPass_T*          VkRenderPass;
 typedef struct VkPipelineLayout_T*      VkPipelineLayout;
+typedef struct VkPipeline_T*            VkPipeline;
 typedef struct VkSurfaceCapabilitiesKHR VkSurfaceCapabilitiesKHR;
 typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
 typedef struct VkExtent2D               VkExtent2D;
@@ -71,15 +72,16 @@ namespace Core
     {
     private:
         Application*             app;
-        VkInstance               vkInstance       = nullptr;
-        VkSurfaceKHR             vkSurface        = nullptr;
-        VkPhysicalDevice         vkPhysicalDevice = nullptr;
-        VkDevice                 vkDevice         = nullptr;
-        VkQueue                  vkGraphicsQueue  = nullptr;
-        VkQueue                  vkPresentQueue   = nullptr;
-        VkSwapchainKHR           vkSwapChain      = nullptr;
-        VkRenderPass             vkRenderPass     = nullptr;
-        VkPipelineLayout         vkPipelineLayout = nullptr;
+        VkInstance               vkInstance         = nullptr;
+        VkSurfaceKHR             vkSurface          = nullptr;
+        VkPhysicalDevice         vkPhysicalDevice   = nullptr;
+        VkDevice                 vkDevice           = nullptr;
+        VkQueue                  vkGraphicsQueue    = nullptr;
+        VkQueue                  vkPresentQueue     = nullptr;
+        VkSwapchainKHR           vkSwapChain        = nullptr;
+        VkRenderPass             vkRenderPass       = nullptr;
+        VkPipelineLayout         vkPipelineLayout   = nullptr;
+        VkPipeline               vkGraphicsPipeline = nullptr;
         std::vector<VkImage>     vkSwapChainImages;
         std::vector<VkImageView> vkSwapChainImageViews;
         VkFormat                 vkSwapChainImageFormat;
