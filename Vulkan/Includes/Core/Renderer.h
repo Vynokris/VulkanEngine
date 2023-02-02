@@ -10,6 +10,7 @@ typedef struct VkDevice_T*              VkDevice;
 typedef struct VkQueue_T*               VkQueue;
 typedef struct VkSurfaceKHR_T*          VkSurfaceKHR;
 typedef struct VkSwapchainKHR_T*        VkSwapchainKHR;
+typedef struct VkFramebuffer_T*         VkFramebuffer;
 typedef struct VkImage_T*               VkImage;
 typedef struct VkImageView_T*           VkImageView;
 typedef struct VkShaderModule_T*        VkShaderModule;
@@ -71,21 +72,22 @@ namespace Core
     class Renderer
     {
     private:
-        Application*             app;
-        VkInstance               vkInstance         = nullptr;
-        VkSurfaceKHR             vkSurface          = nullptr;
-        VkPhysicalDevice         vkPhysicalDevice   = nullptr;
-        VkDevice                 vkDevice           = nullptr;
-        VkQueue                  vkGraphicsQueue    = nullptr;
-        VkQueue                  vkPresentQueue     = nullptr;
-        VkSwapchainKHR           vkSwapChain        = nullptr;
-        VkRenderPass             vkRenderPass       = nullptr;
-        VkPipelineLayout         vkPipelineLayout   = nullptr;
-        VkPipeline               vkGraphicsPipeline = nullptr;
-        std::vector<VkImage>     vkSwapChainImages;
-        std::vector<VkImageView> vkSwapChainImageViews;
-        VkFormat                 vkSwapChainImageFormat;
-        uint32_t                 vkSwapChainWidth = 0, vkSwapChainHeight = 0;
+        Application*               app;
+        VkInstance                 vkInstance         = nullptr;
+        VkSurfaceKHR               vkSurface          = nullptr;
+        VkPhysicalDevice           vkPhysicalDevice   = nullptr;
+        VkDevice                   vkDevice           = nullptr;
+        VkQueue                    vkGraphicsQueue    = nullptr;
+        VkQueue                    vkPresentQueue     = nullptr;
+        VkSwapchainKHR             vkSwapChain        = nullptr;
+        VkRenderPass               vkRenderPass       = nullptr;
+        VkPipelineLayout           vkPipelineLayout   = nullptr;
+        VkPipeline                 vkGraphicsPipeline = nullptr;
+        std::vector<VkFramebuffer> vkSwapChainFramebuffers;
+        std::vector<VkImage>       vkSwapChainImages;
+        std::vector<VkImageView>   vkSwapChainImageViews;
+        VkFormat                   vkSwapChainImageFormat;
+        uint32_t                   vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
@@ -101,5 +103,6 @@ namespace Core
         void CreateImageViews();
         void CreateRenderPass();
         void CreateGraphicsPipeline();
+        void CreateFramebuffers();
     };
 }
