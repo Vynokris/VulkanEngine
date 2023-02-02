@@ -12,6 +12,8 @@ typedef struct VkSurfaceKHR_T*          VkSurfaceKHR;
 typedef struct VkSwapchainKHR_T*        VkSwapchainKHR;
 typedef struct VkImage_T*               VkImage;
 typedef struct VkImageView_T*           VkImageView;
+typedef struct VkShaderModule_T*        VkShaderModule;
+typedef struct VkPipelineLayout_T*      VkPipelineLayout;
 typedef struct VkSurfaceCapabilitiesKHR VkSurfaceCapabilitiesKHR;
 typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
 typedef struct VkExtent2D               VkExtent2D;
@@ -55,6 +57,8 @@ namespace VulkanUtils
     VkExtent2D              ChooseSwapExtent           (const VkSurfaceCapabilitiesKHR& capabilities);
     bool                    CheckDeviceExtensionSupport(const VkPhysicalDevice& device);
     bool                    IsDeviceSuitable           (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+
+    VkShaderModule CreateShaderModule(const VkDevice& device, const char* filename);
 }
 
 
@@ -73,6 +77,7 @@ namespace Core
         VkQueue                  vkGraphicsQueue  = nullptr;
         VkQueue                  vkPresentQueue   = nullptr;
         VkSwapchainKHR           vkSwapChain      = nullptr;
+        VkPipelineLayout         vkPipelineLayout = nullptr;
         std::vector<VkImage>     vkSwapChainImages;
         std::vector<VkImageView> vkSwapChainImageViews;
         VkFormat                 vkSwapChainImageFormat;
@@ -90,5 +95,6 @@ namespace Core
         void CreateLogicalDevice();
         void CreateSwapChain();
         void CreateImageViews();
+        void CreateGraphicsPipeline();
     };
 }
