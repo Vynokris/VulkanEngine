@@ -42,6 +42,7 @@ void Application::Run()
         Update();
         Render();
         ui->Render();
+        renderer->DrawFrame();
         window->EndFrame();
     }
 }

@@ -17,6 +17,10 @@ typedef struct VkShaderModule_T*        VkShaderModule;
 typedef struct VkRenderPass_T*          VkRenderPass;
 typedef struct VkPipelineLayout_T*      VkPipelineLayout;
 typedef struct VkPipeline_T*            VkPipeline;
+typedef struct VkCommandPool_T*         VkCommandPool;
+typedef struct VkCommandBuffer_T*       VkCommandBuffer;
+typedef struct VkSemaphore_T*           VkSemaphore;
+typedef struct VkFence_T*               VkFence;
 typedef struct VkSurfaceCapabilitiesKHR VkSurfaceCapabilitiesKHR;
 typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
 typedef struct VkExtent2D               VkExtent2D;
@@ -73,16 +77,21 @@ namespace Core
     {
     private:
         Application*               app;
-        VkInstance                 vkInstance         = nullptr;
-        VkSurfaceKHR               vkSurface          = nullptr;
-        VkPhysicalDevice           vkPhysicalDevice   = nullptr;
-        VkDevice                   vkDevice           = nullptr;
-        VkQueue                    vkGraphicsQueue    = nullptr;
-        VkQueue                    vkPresentQueue     = nullptr;
-        VkSwapchainKHR             vkSwapChain        = nullptr;
-        VkRenderPass               vkRenderPass       = nullptr;
-        VkPipelineLayout           vkPipelineLayout   = nullptr;
-        VkPipeline                 vkGraphicsPipeline = nullptr;
+        VkInstance                 vkInstance                = nullptr;
+        VkSurfaceKHR               vkSurface                 = nullptr;
+        VkPhysicalDevice           vkPhysicalDevice          = nullptr;
+        VkDevice                   vkDevice                  = nullptr;
+        VkQueue                    vkGraphicsQueue           = nullptr;
+        VkQueue                    vkPresentQueue            = nullptr;
+        VkSwapchainKHR             vkSwapChain               = nullptr;
+        VkRenderPass               vkRenderPass              = nullptr;
+        VkPipelineLayout           vkPipelineLayout          = nullptr;
+        VkPipeline                 vkGraphicsPipeline        = nullptr;
+        VkCommandPool              vkCommandPool             = nullptr;
+        VkCommandBuffer            vkCommandBuffer           = nullptr;
+        VkSemaphore                vkImageAvailableSemaphore = nullptr;
+        VkSemaphore                vkRenderFinishedSemaphore = nullptr;
+        VkFence                    vkInFlightFence           = nullptr;
         std::vector<VkFramebuffer> vkSwapChainFramebuffers;
         std::vector<VkImage>       vkSwapChainImages;
         std::vector<VkImageView>   vkSwapChainImageViews;
@@ -92,6 +101,8 @@ namespace Core
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
         ~Renderer();
+
+        void DrawFrame();
 
     private:
         void CheckValidationLayers() const;
@@ -104,5 +115,9 @@ namespace Core
         void CreateRenderPass();
         void CreateGraphicsPipeline();
         void CreateFramebuffers();
+        void CreateCommandPool();
+        void CreateCommandBuffer();
+        void CreateSyncObjects();
+        void RecordCommandBuffer(const VkCommandBuffer& commandBuffer, const uint32_t& imageIndex);
     };
 }
