@@ -64,6 +64,11 @@
     <None Include="Includes\Maths\Vector3.inl" />
     <None Include="Includes\Maths\Vector4.inl" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\CompileShaders.bat" />
+    <Content Include="Shaders\VulkanFrag.frag" />
+    <Content Include="Shaders\VulkanVert.vert" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

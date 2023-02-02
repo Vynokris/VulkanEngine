@@ -5,9 +5,33 @@
 #include <set>
 #include <limits>
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 using namespace Core;
 using namespace VulkanUtils;
+
+// TODO: Move this method to a separate file.
+static std::vector<char> ReadBinFile(const std::string& filename)
+{
+    // Open the binary file and place the cursor at its end.
+    std::ifstream f(filename, std::ios::ate | std::ios::binary);
+    if (!f.is_open()) {
+        std::cout << "ERROR (File IO): Failed to open file: " << filename << std::endl;
+        throw std::runtime_error("FILE_IO_ERROR");
+    }
+
+    // Get the file size and allocate a buffer with it.
+    const size_t fSize = (size_t)f.tellg();
+    std::vector<char> buffer(fSize);
+
+    // Move the cursor back to the start of the file and read it.
+    f.seekg(0);
+    f.read(buffer.data(), fSize);
+
+    f.close();
+    return buffer;
+}
+
 
 #pragma region VulkanUtils
 namespace VulkanUtils
@@ -186,6 +210,26 @@ bool VulkanUtils::IsDeviceSuitable(const VkPhysicalDevice& device, const VkSurfa
         && CheckDeviceExtensionSupport(device)
         && QuerySwapChainSupport(device, surface).IsAdequate();
 }
+
+VkShaderModule VulkanUtils::CreateShaderModule(const VkDevice& device, const char* filename)
+{
+    // Read the shader code.
+    const std::vector<char> shaderCode = ReadBinFile(filename);
+    
+    // Set shader module creation information.
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = shaderCode.size();
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
+
+    // Create and return the shader module.
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to create shader module." << std::endl;
+        throw std::runtime_error("VULKAN_SHADER_MODULE_ERROR");
+    }
+    return shaderModule;
+}
 #pragma endregion
 
 
@@ -202,10 +246,12 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateLogicalDevice();
     CreateSwapChain();
     CreateImageViews();
+    CreateGraphicsPipeline();
 }
 
 Renderer::~Renderer()
 {
+    vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
     for (const VkImageView& imageView : vkSwapChainImageViews)
         vkDestroyImageView(vkDevice, imageView, nullptr);
     vkDestroySwapchainKHR (vkDevice, vkSwapChain, nullptr);
@@ -246,7 +292,7 @@ void Renderer::CheckValidationLayers() const
 
     // Throw and error if a validation layer hasn't been found.
     if (VALIDATION_LAYERS_ENABLED && validationLayersError) {
-        std::cout << "ERROR (Vulkan): Some of the requested validation layers are not available.";
+        std::cout << "ERROR (Vulkan): Some of the requested validation layers are not available." << std::endl;
         throw std::runtime_error("VK_VALIDATION_LAYERS_ERROR");
     }
 }
@@ -482,4 +528,133 @@ void Renderer::CreateImageViews()
             throw std::runtime_error("VULKAN_IMAGE_VIEW_ERROR");
         }
     }
+}
+
+void Renderer::CreateGraphicsPipeline()
+{
+    // Load vulkan fragment and vertex shaders.
+    VkShaderModule vertShaderModule = CreateShaderModule(vkDevice, "Shaders/VulkanVert.spv");
+    VkShaderModule fragShaderModule = CreateShaderModule(vkDevice, "Shaders/VulkanFrag.spv");
+
+    // Set the vertex shader's pipeline stage and entry point.
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.pName  = "main";
+
+    // Set the fragment shader's pipeline stage and entry point.
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.pName = "main";
+
+    // Create an array of both pipeline stage info structures.
+    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+    // Setup vertex bindings and attributes.
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount   = 0;
+    vertexInputInfo.pVertexBindingDescriptions      = nullptr; // Optional.
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions    = nullptr; // Optional.
+
+    // Specify the kind of geometry to be drawn.
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+    inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+    // Specify the region of the framebuffer to render to.
+    VkViewport viewport{};
+    viewport.x        = 0.f;
+    viewport.y        = 0.f;
+    viewport.width    = (float)vkSwapChainWidth;
+    viewport.height   = (float)vkSwapChainHeight;
+    viewport.minDepth = 0.f;
+    viewport.maxDepth = 1.f;
+
+    // Specify the scissor rectangle (pixels outside it will be discarded).
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { vkSwapChainWidth, vkSwapChainHeight };
+
+    // Create the immutable viewport state info.
+    // TODO: To make viewport and scissor size dynamic, see: https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions.
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports    = &viewport;
+    viewportState.scissorCount  = 1;
+    viewportState.pScissors     = &scissor;
+
+    // Set rasterizer parameters.
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
+    rasterizer.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable        = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode             = VK_POLYGON_MODE_FILL; // Use VK_POLYGON_MODE_LINE to draw wireframe.
+    rasterizer.lineWidth               = 1.f;
+    rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace               = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable         = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.f; // Optional.
+    rasterizer.depthBiasClamp          = 0.f; // Optional.
+    rasterizer.depthBiasSlopeFactor    = 0.f; // Optional.
+
+    // Set multisampling parameters (disabled).
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable   = VK_FALSE;
+    multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.minSampleShading      = 1.f;      // Optional.
+    multisampling.pSampleMask           = nullptr;  // Optional.
+    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional.
+    multisampling.alphaToOneEnable      = VK_FALSE; // Optional.
+
+    // Depth and stencil buffer parameters.
+    // TODO: Currently don't have one...
+
+    // Set color blending parameters for current framebuffer (alpha blending enabled).
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable         = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+
+    // Set color blending parameters for all framebuffers.
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable     = VK_FALSE;
+    colorBlending.logicOp           = VK_LOGIC_OP_COPY; // Optional.
+    colorBlending.attachmentCount   = 1;
+    colorBlending.pAttachments      = &colorBlendAttachment;
+    colorBlending.blendConstants[0] = 0.f; // Optional.
+    colorBlending.blendConstants[1] = 0.f; // Optional.
+    colorBlending.blendConstants[2] = 0.f; // Optional.
+    colorBlending.blendConstants[3] = 0.f; // Optional.
+
+    // Set the pipeline layout creation information.
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount         = 0;       // Optional.
+    pipelineLayoutInfo.pSetLayouts            = nullptr; // Optional.
+    pipelineLayoutInfo.pushConstantRangeCount = 0;       // Optional.
+    pipelineLayoutInfo.pPushConstantRanges    = nullptr; // Optional.
+
+    // Create the pipeline layout.
+    if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to create pipeline layout." << std::endl;
+        throw std::runtime_error("VULKAN_PIPELINE_LAYOUT_ERROR");
+    }
+    
+    // Destroy both shader modules.
+    vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
+    vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
 }
