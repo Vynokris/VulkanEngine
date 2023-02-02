@@ -246,18 +246,20 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateLogicalDevice();
     CreateSwapChain();
     CreateImageViews();
+    CreateRenderPass();
     CreateGraphicsPipeline();
 }
 
 Renderer::~Renderer()
 {
     vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+    vkDestroyRenderPass    (vkDevice, vkRenderPass,     nullptr);
     for (const VkImageView& imageView : vkSwapChainImageViews)
-        vkDestroyImageView(vkDevice, imageView, nullptr);
+        vkDestroyImageView(vkDevice, imageView,   nullptr);
     vkDestroySwapchainKHR (vkDevice, vkSwapChain, nullptr);
-    vkDestroyDevice       (vkDevice, nullptr);
+    vkDestroyDevice       (vkDevice,              nullptr);
     vkDestroySurfaceKHR   (vkInstance, vkSurface, nullptr);
-    vkDestroyInstance     (vkInstance, nullptr);
+    vkDestroyInstance     (vkInstance,            nullptr);
 }
 
 void Renderer::CheckValidationLayers() const
@@ -527,6 +529,45 @@ void Renderer::CreateImageViews()
             std::cout << "ERROR (Vulkan): Failed to create image views." << std::endl;
             throw std::runtime_error("VULKAN_IMAGE_VIEW_ERROR");
         }
+    }
+}
+
+void Renderer::CreateRenderPass()
+{
+    // Create a color buffer attachment.
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format         = vkSwapChainImageFormat;
+    colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // No stencil is used so we don't care.
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Create the color attachment (retrieved from the shader's layout(location = 0) out vec4).
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Create a single sub-pass.
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments    = &colorAttachmentRef;
+
+    // Set the render pass creation information.
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    // Create the render pass.
+    if (vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to create render pass." << std::endl;
+        throw std::runtime_error("VULKAN_RENDER_PASS_ERROR");
     }
 }
 
