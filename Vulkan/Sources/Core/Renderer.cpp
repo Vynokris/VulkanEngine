@@ -252,8 +252,9 @@ Renderer::Renderer(const char* appName, const char* engineName)
 
 Renderer::~Renderer()
 {
-    vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-    vkDestroyRenderPass    (vkDevice, vkRenderPass,     nullptr);
+    vkDestroyPipeline      (vkDevice, vkGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(vkDevice, vkPipelineLayout,   nullptr);
+    vkDestroyRenderPass    (vkDevice, vkRenderPass,       nullptr);
     for (const VkImageView& imageView : vkSwapChainImageViews)
         vkDestroyImageView(vkDevice, imageView,   nullptr);
     vkDestroySwapchainKHR (vkDevice, vkSwapChain, nullptr);
@@ -693,6 +694,31 @@ void Renderer::CreateGraphicsPipeline()
     if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to create pipeline layout." << std::endl;
         throw std::runtime_error("VULKAN_PIPELINE_LAYOUT_ERROR");
+    }
+
+    // Set the graphics pipeline creation information.
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount          = 2;
+    pipelineInfo.pStages             = shaderStages;
+    pipelineInfo.pVertexInputState   = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState      = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState   = &multisampling;
+    pipelineInfo.pDepthStencilState  = nullptr; // Optional.
+    pipelineInfo.pColorBlendState    = &colorBlending;
+    pipelineInfo.pDynamicState       = nullptr; // Optional.
+    pipelineInfo.layout              = vkPipelineLayout;
+    pipelineInfo.renderPass          = vkRenderPass;
+    pipelineInfo.subpass             = 0;
+    pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE; // Optional.
+    pipelineInfo.basePipelineIndex   = -1;             // Optional.
+
+    // Create the graphics pipeline.
+    if (vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to create graphics pipeline." << std::endl;
+        throw std::runtime_error("VULKAN_GRAPHICS_PIPELINE_ERROR");
     }
     
     // Destroy both shader modules.
