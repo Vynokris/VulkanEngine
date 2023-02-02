@@ -11,11 +11,12 @@ typedef struct VkQueue_T*               VkQueue;
 typedef struct VkSurfaceKHR_T*          VkSurfaceKHR;
 typedef struct VkSwapchainKHR_T*        VkSwapchainKHR;
 typedef struct VkImage_T*               VkImage;
+typedef struct VkImageView_T*           VkImageView;
 typedef struct VkSurfaceCapabilitiesKHR VkSurfaceCapabilitiesKHR;
 typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
 typedef struct VkExtent2D               VkExtent2D;
 typedef enum   VkPresentModeKHR : int   VkPresentModeKHR;
-typedef enum   VkFormat : int           VkFormat;
+typedef enum   VkFormat         : int   VkFormat;
 
 namespace VulkanUtils
 {
@@ -64,17 +65,18 @@ namespace Core
     class Renderer
     {
     private:
-        Application*         app;
-        VkInstance           vkInstance       = nullptr;
-        VkSurfaceKHR         vkSurface        = nullptr;
-        VkPhysicalDevice     vkPhysicalDevice = nullptr;
-        VkDevice             vkDevice         = nullptr;
-        VkQueue              vkGraphicsQueue  = nullptr;
-        VkQueue              vkPresentQueue   = nullptr;
-        VkSwapchainKHR       vkSwapChain      = nullptr;
-        std::vector<VkImage> vkSwapChainImages;
-        VkFormat             vkSwapChainImageFormat;
-        uint32_t             vkSwapChainWidth, vkSwapChainHeight;
+        Application*             app;
+        VkInstance               vkInstance       = nullptr;
+        VkSurfaceKHR             vkSurface        = nullptr;
+        VkPhysicalDevice         vkPhysicalDevice = nullptr;
+        VkDevice                 vkDevice         = nullptr;
+        VkQueue                  vkGraphicsQueue  = nullptr;
+        VkQueue                  vkPresentQueue   = nullptr;
+        VkSwapchainKHR           vkSwapChain      = nullptr;
+        std::vector<VkImage>     vkSwapChainImages;
+        std::vector<VkImageView> vkSwapChainImageViews;
+        VkFormat                 vkSwapChainImageFormat;
+        uint32_t                 vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
@@ -87,5 +89,6 @@ namespace Core
         void PickPhysicalDevice();
         void CreateLogicalDevice();
         void CreateSwapChain();
+        void CreateImageViews();
     };
 }

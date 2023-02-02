@@ -193,20 +193,25 @@ Renderer::Renderer(const char* appName, const char* engineName)
 {
     app = Application::Get();
     vkPhysicalDevice = VK_NULL_HANDLE;
+    vkSwapChainImageFormat = VK_FORMAT_UNDEFINED;
 
     CheckValidationLayers();
     CreateVkInstance(appName, engineName);
     CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
+    CreateSwapChain();
+    CreateImageViews();
 }
 
 Renderer::~Renderer()
 {
-    vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-    vkDestroyDevice      (vkDevice, nullptr);
-    vkDestroySurfaceKHR  (vkInstance, vkSurface, nullptr);
-    vkDestroyInstance    (vkInstance, nullptr);
+    for (const VkImageView& imageView : vkSwapChainImageViews)
+        vkDestroyImageView(vkDevice, imageView, nullptr);
+    vkDestroySwapchainKHR (vkDevice, vkSwapChain, nullptr);
+    vkDestroyDevice       (vkDevice, nullptr);
+    vkDestroySurfaceKHR   (vkInstance, vkSurface, nullptr);
+    vkDestroyInstance     (vkInstance, nullptr);
 }
 
 void Renderer::CheckValidationLayers() const
@@ -443,4 +448,38 @@ void Renderer::CreateSwapChain()
     vkSwapChainImageFormat = surfaceFormat.format;
     vkSwapChainWidth       = extent.width;
     vkSwapChainHeight      = extent.height;
+}
+
+void Renderer::CreateImageViews()
+{
+    vkSwapChainImageViews.resize(vkSwapChainImages.size());
+
+    for (size_t i = 0; i < vkSwapChainImages.size(); i++)
+    {
+        // Set creation information for the image view.
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image    = vkSwapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format   = vkSwapChainImageFormat;
+
+        // Set color channel swizzling.
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        // Choose how the image is used and set the mipmap and layer counts.
+        createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel   = 0;
+        createInfo.subresourceRange.levelCount     = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount     = 1;
+
+        // Create the image view.
+        if (vkCreateImageView(vkDevice, &createInfo, nullptr, &vkSwapChainImageViews[i]) != VK_SUCCESS) {
+            std::cout << "ERROR (Vulkan): Failed to create image views." << std::endl;
+            throw std::runtime_error("VULKAN_IMAGE_VIEW_ERROR");
+        }
+    }
 }
