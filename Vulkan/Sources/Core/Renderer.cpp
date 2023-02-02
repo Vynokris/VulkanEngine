@@ -248,13 +248,16 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateImageViews();
     CreateRenderPass();
     CreateGraphicsPipeline();
+    CreateFramebuffers();
 }
 
 Renderer::~Renderer()
 {
-    vkDestroyPipeline      (vkDevice, vkGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(vkDevice, vkPipelineLayout,   nullptr);
-    vkDestroyRenderPass    (vkDevice, vkRenderPass,       nullptr);
+    for (const VkFramebuffer& framebuffer : vkSwapChainFramebuffers)
+        vkDestroyFramebuffer(vkDevice, framebuffer,        nullptr);
+    vkDestroyPipeline       (vkDevice, vkGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout (vkDevice, vkPipelineLayout,   nullptr);
+    vkDestroyRenderPass     (vkDevice, vkRenderPass,       nullptr);
     for (const VkImageView& imageView : vkSwapChainImageViews)
         vkDestroyImageView(vkDevice, imageView,   nullptr);
     vkDestroySwapchainKHR (vkDevice, vkSwapChain, nullptr);
@@ -724,4 +727,29 @@ void Renderer::CreateGraphicsPipeline()
     // Destroy both shader modules.
     vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
     vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
+}
+
+void Renderer::CreateFramebuffers()
+{
+    vkSwapChainFramebuffers.resize(vkSwapChainImageViews.size());
+
+    for (size_t i = 0; i < vkSwapChainImageViews.size(); i++)
+    {
+        // Create the current framebuffer creation information.
+        VkFramebufferCreateInfo framebufferInfo{};
+        const VkImageView attachments[] = { vkSwapChainImageViews[i] };
+        framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass      = vkRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments    = attachments;
+        framebufferInfo.width           = vkSwapChainWidth;
+        framebufferInfo.height          = vkSwapChainHeight;
+        framebufferInfo.layers          = 1;
+
+        // Create the current framebuffer.
+        if (vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &vkSwapChainFramebuffers[i]) != VK_SUCCESS) {
+            std::cout << "ERROR (Vulkan): Failed to create framebuffer." << std::endl;
+            throw std::runtime_error("VULKAN_FRAMEBUFFER_ERROR");
+        }
+    }
 }
