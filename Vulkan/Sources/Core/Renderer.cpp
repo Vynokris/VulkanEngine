@@ -10,28 +10,6 @@
 using namespace Core;
 using namespace VulkanUtils;
 
-// TODO: Move this method to a separate file.
-static std::vector<char> ReadBinFile(const std::string& filename)
-{
-    // Open the binary file and place the cursor at its end.
-    std::ifstream f(filename, std::ios::ate | std::ios::binary);
-    if (!f.is_open()) {
-        std::cout << "ERROR (File IO): Failed to open file: " << filename << std::endl;
-        throw std::runtime_error("FILE_IO_ERROR");
-    }
-
-    // Get the file size and allocate a buffer with it.
-    const size_t fSize = (size_t)f.tellg();
-    std::vector<char> buffer(fSize);
-
-    // Move the cursor back to the start of the file and read it.
-    f.seekg(0);
-    f.read(buffer.data(), fSize);
-
-    f.close();
-    return buffer;
-}
-
 
 #pragma region VulkanUtils
 namespace VulkanUtils
@@ -211,6 +189,27 @@ bool VulkanUtils::IsDeviceSuitable(const VkPhysicalDevice& device, const VkSurfa
         && QuerySwapChainSupport(device, surface).IsAdequate();
 }
 
+// TODO: Put this method somewhere it belongs.
+static std::vector<char> ReadBinFile(const std::string& filename)
+{
+    // Open the binary file and place the cursor at its end.
+    std::ifstream f(filename, std::ios::ate | std::ios::binary);
+    if (!f.is_open()) {
+        std::cout << "ERROR (File IO): Failed to open file: " << filename << std::endl;
+        throw std::runtime_error("FILE_IO_ERROR");
+    }
+
+    // Get the file size and allocate a buffer with it.
+    const size_t fSize = (size_t)f.tellg();
+    std::vector<char> buffer(fSize);
+
+    // Move the cursor back to the start of the file and read it.
+    f.seekg(0);
+    f.read(buffer.data(), (std::streamsize)fSize);
+    f.close();
+    return buffer;
+}
+
 VkShaderModule VulkanUtils::CreateShaderModule(const VkDevice& device, const char* filename)
 {
     // Read the shader code.
@@ -223,7 +222,7 @@ VkShaderModule VulkanUtils::CreateShaderModule(const VkDevice& device, const cha
     createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
     // Create and return the shader module.
-    VkShaderModule shaderModule;
+    VkShaderModule shaderModule{};
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to create shader module." << std::endl;
         throw std::runtime_error("VULKAN_SHADER_MODULE_ERROR");
@@ -274,55 +273,26 @@ Renderer::~Renderer()
     vkDestroyInstance     (vkInstance,            nullptr);
 }
 
-void Renderer::DrawFrame()
+void Renderer::BeginRender()
 {
-    // Wait for the previous frame to finish.
-    vkWaitForFences(vkDevice, 1, &vkInFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences  (vkDevice, 1, &vkInFlightFence);
+    NewFrame();
+    BeginRecordCmdBuf();
+}
 
-    // Acquire an image from the swap chain.
-    uint32_t imageIndex;
-    vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+void Renderer::DrawFrame() const
+{
+    // Issue the command to draw the triangle.
+    vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
+}
 
-    // Record the command buffer.
-    vkResetCommandBuffer(vkCommandBuffer, 0);
-    RecordCommandBuffer (vkCommandBuffer, imageIndex);
-
-    // Set the command buffer submit information.
-    const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphore };
-    const VkPipelineStageFlags waitStages      [] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    const VkSemaphore          signalSemaphores[] = { vkRenderFinishedSemaphore };
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount   = 1;
-    submitInfo.pWaitSemaphores      = waitSemaphores;
-    submitInfo.pWaitDstStageMask    = waitStages;
-    submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &vkCommandBuffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    = signalSemaphores;
-
-    // Submit the graphics command queue.
-    if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, vkInFlightFence) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to submit draw command buffer." << std::endl;
-        throw std::runtime_error("VULKAN_SUBMIT_COMMAND_BUFFER_ERROR");
-    }
-
-    // Present the frame.
-    const VkSwapchainKHR swapChains[] = { vkSwapChain };
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = signalSemaphores;
-    presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = swapChains;
-    presentInfo.pImageIndices      = &imageIndex;
-    presentInfo.pResults           = nullptr; // Optional.
-    vkQueuePresentKHR(vkPresentQueue, &presentInfo);
+void Renderer::EndRender() const
+{
+    EndRecordCmdBuf();
+    PresentFrame();
 }
 
 
-#pragma region RendererSetup
+#pragma region Setup
 void Renderer::CheckValidationLayers() const
 {
     // Get the number of vulkan layers on the machine.
@@ -694,14 +664,21 @@ void Renderer::CreateGraphicsPipeline()
     scissor.offset = { 0, 0 };
     scissor.extent = { vkSwapChainWidth, vkSwapChainHeight };
 
-    // Create the immutable viewport state info.
-    // TODO: To make viewport and scissor size dynamic, see: https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions.
+    // Create the dynamic states for viewport and scissor.
+    std::vector dynamicStates = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+    dynamicState.pDynamicStates    = dynamicStates.data();
+    
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
-    viewportState.pViewports    = &viewport;
     viewportState.scissorCount  = 1;
-    viewportState.pScissors     = &scissor;
 
     // Set rasterizer parameters.
     VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -779,7 +756,7 @@ void Renderer::CreateGraphicsPipeline()
     pipelineInfo.pMultisampleState   = &multisampling;
     pipelineInfo.pDepthStencilState  = nullptr; // Optional.
     pipelineInfo.pColorBlendState    = &colorBlending;
-    pipelineInfo.pDynamicState       = nullptr; // Optional.
+    pipelineInfo.pDynamicState       = &dynamicState;
     pipelineInfo.layout              = vkPipelineLayout;
     pipelineInfo.renderPass          = vkRenderPass;
     pipelineInfo.subpass             = 0;
@@ -875,14 +852,30 @@ void Renderer::CreateSyncObjects()
 }
 #pragma endregion
 
-void Renderer::RecordCommandBuffer(const VkCommandBuffer& commandBuffer, const uint32_t& imageIndex)
+#pragma region Rendering
+void Renderer::NewFrame()
 {
+    // Wait for the previous frame to finish.
+    vkWaitForFences(vkDevice, 1, &vkInFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences  (vkDevice, 1, &vkInFlightFence);
+
+    // Acquire an image from the swap chain.
+    vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphore, VK_NULL_HANDLE, &vkSwapchainImageIndex);
+
+    // Reset the command buffer and start recording it.
+    vkResetCommandBuffer(vkCommandBuffer, 0);
+}
+
+void Renderer::BeginRecordCmdBuf() const
+{
+    vkResetCommandBuffer(vkCommandBuffer, 0);
+    
     // Begin recording the command buffer.
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags            = 0;       // Optional.
     beginInfo.pInheritanceInfo = nullptr; // Optional.
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(vkCommandBuffer, &beginInfo) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to begin recording command buffer." << std::endl;
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
     }
@@ -894,25 +887,77 @@ void Renderer::RecordCommandBuffer(const VkCommandBuffer& commandBuffer, const u
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass        = vkRenderPass;
-    renderPassInfo.framebuffer       = vkSwapChainFramebuffers[imageIndex];
+    renderPassInfo.framebuffer       = vkSwapChainFramebuffers[vkSwapchainImageIndex];
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = { vkSwapChainWidth, vkSwapChainHeight };
     renderPassInfo.clearValueCount   = 1;
     renderPassInfo.pClearValues      = &clearColor;
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     // Bind the graphics pipeline.
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
+    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
 
-    // Issue the command to draw the triangle.
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    // Set the viewport.
+    VkViewport viewport{};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = (float)vkSwapChainWidth;
+    viewport.height   = (float)vkSwapChainHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
 
+    // Set the scissor.
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { vkSwapChainWidth, vkSwapChainHeight };
+    vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+}
+
+void Renderer::EndRecordCmdBuf() const
+{
     // End the render pass.
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(vkCommandBuffer);
 
     // Stop recording the command buffer.
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(vkCommandBuffer) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to record command buffer." << std::endl;
         throw std::runtime_error("VULKAN_RECORD_COMMAND_BUFFER_ERROR");
     }
 }
+
+void Renderer::PresentFrame() const
+{
+    // Set the command buffer submit information.
+    const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphore };
+    const VkPipelineStageFlags waitStages      [] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    const VkSemaphore          signalSemaphores[] = { vkRenderFinishedSemaphore };
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount   = 1;
+    submitInfo.pWaitSemaphores      = waitSemaphores;
+    submitInfo.pWaitDstStageMask    = waitStages;
+    submitInfo.commandBufferCount   = 1;
+    submitInfo.pCommandBuffers      = &vkCommandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores    = signalSemaphores;
+
+    // Submit the graphics command queue.
+    if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, vkInFlightFence) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to submit draw command buffer." << std::endl;
+        throw std::runtime_error("VULKAN_SUBMIT_COMMAND_BUFFER_ERROR");
+    }
+
+    // Present the frame.
+    const VkSwapchainKHR swapChains[] = { vkSwapChain };
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores    = signalSemaphores;
+    presentInfo.swapchainCount     = 1;
+    presentInfo.pSwapchains        = swapChains;
+    presentInfo.pImageIndices      = &vkSwapchainImageIndex;
+    presentInfo.pResults           = nullptr; // Optional.
+    vkQueuePresentKHR(vkPresentQueue, &presentInfo);
+}
+#pragma endregion

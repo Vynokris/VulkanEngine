@@ -40,9 +40,13 @@ void Application::Run()
     {
         window->Update();
         Update();
-        Render();
-        ui->Render();
-        renderer->DrawFrame();
+        
+        renderer->BeginRender();
+        {
+            Render();
+            ui->Render();
+        }
+        renderer->EndRender();
         window->EndFrame();
     }
 }
@@ -67,5 +71,5 @@ void Application::Update()
 
 void Application::Render()
 {
-    
+    renderer->DrawFrame();
 }

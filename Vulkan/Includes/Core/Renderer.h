@@ -3,7 +3,8 @@
 #include <optional>
 #include <vector>
 
-// Forward declaration of Vulkan types to avoid include.
+#pragma region Forward Declarations
+// Forward declaration of Vulkan types to avoid include inside header.
 typedef struct VkInstance_T*            VkInstance;
 typedef struct VkPhysicalDevice_T*      VkPhysicalDevice;
 typedef struct VkDevice_T*              VkDevice;
@@ -26,7 +27,9 @@ typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
 typedef struct VkExtent2D               VkExtent2D;
 typedef enum   VkPresentModeKHR : int   VkPresentModeKHR;
 typedef enum   VkFormat         : int   VkFormat;
+#pragma endregion 
 
+#pragma region VulkanUtils
 namespace VulkanUtils
 {
     struct QueueFamilyIndices
@@ -67,6 +70,7 @@ namespace VulkanUtils
 
     VkShaderModule CreateShaderModule(const VkDevice& device, const char* filename);
 }
+#pragma endregion
 
 
 namespace Core
@@ -97,12 +101,15 @@ namespace Core
         std::vector<VkImageView>   vkSwapChainImageViews;
         VkFormat                   vkSwapChainImageFormat;
         uint32_t                   vkSwapChainWidth = 0, vkSwapChainHeight = 0;
+        uint32_t                   vkSwapchainImageIndex = 0;
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
         ~Renderer();
 
-        void DrawFrame();
+        void BeginRender();
+        void DrawFrame() const;
+        void EndRender() const;
 
     private:
         void CheckValidationLayers() const;
@@ -118,6 +125,10 @@ namespace Core
         void CreateCommandPool();
         void CreateCommandBuffer();
         void CreateSyncObjects();
-        void RecordCommandBuffer(const VkCommandBuffer& commandBuffer, const uint32_t& imageIndex);
+
+        void NewFrame();
+        void BeginRecordCmdBuf() const;
+        void EndRecordCmdBuf() const;
+        void PresentFrame() const;
     };
 }
