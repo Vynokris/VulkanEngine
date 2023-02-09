@@ -105,6 +105,7 @@ namespace Core
         uint32_t                     vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         uint32_t                     vkSwapchainImageIndex = 0;
         uint32_t                     currentFrame = 0;
+        bool                         framebufferResized = false;
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
@@ -113,6 +114,8 @@ namespace Core
         void BeginRender();
         void DrawFrame() const;
         void EndRender();
+
+        void ResizeSwapChain() { framebufferResized = true; }
 
     private:
         void CheckValidationLayers() const;
@@ -129,9 +132,12 @@ namespace Core
         void CreateCommandBuffers();
         void CreateSyncObjects();
 
+        void DestroySwapChain() const;
+        void RecreateSwapChain();
+
         void NewFrame();
         void BeginRecordCmdBuf() const;
         void EndRecordCmdBuf() const;
-        void PresentFrame() const;
+        void PresentFrame();
     };
 }
