@@ -5,6 +5,13 @@
 
 namespace Maths
 {
+    // Structure used for the vulkan tutorial.
+    struct TestVertex
+    {
+        Vector2 pos;
+        Vector3 color;
+    };
+    
     // A point in 3D space with rendering data.
     struct Vertex
     {
