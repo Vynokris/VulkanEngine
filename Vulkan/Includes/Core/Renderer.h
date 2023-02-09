@@ -3,6 +3,8 @@
 #include <optional>
 #include <vector>
 
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 #pragma region Forward Declarations
 // Forward declaration of Vulkan types to avoid include inside header.
 typedef struct VkInstance_T*            VkInstance;
@@ -80,28 +82,29 @@ namespace Core
     class Renderer
     {
     private:
-        Application*               app;
-        VkInstance                 vkInstance                = nullptr;
-        VkSurfaceKHR               vkSurface                 = nullptr;
-        VkPhysicalDevice           vkPhysicalDevice          = nullptr;
-        VkDevice                   vkDevice                  = nullptr;
-        VkQueue                    vkGraphicsQueue           = nullptr;
-        VkQueue                    vkPresentQueue            = nullptr;
-        VkSwapchainKHR             vkSwapChain               = nullptr;
-        VkRenderPass               vkRenderPass              = nullptr;
-        VkPipelineLayout           vkPipelineLayout          = nullptr;
-        VkPipeline                 vkGraphicsPipeline        = nullptr;
-        VkCommandPool              vkCommandPool             = nullptr;
-        VkCommandBuffer            vkCommandBuffer           = nullptr;
-        VkSemaphore                vkImageAvailableSemaphore = nullptr;
-        VkSemaphore                vkRenderFinishedSemaphore = nullptr;
-        VkFence                    vkInFlightFence           = nullptr;
-        std::vector<VkFramebuffer> vkSwapChainFramebuffers;
-        std::vector<VkImage>       vkSwapChainImages;
-        std::vector<VkImageView>   vkSwapChainImageViews;
-        VkFormat                   vkSwapChainImageFormat;
-        uint32_t                   vkSwapChainWidth = 0, vkSwapChainHeight = 0;
-        uint32_t                   vkSwapchainImageIndex = 0;
+        Application*                 app;
+        VkInstance                   vkInstance                = nullptr;
+        VkSurfaceKHR                 vkSurface                 = nullptr;
+        VkPhysicalDevice             vkPhysicalDevice          = nullptr;
+        VkDevice                     vkDevice                  = nullptr;
+        VkQueue                      vkGraphicsQueue           = nullptr;
+        VkQueue                      vkPresentQueue            = nullptr;
+        VkSwapchainKHR               vkSwapChain               = nullptr;
+        VkRenderPass                 vkRenderPass              = nullptr;
+        VkPipelineLayout             vkPipelineLayout          = nullptr;
+        VkPipeline                   vkGraphicsPipeline        = nullptr;
+        VkCommandPool                vkCommandPool             = nullptr;
+        std::vector<VkCommandBuffer> vkCommandBuffers;
+        std::vector<VkSemaphore>     vkImageAvailableSemaphores;
+        std::vector<VkSemaphore>     vkRenderFinishedSemaphores;
+        std::vector<VkFence>         vkInFlightFences;
+        std::vector<VkFramebuffer>   vkSwapChainFramebuffers;
+        std::vector<VkImage>         vkSwapChainImages;
+        std::vector<VkImageView>     vkSwapChainImageViews;
+        VkFormat                     vkSwapChainImageFormat;
+        uint32_t                     vkSwapChainWidth = 0, vkSwapChainHeight = 0;
+        uint32_t                     vkSwapchainImageIndex = 0;
+        uint32_t                     currentFrame = 0;
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
@@ -109,7 +112,7 @@ namespace Core
 
         void BeginRender();
         void DrawFrame() const;
-        void EndRender() const;
+        void EndRender();
 
     private:
         void CheckValidationLayers() const;
@@ -123,7 +126,7 @@ namespace Core
         void CreateGraphicsPipeline();
         void CreateFramebuffers();
         void CreateCommandPool();
-        void CreateCommandBuffer();
+        void CreateCommandBuffers();
         void CreateSyncObjects();
 
         void NewFrame();

@@ -249,17 +249,20 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
-    CreateCommandBuffer();
+    CreateCommandBuffers();
     CreateSyncObjects();
 }
 
 Renderer::~Renderer()
 {
-    vkDeviceWaitIdle    (vkDevice);
-    vkDestroyFence      (vkDevice, vkInFlightFence,           nullptr);
-    vkDestroySemaphore  (vkDevice, vkRenderFinishedSemaphore, nullptr);
-    vkDestroySemaphore  (vkDevice, vkImageAvailableSemaphore, nullptr);
-    vkDestroyCommandPool(vkDevice, vkCommandPool,             nullptr);
+    vkDeviceWaitIdle(vkDevice);
+    
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(vkDevice, vkImageAvailableSemaphores[i], nullptr);
+        vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
+    }
+    vkDestroyCommandPool(vkDevice, vkCommandPool,          nullptr);
     for (const VkFramebuffer& framebuffer : vkSwapChainFramebuffers)
         vkDestroyFramebuffer(vkDevice, framebuffer,        nullptr);
     vkDestroyPipeline       (vkDevice, vkGraphicsPipeline, nullptr);
@@ -282,13 +285,14 @@ void Renderer::BeginRender()
 void Renderer::DrawFrame() const
 {
     // Issue the command to draw the triangle.
-    vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
+    vkCmdDraw(vkCommandBuffers[currentFrame], 3, 1, 0, 0);
 }
 
-void Renderer::EndRender() const
+void Renderer::EndRender()
 {
     EndRecordCmdBuf();
     PresentFrame();
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 
@@ -339,7 +343,7 @@ void Renderer::CreateVkInstance(const char* appName, const char* engineName)
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName        = engineName;
     appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion         = VK_API_VERSION_1_0;
+    appInfo.apiVersion         = VK_API_VERSION_1_3;
 
     // Set vulkan instance creation information.
     VkInstanceCreateInfo createInfo{};
@@ -816,17 +820,18 @@ void Renderer::CreateCommandPool()
     }
 }
 
-void Renderer::CreateCommandBuffer()
+void Renderer::CreateCommandBuffers()
 {
     // Set the command buffer allocation information.
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool        = vkCommandPool;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
 
     // Allocate the command buffer.
-    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, &vkCommandBuffer) != VK_SUCCESS) {
+    vkCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, vkCommandBuffers.data()) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to allocate command buffers." << std::endl;
         throw std::runtime_error("VULKAN_COMMAND_BUFFER_ERROR");
     }
@@ -834,6 +839,10 @@ void Renderer::CreateCommandBuffer()
 
 void Renderer::CreateSyncObjects()
 {
+    vkImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    vkRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    vkInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    
     // Set the semaphore and fence creation information.
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -842,12 +851,15 @@ void Renderer::CreateSyncObjects()
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     // Create the semaphores and fence.
-    if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence    (vkDevice, &fenceInfo,     nullptr, &vkInFlightFence          ) != VK_SUCCESS)
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        std::cout << "ERROR (Vulkan): Failed to create semaphores." << std::endl;
-        throw std::runtime_error("VULKAN_SEMAPHORE_ERROR");
+        if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence    (vkDevice, &fenceInfo,     nullptr, &vkInFlightFences[i])           != VK_SUCCESS)
+        {
+            std::cout << "ERROR (Vulkan): Failed to create semaphores and fence." << std::endl;
+            throw std::runtime_error("VULKAN_SYNC_OBJECTS_ERROR");
+        }
     }
 }
 #pragma endregion
@@ -856,26 +868,24 @@ void Renderer::CreateSyncObjects()
 void Renderer::NewFrame()
 {
     // Wait for the previous frame to finish.
-    vkWaitForFences(vkDevice, 1, &vkInFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences  (vkDevice, 1, &vkInFlightFence);
+    vkWaitForFences(vkDevice, 1, &vkInFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences  (vkDevice, 1, &vkInFlightFences[currentFrame]);
 
     // Acquire an image from the swap chain.
-    vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphore, VK_NULL_HANDLE, &vkSwapchainImageIndex);
-
-    // Reset the command buffer and start recording it.
-    vkResetCommandBuffer(vkCommandBuffer, 0);
+    vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &vkSwapchainImageIndex);
 }
 
 void Renderer::BeginRecordCmdBuf() const
 {
-    vkResetCommandBuffer(vkCommandBuffer, 0);
+    // Reset the command buffer.
+    vkResetCommandBuffer(vkCommandBuffers[currentFrame],  0);
     
     // Begin recording the command buffer.
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags            = 0;       // Optional.
     beginInfo.pInheritanceInfo = nullptr; // Optional.
-    if (vkBeginCommandBuffer(vkCommandBuffer, &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(vkCommandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to begin recording command buffer." << std::endl;
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
     }
@@ -892,10 +902,10 @@ void Renderer::BeginRecordCmdBuf() const
     renderPassInfo.renderArea.extent = { vkSwapChainWidth, vkSwapChainHeight };
     renderPassInfo.clearValueCount   = 1;
     renderPassInfo.pClearValues      = &clearColor;
-    vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(vkCommandBuffers[currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     // Bind the graphics pipeline.
-    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
+    vkCmdBindPipeline(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
 
     // Set the viewport.
     VkViewport viewport{};
@@ -905,22 +915,22 @@ void Renderer::BeginRecordCmdBuf() const
     viewport.height   = (float)vkSwapChainHeight;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(vkCommandBuffers[currentFrame], 0, 1, &viewport);
 
     // Set the scissor.
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
     scissor.extent = { vkSwapChainWidth, vkSwapChainHeight };
-    vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+    vkCmdSetScissor(vkCommandBuffers[currentFrame], 0, 1, &scissor);
 }
 
 void Renderer::EndRecordCmdBuf() const
 {
     // End the render pass.
-    vkCmdEndRenderPass(vkCommandBuffer);
+    vkCmdEndRenderPass(vkCommandBuffers[currentFrame]);
 
     // Stop recording the command buffer.
-    if (vkEndCommandBuffer(vkCommandBuffer) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(vkCommandBuffers[currentFrame]) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to record command buffer." << std::endl;
         throw std::runtime_error("VULKAN_RECORD_COMMAND_BUFFER_ERROR");
     }
@@ -929,21 +939,21 @@ void Renderer::EndRecordCmdBuf() const
 void Renderer::PresentFrame() const
 {
     // Set the command buffer submit information.
-    const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphore };
+    const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphores[currentFrame] };
     const VkPipelineStageFlags waitStages      [] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    const VkSemaphore          signalSemaphores[] = { vkRenderFinishedSemaphore };
+    const VkSemaphore          signalSemaphores[] = { vkRenderFinishedSemaphores[currentFrame] };
     VkSubmitInfo submitInfo{};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = waitSemaphores;
     submitInfo.pWaitDstStageMask    = waitStages;
     submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &vkCommandBuffer;
+    submitInfo.pCommandBuffers      = &vkCommandBuffers[currentFrame];
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = signalSemaphores;
 
     // Submit the graphics command queue.
-    if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, vkInFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, vkInFlightFences[currentFrame]) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to submit draw command buffer." << std::endl;
         throw std::runtime_error("VULKAN_SUBMIT_COMMAND_BUFFER_ERROR");
     }
