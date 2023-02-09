@@ -1,14 +1,46 @@
 ﻿#include "Core/Renderer.h"
 #include "Core/Application.h"
+#include "Maths/Vertex.h"
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <set>
+#include <array>
 #include <limits>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 using namespace Core;
 using namespace VulkanUtils;
+
+// TODO: This is temporary.
+const std::vector<Maths::TestVertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+static VkVertexInputBindingDescription GetBindingDescription()
+{
+    VkVertexInputBindingDescription bindingDescription{};
+    bindingDescription.binding   = 0;
+    bindingDescription.stride    = sizeof(Maths::TestVertex);
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    return bindingDescription;
+}
+static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+{
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].offset = offsetof(Maths::TestVertex, pos);
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(Maths::TestVertex, color);
+
+    return attributeDescriptions;
+}
 
 
 #pragma region VulkanUtils
@@ -79,6 +111,21 @@ QueueFamilyIndices VulkanUtils::FindQueueFamilies(const VkPhysicalDevice& device
         ++i;
     }
     return queueFamilyIndices;
+}
+
+uint32_t VulkanUtils::FindMemoryType(const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    std::cout << "ERROR (Vulkan): Failed to find suitable memory type." << std::endl;
+    throw std::runtime_error("VULKAN_FIND_MEMORY_TYPE_ERROR");
 }
 
 SwapChainSupportDetails VulkanUtils::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
@@ -249,6 +296,7 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
+    CreateVertexBuffer();
     CreateCommandBuffers();
     CreateSyncObjects();
 }
@@ -263,13 +311,15 @@ Renderer::~Renderer()
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
     }
     DestroySwapChain();
-    vkDestroyCommandPool   (vkDevice,   vkCommandPool,      nullptr);
-    vkDestroyPipeline      (vkDevice,   vkGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(vkDevice,   vkPipelineLayout,   nullptr);
-    vkDestroyRenderPass    (vkDevice,   vkRenderPass,       nullptr);
-    vkDestroyDevice        (vkDevice,                       nullptr);
-    vkDestroySurfaceKHR    (vkInstance, vkSurface,          nullptr);
-    vkDestroyInstance      (vkInstance,                     nullptr);
+    vkDestroyBuffer        (vkDevice,   vkVertexBuffer,       nullptr);
+    vkFreeMemory           (vkDevice,   vkVertexBufferMemory, nullptr);
+    vkDestroyCommandPool   (vkDevice,   vkCommandPool,        nullptr);
+    vkDestroyPipeline      (vkDevice,   vkGraphicsPipeline,   nullptr);
+    vkDestroyPipelineLayout(vkDevice,   vkPipelineLayout,     nullptr);
+    vkDestroyRenderPass    (vkDevice,   vkRenderPass,         nullptr);
+    vkDestroyDevice        (vkDevice,                         nullptr);
+    vkDestroySurfaceKHR    (vkInstance, vkSurface,            nullptr);
+    vkDestroyInstance      (vkInstance,                       nullptr);
 }
 
 void Renderer::BeginRender()
@@ -281,7 +331,7 @@ void Renderer::BeginRender()
 void Renderer::DrawFrame() const
 {
     // Issue the command to draw the triangle.
-    vkCmdDraw(vkCommandBuffers[currentFrame], 3, 1, 0, 0);
+    vkCmdDraw(vkCommandBuffers[currentFrame], (uint32_t)vertices.size(), 1, 0, 0);
 }
 
 void Renderer::EndRender()
@@ -636,12 +686,14 @@ void Renderer::CreateGraphicsPipeline()
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
     // Setup vertex bindings and attributes.
+    auto bindingDescription    = GetBindingDescription();
+    auto attributeDescriptions = GetAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount   = 0;
-    vertexInputInfo.pVertexBindingDescriptions      = nullptr; // Optional.
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions    = nullptr; // Optional.
+    vertexInputInfo.vertexBindingDescriptionCount   = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
+    vertexInputInfo.pVertexBindingDescriptions      = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
 
     // Specify the kind of geometry to be drawn.
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -815,6 +867,45 @@ void Renderer::CreateCommandPool()
     }
 }
 
+void Renderer::CreateVertexBuffer()
+{
+    // TODO: This probably shouldn't be done here, but for every mesh...
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size        = sizeof(vertices[0]) * vertices.size();
+    bufferInfo.usage       = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    // Create the vertex buffer.
+    if (vkCreateBuffer(vkDevice, &bufferInfo, nullptr, &vkVertexBuffer) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to create vertex buffer." << std::endl;
+        throw std::runtime_error("VULKAN_VERTEX_BUFFER_CREATION_ERROR");
+    }
+
+    // Find the buffer's memory requirements.
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(vkDevice, vkVertexBuffer, &memRequirements);
+
+    // Find which memory type is most suitable for the vertex buffer.
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize  = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(vkPhysicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    // Allocate the vertex buffer's memory.
+    if (vkAllocateMemory(vkDevice, &allocInfo, nullptr, &vkVertexBufferMemory) != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to allocate vertex buffer memory." << std::endl;
+        throw std::runtime_error("VULKAN_VERTEX_BUFFER_ALLOCATION_ERROR");
+    }
+    vkBindBufferMemory(vkDevice, vkVertexBuffer, vkVertexBufferMemory, 0);
+
+    // Map the buffer's GPU memory to CPU memory, and write vertex info to it.
+    void* data;
+    vkMapMemory(vkDevice, vkVertexBufferMemory, 0, bufferInfo.size, 0, &data);
+    memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+    vkUnmapMemory(vkDevice, vkVertexBufferMemory);
+}
+
 void Renderer::CreateCommandBuffers()
 {
     // Set the command buffer allocation information.
@@ -934,6 +1025,11 @@ void Renderer::BeginRecordCmdBuf() const
 
     // Bind the graphics pipeline.
     vkCmdBindPipeline(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
+
+    // Bind the vertex buffer.
+    const VkBuffer vertexBuffers[] = { vkVertexBuffer };
+    const VkDeviceSize offsets[]   = { 0 };
+    vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
 
     // Set the viewport.
     VkViewport viewport{};

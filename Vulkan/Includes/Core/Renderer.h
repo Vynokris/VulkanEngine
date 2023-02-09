@@ -7,28 +7,31 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 #pragma region Forward Declarations
 // Forward declaration of Vulkan types to avoid include inside header.
-typedef struct VkInstance_T*            VkInstance;
-typedef struct VkPhysicalDevice_T*      VkPhysicalDevice;
-typedef struct VkDevice_T*              VkDevice;
-typedef struct VkQueue_T*               VkQueue;
-typedef struct VkSurfaceKHR_T*          VkSurfaceKHR;
-typedef struct VkSwapchainKHR_T*        VkSwapchainKHR;
-typedef struct VkFramebuffer_T*         VkFramebuffer;
-typedef struct VkImage_T*               VkImage;
-typedef struct VkImageView_T*           VkImageView;
-typedef struct VkShaderModule_T*        VkShaderModule;
-typedef struct VkRenderPass_T*          VkRenderPass;
-typedef struct VkPipelineLayout_T*      VkPipelineLayout;
-typedef struct VkPipeline_T*            VkPipeline;
-typedef struct VkCommandPool_T*         VkCommandPool;
-typedef struct VkCommandBuffer_T*       VkCommandBuffer;
-typedef struct VkSemaphore_T*           VkSemaphore;
-typedef struct VkFence_T*               VkFence;
-typedef struct VkSurfaceCapabilitiesKHR VkSurfaceCapabilitiesKHR;
-typedef struct VkSurfaceFormatKHR       VkSurfaceFormatKHR;
-typedef struct VkExtent2D               VkExtent2D;
-typedef enum   VkPresentModeKHR : int   VkPresentModeKHR;
-typedef enum   VkFormat         : int   VkFormat;
+typedef struct VkInstance_T*               VkInstance;
+typedef struct VkPhysicalDevice_T*         VkPhysicalDevice;
+typedef struct VkDevice_T*                 VkDevice;
+typedef struct VkQueue_T*                  VkQueue;
+typedef struct VkSurfaceKHR_T*             VkSurfaceKHR;
+typedef struct VkSwapchainKHR_T*           VkSwapchainKHR;
+typedef struct VkFramebuffer_T*            VkFramebuffer;
+typedef struct VkImage_T*                  VkImage;
+typedef struct VkImageView_T*              VkImageView;
+typedef struct VkShaderModule_T*           VkShaderModule;
+typedef struct VkRenderPass_T*             VkRenderPass;
+typedef struct VkPipelineLayout_T*         VkPipelineLayout;
+typedef struct VkPipeline_T*               VkPipeline;
+typedef struct VkCommandPool_T*            VkCommandPool;
+typedef struct VkBuffer_T*                 VkBuffer;
+typedef struct VkDeviceMemory_T*           VkDeviceMemory;
+typedef struct VkCommandBuffer_T*          VkCommandBuffer;
+typedef struct VkSemaphore_T*              VkSemaphore;
+typedef struct VkFence_T*                  VkFence;
+typedef struct VkSurfaceCapabilitiesKHR    VkSurfaceCapabilitiesKHR;
+typedef struct VkSurfaceFormatKHR          VkSurfaceFormatKHR;
+typedef struct VkExtent2D                  VkExtent2D;
+typedef enum   VkPresentModeKHR      : int VkPresentModeKHR;
+typedef enum   VkFormat              : int VkFormat;
+typedef uint32_t                           VkMemoryPropertyFlags;
 #pragma endregion 
 
 #pragma region VulkanUtils
@@ -63,6 +66,7 @@ namespace VulkanUtils
     };
     
     QueueFamilyIndices      FindQueueFamilies          (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+    uint32_t                FindMemoryType             (const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties);
     SwapChainSupportDetails QuerySwapChainSupport      (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
     VkSurfaceFormatKHR      ChooseSwapSurfaceFormat    (const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR        ChooseSwapPresentMode      (const std::vector<VkPresentModeKHR  >& availablePresentModes);
@@ -94,6 +98,8 @@ namespace Core
         VkPipelineLayout             vkPipelineLayout          = nullptr;
         VkPipeline                   vkGraphicsPipeline        = nullptr;
         VkCommandPool                vkCommandPool             = nullptr;
+        VkBuffer                     vkVertexBuffer            = nullptr;
+        VkDeviceMemory               vkVertexBufferMemory      = nullptr;
         std::vector<VkCommandBuffer> vkCommandBuffers;
         std::vector<VkSemaphore>     vkImageAvailableSemaphores;
         std::vector<VkSemaphore>     vkRenderFinishedSemaphores;
@@ -129,6 +135,7 @@ namespace Core
         void CreateGraphicsPipeline();
         void CreateFramebuffers();
         void CreateCommandPool();
+        void CreateVertexBuffer();
         void CreateCommandBuffers();
         void CreateSyncObjects();
 
