@@ -1,6 +1,8 @@
 ﻿#include "Core/Window.h"
 #include "GLFW/glfw3.h"
 #include <iostream>
+
+#include "Core/Application.h"
 using namespace Core;
 
 Window::Window(const WindowParams& windowParams)
@@ -30,10 +32,17 @@ Window::Window(const WindowParams& windowParams)
 
     // Set window user pointer and callbacks.
     glfwSetWindowUserPointer (glfwWindow, this);
-    glfwSetWindowSizeCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _width, int _height)
+    glfwSetFramebufferSizeCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _width, int _height)
     {
         Window* window = (Window*)glfwGetWindowUserPointer(_glfwWindow);
         window->params.width = _width; window->params.height = _height;
+        
+        while (window->params.width == 0 || window->params.height == 0) {
+            glfwGetFramebufferSize(_glfwWindow, &window->params.width, &window->params.height);
+            glfwWaitEvents();
+        }
+        
+        Application::Get()->GetRenderer()->ResizeSwapChain();
     });
     glfwSetWindowPosCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _posX, int _posY)
     {

@@ -262,18 +262,14 @@ Renderer::~Renderer()
         vkDestroySemaphore(vkDevice, vkImageAvailableSemaphores[i], nullptr);
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
     }
-    vkDestroyCommandPool(vkDevice, vkCommandPool,          nullptr);
-    for (const VkFramebuffer& framebuffer : vkSwapChainFramebuffers)
-        vkDestroyFramebuffer(vkDevice, framebuffer,        nullptr);
-    vkDestroyPipeline       (vkDevice, vkGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout (vkDevice, vkPipelineLayout,   nullptr);
-    vkDestroyRenderPass     (vkDevice, vkRenderPass,       nullptr);
-    for (const VkImageView& imageView : vkSwapChainImageViews)
-        vkDestroyImageView(vkDevice, imageView,   nullptr);
-    vkDestroySwapchainKHR (vkDevice, vkSwapChain, nullptr);
-    vkDestroyDevice       (vkDevice,              nullptr);
-    vkDestroySurfaceKHR   (vkInstance, vkSurface, nullptr);
-    vkDestroyInstance     (vkInstance,            nullptr);
+    DestroySwapChain();
+    vkDestroyCommandPool   (vkDevice,   vkCommandPool,      nullptr);
+    vkDestroyPipeline      (vkDevice,   vkGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(vkDevice,   vkPipelineLayout,   nullptr);
+    vkDestroyRenderPass    (vkDevice,   vkRenderPass,       nullptr);
+    vkDestroyDevice        (vkDevice,                       nullptr);
+    vkDestroySurfaceKHR    (vkInstance, vkSurface,          nullptr);
+    vkDestroyInstance      (vkInstance,                     nullptr);
 }
 
 void Renderer::BeginRender()
@@ -292,7 +288,6 @@ void Renderer::EndRender()
 {
     EndRecordCmdBuf();
     PresentFrame();
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 
@@ -864,15 +859,48 @@ void Renderer::CreateSyncObjects()
 }
 #pragma endregion
 
+#pragma region Swapchain Recreation
+void Renderer::DestroySwapChain() const
+{
+    for (const VkFramebuffer& vkSwapChainFramebuffer : vkSwapChainFramebuffers)
+        vkDestroyFramebuffer(vkDevice, vkSwapChainFramebuffer, nullptr);
+    for (const VkImageView& vkSwapChainImageView : vkSwapChainImageViews)
+        vkDestroyImageView(vkDevice, vkSwapChainImageView, nullptr);
+    vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+}
+
+void Renderer::RecreateSwapChain()
+{    
+    vkDeviceWaitIdle(vkDevice);
+    DestroySwapChain();
+    
+    CreateSwapChain();
+    CreateImageViews();
+    CreateFramebuffers();
+}
+#pragma endregion 
+
 #pragma region Rendering
 void Renderer::NewFrame()
 {
     // Wait for the previous frame to finish.
     vkWaitForFences(vkDevice, 1, &vkInFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences  (vkDevice, 1, &vkInFlightFences[currentFrame]);
 
     // Acquire an image from the swap chain.
-    vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &vkSwapchainImageIndex);
+    const VkResult result = vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &vkSwapchainImageIndex);
+
+    // Recreate the swap chain if it is out of date.
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        RecreateSwapChain();
+        return;
+    }
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        std::cout << "ERROR (Vulkan): Failed to acquire swap chain image." << std::endl;
+        throw std::runtime_error("VULKAN_IMAGE_ACQUISITION_ERROR");
+    }
+
+    // Only reset fences if we are going to be submitting work.
+    vkResetFences(vkDevice, 1, &vkInFlightFences[currentFrame]);
 }
 
 void Renderer::BeginRecordCmdBuf() const
@@ -936,7 +964,7 @@ void Renderer::EndRecordCmdBuf() const
     }
 }
 
-void Renderer::PresentFrame() const
+void Renderer::PresentFrame()
 {
     // Set the command buffer submit information.
     const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphores[currentFrame] };
@@ -968,6 +996,19 @@ void Renderer::PresentFrame() const
     presentInfo.pSwapchains        = swapChains;
     presentInfo.pImageIndices      = &vkSwapchainImageIndex;
     presentInfo.pResults           = nullptr; // Optional.
-    vkQueuePresentKHR(vkPresentQueue, &presentInfo);
+    const VkResult result = vkQueuePresentKHR(vkPresentQueue, &presentInfo);
+
+    // Recreate the swap chain if it is out of date or suboptimal.
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+        framebufferResized = false;
+        RecreateSwapChain();
+    }
+    else if (result != VK_SUCCESS) {
+        std::cout << "ERROR (Vulkan): Failed to present swap chain image." << std::endl;
+        throw std::runtime_error("VULKAN_PRESENTATION_ERROR");
+    }
+
+    // Move to the next frame.
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 #pragma endregion
