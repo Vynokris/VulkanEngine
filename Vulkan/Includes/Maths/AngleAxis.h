@@ -1,8 +1,8 @@
 #pragma once
+#include "Vector3.h"
 
 namespace Maths
 {
-    class Vector3;
     class Quaternion;
     typedef Matrix<4, 4> Mat4;
 

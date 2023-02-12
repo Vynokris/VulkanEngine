@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Maths/Matrix.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -7,6 +8,10 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 #pragma region Forward Declarations
 // Forward declaration of Vulkan types to avoid include inside header.
+typedef uint64_t VkDeviceSize;
+typedef uint32_t VkFlags;
+typedef VkFlags  VkMemoryPropertyFlags;
+typedef VkFlags  VkBufferUsageFlags;
 typedef struct VkInstance_T*               VkInstance;
 typedef struct VkPhysicalDevice_T*         VkPhysicalDevice;
 typedef struct VkDevice_T*                 VkDevice;
@@ -18,11 +23,14 @@ typedef struct VkImage_T*                  VkImage;
 typedef struct VkImageView_T*              VkImageView;
 typedef struct VkShaderModule_T*           VkShaderModule;
 typedef struct VkRenderPass_T*             VkRenderPass;
+typedef struct VkDescriptorSetLayout_T*    VkDescriptorSetLayout;
 typedef struct VkPipelineLayout_T*         VkPipelineLayout;
 typedef struct VkPipeline_T*               VkPipeline;
 typedef struct VkCommandPool_T*            VkCommandPool;
 typedef struct VkBuffer_T*                 VkBuffer;
 typedef struct VkDeviceMemory_T*           VkDeviceMemory;
+typedef struct VkDescriptorPool_T*         VkDescriptorPool;
+typedef struct VkDescriptorSet_T*          VkDescriptorSet;
 typedef struct VkCommandBuffer_T*          VkCommandBuffer;
 typedef struct VkSemaphore_T*              VkSemaphore;
 typedef struct VkFence_T*                  VkFence;
@@ -31,7 +39,6 @@ typedef struct VkSurfaceFormatKHR          VkSurfaceFormatKHR;
 typedef struct VkExtent2D                  VkExtent2D;
 typedef enum   VkPresentModeKHR      : int VkPresentModeKHR;
 typedef enum   VkFormat              : int VkFormat;
-typedef uint32_t                           VkMemoryPropertyFlags;
 #pragma endregion 
 
 #pragma region VulkanUtils
@@ -75,9 +82,18 @@ namespace VulkanUtils
     bool                    IsDeviceSuitable           (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
 
     VkShaderModule CreateShaderModule(const VkDevice& device, const char* filename);
+    void CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void CopyBuffer  (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size);
 }
 #pragma endregion
 
+// TODO: Temporary.
+struct UniformBufferObject {
+    Maths::Mat4 model;
+    Maths::Mat4 view;
+    Maths::Mat4 proj;
+};
+// End temporary.
 
 namespace Core
 {
@@ -87,19 +103,27 @@ namespace Core
     {
     private:
         Application*                 app;
-        VkInstance                   vkInstance                = nullptr;
-        VkSurfaceKHR                 vkSurface                 = nullptr;
-        VkPhysicalDevice             vkPhysicalDevice          = nullptr;
-        VkDevice                     vkDevice                  = nullptr;
-        VkQueue                      vkGraphicsQueue           = nullptr;
-        VkQueue                      vkPresentQueue            = nullptr;
-        VkSwapchainKHR               vkSwapChain               = nullptr;
-        VkRenderPass                 vkRenderPass              = nullptr;
-        VkPipelineLayout             vkPipelineLayout          = nullptr;
-        VkPipeline                   vkGraphicsPipeline        = nullptr;
-        VkCommandPool                vkCommandPool             = nullptr;
-        VkBuffer                     vkVertexBuffer            = nullptr;
-        VkDeviceMemory               vkVertexBufferMemory      = nullptr;
+        VkInstance                   vkInstance            = nullptr;
+        VkSurfaceKHR                 vkSurface             = nullptr;
+        VkPhysicalDevice             vkPhysicalDevice      = nullptr;
+        VkDevice                     vkDevice              = nullptr;
+        VkQueue                      vkGraphicsQueue       = nullptr;
+        VkQueue                      vkPresentQueue        = nullptr;
+        VkSwapchainKHR               vkSwapChain           = nullptr;
+        VkRenderPass                 vkRenderPass          = nullptr;
+        VkDescriptorSetLayout        vkDescriptorSetLayout = nullptr;
+        VkPipelineLayout             vkPipelineLayout      = nullptr;
+        VkPipeline                   vkGraphicsPipeline    = nullptr;
+        VkCommandPool                vkCommandPool         = nullptr;
+        VkBuffer                     vkVertexBuffer        = nullptr;
+        VkDeviceMemory               vkVertexBufferMemory  = nullptr;
+        VkBuffer                     vkIndexBuffer         = nullptr;
+        VkDeviceMemory               vkIndexBufferMemory   = nullptr;
+        VkDescriptorPool             vkDescriptorPool      = nullptr;
+        std::vector<VkDescriptorSet> vkDescriptorSets;
+        std::vector<VkBuffer>        vkUniformBuffers;
+        std::vector<VkDeviceMemory>  vkUniformBuffersMemory;
+        std::vector<void*>           vkUniformBuffersMapped;
         std::vector<VkCommandBuffer> vkCommandBuffers;
         std::vector<VkSemaphore>     vkImageAvailableSemaphores;
         std::vector<VkSemaphore>     vkRenderFinishedSemaphores;
@@ -132,15 +156,22 @@ namespace Core
         void CreateSwapChain();
         void CreateImageViews();
         void CreateRenderPass();
+        void CreateDescriptorSetLayout();
         void CreateGraphicsPipeline();
         void CreateFramebuffers();
         void CreateCommandPool();
         void CreateVertexBuffer();
+        void CreateIndexBuffer();
+        void CreateUniformBuffers();
+        void CreateDescriptorPool();
+        void CreateDescriptorSets();
         void CreateCommandBuffers();
         void CreateSyncObjects();
 
         void DestroySwapChain() const;
         void RecreateSwapChain();
+
+        void UpdateUniformBuffer() const;
 
         void NewFrame();
         void BeginRecordCmdBuf() const;
