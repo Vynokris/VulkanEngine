@@ -8,7 +8,7 @@ namespace Maths
     // Structure used for the vulkan tutorial.
     struct TestVertex
     {
-        Vector2 pos;
+        Vector3 pos;
         Vector3 color;
         Vector2 texCoord;
     };
