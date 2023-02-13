@@ -345,8 +345,8 @@ void VulkanUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& comman
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
-{
+void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
+{    
     // Create a vulkan image.
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -354,7 +354,7 @@ void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& ph
     imageInfo.extent.width  = (uint32_t)width;
     imageInfo.extent.height = (uint32_t)height;
     imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = 1;
+    imageInfo.mipLevels     = mipLevels;
     imageInfo.arrayLayers   = 1;
     imageInfo.format        = format;
     imageInfo.tiling        = tiling;
@@ -382,7 +382,7 @@ void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& ph
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, VkImageView& imageView)
+void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView)
 {
     // Set creation information for the image view.
     VkImageViewCreateInfo viewInfo{};
@@ -400,7 +400,7 @@ void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, 
     // Choose how the image is used and set the mipmap and layer counts.
     viewInfo.subresourceRange.aspectMask     = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel   = 0;
-    viewInfo.subresourceRange.levelCount     = 1;
+    viewInfo.subresourceRange.levelCount     = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount     = 1;
 
@@ -411,7 +411,7 @@ void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, 
     }
 }
 
-void VulkanUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
+void VulkanUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 
@@ -424,7 +424,7 @@ void VulkanUtils::TransitionImageLayout(const VkDevice& device, const VkCommandP
     barrier.image                           = image;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
-    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.levelCount     = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = 1;
 
@@ -550,9 +550,9 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateDepthResources();
     CreateFramebuffers();
     CreateCommandPool();
-    CreateTextureSampler();
     texture = new Resources::Texture("Resources/Textures/VikingRoom.png", this);
     mesh    = new Resources::Mesh(); mesh->LoadObj("Resources/Models/VikingRoom.obj");
+    CreateTextureSampler();
     CreateVertexBuffer();
     CreateIndexBuffer();
     CreateUniformBuffers();
@@ -854,7 +854,7 @@ void Renderer::CreateImageViews()
 {
     vkSwapChainImageViews.resize(vkSwapChainImages.size());
     for (size_t i = 0; i < vkSwapChainImages.size(); i++)
-        CreateImageView(vkDevice, vkSwapChainImages[i], vkSwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, vkSwapChainImageViews[i]);
+        CreateImageView(vkDevice, vkSwapChainImages[i], vkSwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, vkSwapChainImageViews[i]);
 }
 
 void Renderer::CreateRenderPass()
@@ -1134,8 +1134,8 @@ void Renderer::CreateGraphicsPipeline()
 void Renderer::CreateDepthResources()
 {
     // Create the depth image and image view.
-    CreateImage(vkDevice, vkPhysicalDevice, vkSwapChainWidth, vkSwapChainHeight, vkDepthImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vkDepthImage, vkDepthImageMemory);
-    CreateImageView(vkDevice, vkDepthImage, vkDepthImageFormat, VK_IMAGE_ASPECT_DEPTH_BIT, vkDepthImageView);
+    CreateImage(vkDevice, vkPhysicalDevice, vkSwapChainWidth, vkSwapChainHeight, 1, vkDepthImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vkDepthImage, vkDepthImageMemory);
+    CreateImageView(vkDevice, vkDepthImage, vkDepthImageFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, vkDepthImageView);
 }
 
 void Renderer::CreateFramebuffers()
@@ -1203,9 +1203,9 @@ void Renderer::CreateTextureSampler()
     samplerInfo.compareEnable           = VK_FALSE;
     samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias              = 0.f;
-    samplerInfo.minLod                  = 0.f;
-    samplerInfo.maxLod                  = 0.f;
+    samplerInfo.minLod                  = 0.f; // Optional.
+    samplerInfo.maxLod                  = (float)texture->GetMipLevels();
+    samplerInfo.mipLodBias              = 0.f; // Optional.
     if (vkCreateSampler(vkDevice, &samplerInfo, nullptr, &vkTextureSampler) != VK_SUCCESS) {
         std::cout << "ERROR (Vulkan): Failed to create texture sampler." << std::endl;
         throw std::runtime_error("VULKAN_TEXTURE_SAMPLER_ERROR");
