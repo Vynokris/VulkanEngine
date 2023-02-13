@@ -64,7 +64,7 @@ void Texture::Load(const char* name, const Renderer* renderer)
     vkFreeMemory   (device, stagingBufferMemory, nullptr);
 
     // Create the texture image view.
-    VulkanUtils::CreateImageView(device, vkImage, VK_FORMAT_R8G8B8A8_SRGB, vkImageView);
+    VulkanUtils::CreateImageView(device, vkImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, vkImageView);
 }
 
 void Texture::Load(const int& width, const int& height, const Renderer* renderer)
