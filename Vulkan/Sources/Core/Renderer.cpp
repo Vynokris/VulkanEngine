@@ -14,21 +14,6 @@ using namespace Core;
 using namespace VulkanUtils;
 
 // TODO: Temporary.
-const std::vector<Maths::TestVertex> vertices = {
-    {{ -.5f, -.5f, .0f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f }},
-    {{  .5f, -.5f, .0f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f }},
-    {{  .5f,  .5f, .0f }, { 0.f, 0.f, 1.f }, { 1.f, 1.f }},
-    {{ -.5f,  .5f, .0f }, { 1.f, 1.f, 1.f }, { 0.f, 1.f }},
-
-    {{ -.5f, -.5f, -.5f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f }},
-    {{  .5f, -.5f, -.5f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f }},
-    {{  .5f,  .5f, -.5f }, { 0.f, 0.f, 1.f }, { 1.f, 1.f }},
-    {{ -.5f,  .5f, -.5f }, { 1.f, 1.f, 1.f }, { 0.f, 1.f }}
-};
-const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-};
 static VkVertexInputBindingDescription GetBindingDescription()
 {
     VkVertexInputBindingDescription bindingDescription{};
@@ -566,7 +551,8 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateFramebuffers();
     CreateCommandPool();
     CreateTextureSampler();
-    texture = new Resources::Texture("Resources/Textures/WholesomeFish.png", this);
+    texture = new Resources::Texture("Resources/Textures/VikingRoom.png", this);
+    mesh    = new Resources::Mesh(); mesh->LoadObj("Resources/Models/VikingRoom.obj");
     CreateVertexBuffer();
     CreateIndexBuffer();
     CreateUniformBuffers();
@@ -616,7 +602,7 @@ void Renderer::DrawFrame() const
     // Issue the command to draw the triangle.
     UpdateUniformBuffer();
     vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &vkDescriptorSets[currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(vkCommandBuffers[currentFrame], (uint32_t)indices.size(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh->GetIndexCount(), 1, 0, 0, 0);
 }
 
 void Renderer::EndRender()
@@ -1230,7 +1216,7 @@ void Renderer::CreateVertexBuffer()
 {
     // TODO: This probably shouldn't be done here, but for every mesh...
     // Create a temporary staging buffer.
-    const VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    const VkDeviceSize bufferSize = sizeof(mesh->GetVertices()[0]) * mesh->GetVertexCount();
     VkBuffer       stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
@@ -1240,7 +1226,7 @@ void Renderer::CreateVertexBuffer()
     // Map the buffer's GPU memory to CPU memory, and write vertex info to it.
     void* data;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), (size_t)bufferSize);
+    memcpy(data, mesh->GetVertices().data(), (size_t)bufferSize);
     vkUnmapMemory(vkDevice, stagingBufferMemory);
 
     // Create the vertex buffer.
@@ -1260,7 +1246,7 @@ void Renderer::CreateIndexBuffer()
 {
     // TODO: This probably shouldn't be done here, but for every mesh...
     // Create a temporary staging buffer.
-    const VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    const VkDeviceSize bufferSize = sizeof(mesh->GetIndices()[0]) * mesh->GetIndexCount();
     VkBuffer       stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
@@ -1270,7 +1256,7 @@ void Renderer::CreateIndexBuffer()
     // Map the buffer's GPU memory to CPU memory, and write vertex info to it.
     void* data;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), (size_t)bufferSize);
+    memcpy(data, mesh->GetIndices().data(), (size_t)bufferSize);
     vkUnmapMemory(vkDevice, stagingBufferMemory);
 
     // Create the vertex buffer.
@@ -1528,7 +1514,7 @@ void Renderer::BeginRecordCmdBuf() const
     const VkBuffer vertexBuffers[] = { vkVertexBuffer };
     const VkDeviceSize offsets[]   = { 0 };
     vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], vkIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], vkIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     // Set the viewport.
     VkViewport viewport{};
