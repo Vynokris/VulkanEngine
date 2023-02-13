@@ -38,6 +38,7 @@
     <ClCompile Include="Sources\Maths\Vector2.cpp" />
     <ClCompile Include="Sources\Maths\Vector3.cpp" />
     <ClCompile Include="Sources\Maths\Vector4.cpp" />
+    <ClCompile Include="Sources\Resources\Mesh.cpp" />
     <ClCompile Include="Sources\Resources\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -57,6 +58,7 @@
     <ClInclude Include="Includes\Maths\Vector3.h" />
     <ClInclude Include="Includes\Maths\Vector4.h" />
     <ClInclude Include="Includes\Maths\Vertex.h" />
+    <ClInclude Include="Includes\Resources\Mesh.h" />
     <ClInclude Include="Includes\Resources\Texture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -142,7 +144,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image;$(ProjectDir)Externals\Includes\tinyobjloader</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -161,7 +163,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image;$(ProjectDir)Externals\Includes\tinyobjloader</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -180,7 +182,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image;$(ProjectDir)Externals\Includes\tinyobjloader</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -199,7 +201,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Includes;$(ProjectDir)Externals\Includes;$(ProjectDir)Externals\Includes\imgui;$(ProjectDir)Externals\Includes\STB_Image;$(ProjectDir)Externals\Includes\tinyobjloader</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

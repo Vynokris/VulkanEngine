@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Maths/Matrix.h"
 #include "Resources/Texture.h"
+#include "Resources/Mesh.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -137,6 +138,7 @@ namespace Core
         VkDescriptorPool             vkDescriptorPool      = nullptr;
         VkSampler                    vkTextureSampler      = nullptr;
         Resources::Texture*          texture               = nullptr;
+        Resources::Mesh*             mesh                  = nullptr;
         VkImage                      vkDepthImage          = nullptr;
         VkDeviceMemory               vkDepthImageMemory    = nullptr;
         VkImageView                  vkDepthImageView      = nullptr;
