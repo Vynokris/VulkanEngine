@@ -1,10 +1,11 @@
 ﻿#pragma once
 #include "Maths/Matrix.h"
+#include "Resources/Texture.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+constexpr int MAX_FRAMES_IN_FLIGHT = 3;
 
 #pragma region Forward Declarations
 // Forward declaration of Vulkan types to avoid include inside header.
@@ -12,6 +13,7 @@ typedef uint64_t VkDeviceSize;
 typedef uint32_t VkFlags;
 typedef VkFlags  VkMemoryPropertyFlags;
 typedef VkFlags  VkBufferUsageFlags;
+typedef VkFlags  VkImageUsageFlags;
 typedef struct VkInstance_T*               VkInstance;
 typedef struct VkPhysicalDevice_T*         VkPhysicalDevice;
 typedef struct VkDevice_T*                 VkDevice;
@@ -21,6 +23,7 @@ typedef struct VkSwapchainKHR_T*           VkSwapchainKHR;
 typedef struct VkFramebuffer_T*            VkFramebuffer;
 typedef struct VkImage_T*                  VkImage;
 typedef struct VkImageView_T*              VkImageView;
+typedef struct VkSampler_T*                VkSampler;
 typedef struct VkShaderModule_T*           VkShaderModule;
 typedef struct VkRenderPass_T*             VkRenderPass;
 typedef struct VkDescriptorSetLayout_T*    VkDescriptorSetLayout;
@@ -39,6 +42,8 @@ typedef struct VkSurfaceFormatKHR          VkSurfaceFormatKHR;
 typedef struct VkExtent2D                  VkExtent2D;
 typedef enum   VkPresentModeKHR      : int VkPresentModeKHR;
 typedef enum   VkFormat              : int VkFormat;
+typedef enum   VkImageTiling         : int VkImageTiling;
+typedef enum   VkImageLayout         : int VkImageLayout;
 #pragma endregion 
 
 #pragma region VulkanUtils
@@ -84,6 +89,13 @@ namespace VulkanUtils
     VkShaderModule CreateShaderModule(const VkDevice& device, const char* filename);
     void CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void CopyBuffer  (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size);
+    void CreateImage (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory);
+    void CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, VkImageView& imageView);
+    void TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const VkImageLayout& oldLayout, const VkImageLayout& newLayout);
+    void CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height);
+    
+    VkCommandBuffer BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool);
+    void EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer);
 }
 #pragma endregion
 
@@ -120,6 +132,8 @@ namespace Core
         VkBuffer                     vkIndexBuffer         = nullptr;
         VkDeviceMemory               vkIndexBufferMemory   = nullptr;
         VkDescriptorPool             vkDescriptorPool      = nullptr;
+        VkSampler                    vkTextureSampler      = nullptr;
+        Resources::Texture*          texture               = nullptr;
         std::vector<VkDescriptorSet> vkDescriptorSets;
         std::vector<VkBuffer>        vkUniformBuffers;
         std::vector<VkDeviceMemory>  vkUniformBuffersMemory;
@@ -147,6 +161,12 @@ namespace Core
 
         void ResizeSwapChain() { framebufferResized = true; }
 
+        VkInstance       GetVkInstance()       const { return vkInstance;       }
+        VkPhysicalDevice GetVkPhysicalDevice() const { return vkPhysicalDevice; }
+        VkDevice         GetVkDevice()         const { return vkDevice;         }
+        VkQueue          GetVkGraphicsQueue()  const { return vkGraphicsQueue;  }
+        VkCommandPool    GetVkCommandPool()    const { return vkCommandPool;    }
+
     private:
         void CheckValidationLayers() const;
         void CreateVkInstance(const char* appName, const char* engineName);
@@ -167,6 +187,7 @@ namespace Core
         void CreateDescriptorSets();
         void CreateCommandBuffers();
         void CreateSyncObjects();
+        void CreateTextureSampler();
 
         void DestroySwapChain() const;
         void RecreateSwapChain();

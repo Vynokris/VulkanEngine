@@ -28,6 +28,12 @@
     <Filter Include="Fichiers d%27en-tête\Core">
       <UniqueIdentifier>{755925dc-e909-4c87-9a14-f6ee88877c4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers sources\Resources">
+      <UniqueIdentifier>{56cb5f8e-76b6-416c-b68c-d587553200f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Resources">
+      <UniqueIdentifier>{2ff0f240-2d5b-4063-9fd0-1758bf1b4830}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Sources\main.cpp">
@@ -87,6 +93,9 @@
     <ClCompile Include="Sources\Core\UserInterface.cpp">
       <Filter>Fichiers sources\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Resources\Texture.cpp">
+      <Filter>Fichiers sources\Resources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">
@@ -136,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="Includes\Core\UserInterface.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Texture.h">
+      <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

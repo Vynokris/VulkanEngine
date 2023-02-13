@@ -30,6 +30,9 @@ Window::Window(const WindowParams& windowParams)
     glfwSwapInterval(params.vsync);
     params.exitKey = GLFW_KEY_ESCAPE;
 
+    // Set the minimum size of the window.
+    glfwSetWindowSizeLimits(glfwWindow, 1, 1, GLFW_DONT_CARE, GLFW_DONT_CARE);
+
     // Set window user pointer and callbacks.
     glfwSetWindowUserPointer (glfwWindow, this);
     glfwSetFramebufferSizeCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _width, int _height)
