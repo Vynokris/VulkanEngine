@@ -10,6 +10,7 @@ namespace Maths
     {
         Vector2 pos;
         Vector3 color;
+        Vector2 texCoord;
     };
     
     // A point in 3D space with rendering data.

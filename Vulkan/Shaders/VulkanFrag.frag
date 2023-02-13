@@ -1,9 +1,13 @@
 #version 450
 
-layout(location = 0) in  vec3 VertColor;
-layout(location = 0) out vec4 FragColor;
+layout(location = 0) in vec3 vertColor;
+layout(location = 1) in vec2 fragTexCoord;
+
+layout(binding = 1) uniform sampler2D texSampler;
+
+layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-    FragColor = vec4(VertColor, 1.0);
+    fragColor = texture(texSampler, fragTexCoord);
 }
