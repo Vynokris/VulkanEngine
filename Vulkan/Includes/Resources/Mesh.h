@@ -12,13 +12,26 @@ namespace Resources
 	private:
 		std::vector<Maths::TestVertex> vertices;
 		std::vector<uint32_t>          indices;
+		
+		VkBuffer       vkVertexBuffer       = nullptr;
+		VkDeviceMemory vkVertexBufferMemory = nullptr;
+		VkBuffer       vkIndexBuffer        = nullptr;
+		VkDeviceMemory vkIndexBufferMemory  = nullptr;
 
-	public:		
-		void LoadObj(const char* filename);
+	public:
+		Mesh() = default;
+		Mesh(std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices);
+		Mesh(const char* filename);
+		~Mesh();
 
 		uint32_t GetVertexCount() const { return (uint32_t)vertices.size(); }
 		uint32_t GetIndexCount () const { return (uint32_t)indices .size(); }
-		std::vector<Maths::TestVertex> GetVertices() const { return vertices; }
-		std::vector<uint32_t>          GetIndices () const { return indices;  }
+		
+		VkBuffer GetVkVertexBuffer() const { return vkVertexBuffer; }
+		VkBuffer GetVkIndexBuffer()  const { return vkIndexBuffer; }
+
+	private:
+		void CreateVertexBuffer();
+		void CreateIndexBuffer();
 	};
 }

@@ -7,17 +7,7 @@
 using namespace Core;
 using namespace Resources;
 
-Texture::Texture(const char* name, const Renderer* renderer)
-{
-    Load(name, renderer);
-}
-
-Texture::Texture(const int& width, const int& height, const Renderer* renderer)
-{
-    Load(width, height, renderer);
-}
-
-void Texture::Load(const char* name, const Renderer* renderer)
+Texture::Texture(const char* name)
 {
     filename = name;
     vkImageFormat = VK_FORMAT_R8G8B8A8_SRGB;
@@ -31,7 +21,7 @@ void Texture::Load(const char* name, const Renderer* renderer)
     mipLevels = (uint32_t)std::floor(std::log2(std::max(width, height))) + 1;
 
     // Get the renderer and Vulkan device.
-    if (renderer == nullptr) renderer       = Application::Get()->GetRenderer();
+    const Renderer*          renderer       = Application::Get()->GetRenderer();
     const VkDevice           device         = renderer->GetVkDevice();
     const VkPhysicalDevice   physicalDevice = renderer->GetVkPhysicalDevice();
     const VkCommandPool      commandPool    = renderer->GetVkCommandPool();
@@ -59,7 +49,7 @@ void Texture::Load(const char* name, const Renderer* renderer)
     // Copy the transfer buffer to the vulkan image.
     VulkanUtils::TransitionImageLayout(device, commandPool, graphicsQueue, vkImage, vkImageFormat, mipLevels, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     VulkanUtils::CopyBufferToImage    (device, commandPool, graphicsQueue, stagingBuffer, vkImage, (uint32_t)width, (uint32_t)height);
-    GenerateMipmaps(renderer);
+    GenerateMipmaps();
 
     // Cleanup allocated structures.
     vkDestroyBuffer(device, stagingBuffer,       nullptr);
@@ -69,28 +59,29 @@ void Texture::Load(const char* name, const Renderer* renderer)
     VulkanUtils::CreateImageView(device, vkImage, vkImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, vkImageView);
 }
 
-void Texture::Load(const int& width, const int& height, const Renderer* renderer)
+Texture::Texture(const int& width, const int& height)
 {
     std::cout << "WARNING (Texture): Texture creation from width and height isn't implemented." << std::endl;
 }
 
 Texture::~Texture()
 {
-    if (vkImage       != nullptr) vkDestroyImage    (Application::Get()->GetRenderer()->GetVkDevice(), vkImage,       nullptr);
-    if (vkImageMemory != nullptr) vkFreeMemory      (Application::Get()->GetRenderer()->GetVkDevice(), vkImageMemory, nullptr);
-    if (vkImageView   != nullptr) vkDestroyImageView(Application::Get()->GetRenderer()->GetVkDevice(), vkImageView,   nullptr);
+    const VkDevice vkDevice = Application::Get()->GetRenderer()->GetVkDevice();
+    if (vkImage       != nullptr) vkDestroyImage    (vkDevice, vkImage,       nullptr);
+    if (vkImageMemory != nullptr) vkFreeMemory      (vkDevice, vkImageMemory, nullptr);
+    if (vkImageView   != nullptr) vkDestroyImageView(vkDevice, vkImageView,   nullptr);
     vkImage       = nullptr;
     vkImageMemory = nullptr;
     vkImageView   = nullptr;
 }
 
-void Texture::GenerateMipmaps(const Renderer* renderer)
+void Texture::GenerateMipmaps() const
 {
-    if (renderer == nullptr) renderer       = Application::Get()->GetRenderer();
-    const VkDevice           device         = renderer->GetVkDevice();
-    const VkPhysicalDevice   physicalDevice = renderer->GetVkPhysicalDevice();
-    const VkCommandPool      commandPool    = renderer->GetVkCommandPool();
-    const VkQueue            graphicsQueue  = renderer->GetVkGraphicsQueue();
+    const Renderer*        renderer       = Application::Get()->GetRenderer();
+    const VkDevice         device         = renderer->GetVkDevice();
+    const VkPhysicalDevice physicalDevice = renderer->GetVkPhysicalDevice();
+    const VkCommandPool    commandPool    = renderer->GetVkCommandPool();
+    const VkQueue          graphicsQueue  = renderer->GetVkGraphicsQueue();
 
     // Check if image format supports linear blitting.
     VkFormatProperties formatProperties;

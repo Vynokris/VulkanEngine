@@ -29,20 +29,17 @@ namespace Resources
         
     public:
         Texture() = default;
-        Texture(const char* name, const Core::Renderer* renderer = nullptr);
-        Texture(const int& width, const int& height, const Core::Renderer* renderer = nullptr);
-
-        void Load(const char* name, const Core::Renderer* renderer = nullptr);
-        void Load(const int& width, const int& height, const Core::Renderer* renderer = nullptr);
+        Texture(const char* name);
+        Texture(const int& width, const int& height);
         
         ~Texture();
 
         int GetWidth () const { return width;  }
         int GetHeight() const { return height; }
-        uint32_t GetMipLevels() const { return mipLevels; }
+        uint32_t    GetMipLevels()   const { return mipLevels; }
         VkImageView GetVkImageView() const { return vkImageView; }
         
     private:
-        void GenerateMipmaps(const Core::Renderer* renderer = nullptr);
+        void GenerateMipmaps() const;
     };
 }

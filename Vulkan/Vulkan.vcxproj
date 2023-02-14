@@ -26,6 +26,7 @@
     <ClCompile Include="Externals\Sources\imgui\imgui_tables.cpp" />
     <ClCompile Include="Externals\Sources\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Sources\Core\Application.cpp" />
+    <ClCompile Include="Sources\Core\Engine.cpp" />
     <ClCompile Include="Sources\Core\Renderer.cpp" />
     <ClCompile Include="Sources\Core\UserInterface.cpp" />
     <ClCompile Include="Sources\Core\Window.cpp" />
@@ -38,11 +39,15 @@
     <ClCompile Include="Sources\Maths\Vector2.cpp" />
     <ClCompile Include="Sources\Maths\Vector3.cpp" />
     <ClCompile Include="Sources\Maths\Vector4.cpp" />
+    <ClCompile Include="Sources\Resources\Camera.cpp" />
     <ClCompile Include="Sources\Resources\Mesh.cpp" />
+    <ClCompile Include="Sources\Resources\Model.cpp" />
+    <ClCompile Include="Sources\Resources\Shader.cpp" />
     <ClCompile Include="Sources\Resources\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Core\Application.h" />
+    <ClInclude Include="Includes\Core\Engine.h" />
     <ClInclude Include="Includes\Core\Renderer.h" />
     <ClInclude Include="Includes\Core\UserInterface.h" />
     <ClInclude Include="Includes\Core\Window.h" />
@@ -58,7 +63,10 @@
     <ClInclude Include="Includes\Maths\Vector3.h" />
     <ClInclude Include="Includes\Maths\Vector4.h" />
     <ClInclude Include="Includes\Maths\Vertex.h" />
+    <ClInclude Include="Includes\Resources\Camera.h" />
     <ClInclude Include="Includes\Resources\Mesh.h" />
+    <ClInclude Include="Includes\Resources\Model.h" />
+    <ClInclude Include="Includes\Resources\Shader.h" />
     <ClInclude Include="Includes\Resources\Texture.h" />
   </ItemGroup>
   <ItemGroup>

@@ -28,22 +28,26 @@ void Application::Init(const WindowParams& windowParams)
     }
     window   = new Window(windowParams);
     renderer = new Renderer(windowParams.name);
+    engine   = new Engine();
     ui       = new UserInterface();
+
+    engine->Awake();
 }
 
-void Application::Run()
+void Application::Run() const
 {
     if (!instance || !window)
         return;
 
+    engine->Start();
     while(!window->ShouldClose())
     {
         window->Update();
-        Update();
+        engine->Update(0.016f); // TODO: Get deltaTime.
         
         renderer->BeginRender();
         {
-            Render();
+            engine->Render(renderer);
             ui->Render();
         }
         renderer->EndRender();
@@ -51,25 +55,17 @@ void Application::Run()
     }
 }
 
-void Application::Quit()
+void Application::Quit() const
 {
     window->Close();
 }
 
-void Application::Release()
+void Application::Release() const
 {
+    renderer->WaitUntilIdle();
     delete ui;
+    delete engine;
     delete renderer;
     delete window;
     glfwTerminate();
-}
-
-void Application::Update()
-{
-    
-}
-
-void Application::Render()
-{
-    renderer->DrawFrame();
 }

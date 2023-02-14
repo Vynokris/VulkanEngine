@@ -9,6 +9,11 @@
 constexpr int MAX_FRAMES_IN_FLIGHT = 3;
 
 #pragma region Forward Declarations
+namespace Resources
+{
+    class Camera;
+    class Model;
+}
 // Forward declaration of Vulkan types to avoid include inside header.
 typedef uint64_t VkDeviceSize;
 typedef uint32_t VkFlags;
@@ -91,6 +96,9 @@ namespace VulkanUtils
     VkExtent2D              ChooseSwapExtent           (const VkSurfaceCapabilitiesKHR& capabilities);
     bool                    CheckDeviceExtensionSupport(const VkPhysicalDevice& device);
     bool                    IsDeviceSuitable           (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+    
+    VkCommandBuffer BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool);
+    void EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer);
 
     void CreateShaderModule   (const VkDevice& device, const char* filename, VkShaderModule& shaderModule);
     void CreateBuffer         (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -99,9 +107,6 @@ namespace VulkanUtils
     void CreateImageView      (const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView);
     void TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout);
     void CopyBufferToImage    (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height);
-    
-    VkCommandBuffer BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool);
-    void EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer);
 }
 #pragma endregion
 
@@ -133,14 +138,8 @@ namespace Core
         VkPipelineLayout             vkPipelineLayout      = nullptr;
         VkPipeline                   vkGraphicsPipeline    = nullptr;
         VkCommandPool                vkCommandPool         = nullptr;
-        VkBuffer                     vkVertexBuffer        = nullptr;
-        VkDeviceMemory               vkVertexBufferMemory  = nullptr;
-        VkBuffer                     vkIndexBuffer         = nullptr;
-        VkDeviceMemory               vkIndexBufferMemory   = nullptr;
         VkDescriptorPool             vkDescriptorPool      = nullptr;
         VkSampler                    vkTextureSampler      = nullptr;
-        Resources::Texture*          texture               = nullptr;
-        Resources::Mesh*             mesh                  = nullptr;
         VkImage                      vkColorImage          = nullptr;
         VkDeviceMemory               vkColorImageMemory    = nullptr;
         VkImageView                  vkColorImageView      = nullptr;
@@ -148,10 +147,6 @@ namespace Core
         VkDeviceMemory               vkDepthImageMemory    = nullptr;
         VkImageView                  vkDepthImageView      = nullptr;
         VkFormat                     vkDepthImageFormat;
-        std::vector<VkDescriptorSet> vkDescriptorSets;
-        std::vector<VkBuffer>        vkUniformBuffers;
-        std::vector<VkDeviceMemory>  vkUniformBuffersMemory;
-        std::vector<void*>           vkUniformBuffersMapped;
         std::vector<VkCommandBuffer> vkCommandBuffers;
         std::vector<VkSemaphore>     vkImageAvailableSemaphores;
         std::vector<VkSemaphore>     vkRenderFinishedSemaphores;
@@ -171,9 +166,10 @@ namespace Core
         ~Renderer();
 
         void BeginRender();
-        void DrawFrame() const;
+        void DrawModel(const Resources::Model* model, const Resources::Camera* camera) const;
         void EndRender();
 
+        void WaitUntilIdle() const;
         void ResizeSwapChain() { framebufferResized = true; }
 
         VkInstance       GetVkInstance()       const { return vkInstance;       }
@@ -198,8 +194,6 @@ namespace Core
         void CreateFramebuffers();
         void CreateCommandPool();
         void CreateTextureSampler();
-        void CreateVertexBuffer();
-        void CreateIndexBuffer();
         void CreateUniformBuffers();
         void CreateDescriptorPool();
         void CreateDescriptorSets();
@@ -209,7 +203,8 @@ namespace Core
         void DestroySwapChain() const;
         void RecreateSwapChain();
 
-        void UpdateUniformBuffer() const;
+        void BindMeshBuffers(const VkBuffer& vertexBuffer, const VkBuffer& indexBuffer) const;
+        void UpdateUniformBuffer(const Maths::Mat4& modelMat, const Maths::Mat4& viewMat, const Maths::Mat4& projMat) const;
 
         void NewFrame();
         void BeginRecordCmdBuf() const;

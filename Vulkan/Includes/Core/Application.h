@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Window.h"
 #include "Renderer.h"
+#include "Engine.h"
 #include "UserInterface.h"
 
 namespace Core
@@ -13,6 +14,7 @@ namespace Core
         
         Window*        window   = nullptr;
         Renderer*      renderer = nullptr;
+        Engine*        engine   = nullptr;
         UserInterface* ui       = nullptr;
         
     public:
@@ -21,16 +23,13 @@ namespace Core
         static void         Destroy();
 
         void Init(const WindowParams& windowParams);
-        void Run();
-        void Quit();
-        void Release();
+        void Run() const;
+        void Quit() const;
+        void Release() const;
 
         Window*        GetWindow()   const { return window; }
         Renderer*      GetRenderer() const { return renderer; }
+        Engine*        GetEngine()   const { return engine; }
         UserInterface* GetUi()       const { return ui; }
-
-    private:
-        void Update();
-        void Render();
     };
 }
