@@ -52,7 +52,7 @@ void Texture::Load(const char* name, const Renderer* renderer)
     stbi_image_free(pixels);
 
     // Create the Vulkan image.
-    VulkanUtils::CreateImage(device, physicalDevice, width, height, mipLevels, vkImageFormat, VK_IMAGE_TILING_OPTIMAL,
+    VulkanUtils::CreateImage(device, physicalDevice, width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, vkImageFormat, VK_IMAGE_TILING_OPTIMAL,
                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                              vkImage, vkImageMemory);
 
