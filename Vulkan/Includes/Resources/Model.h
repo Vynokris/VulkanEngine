@@ -2,12 +2,14 @@
 #include "Maths/Transform.h"
 #include <vector>
 
-typedef struct VkDescriptorSet_T* VkDescriptorSet;
-typedef struct VkBuffer_T*        VkBuffer;
-typedef struct VkDeviceMemory_T*  VkDeviceMemory;
+typedef struct VkDescriptorPool_T* VkDescriptorPool;
+typedef struct VkDescriptorSet_T*  VkDescriptorSet;
+typedef struct VkBuffer_T*         VkBuffer;
+typedef struct VkDeviceMemory_T*   VkDeviceMemory;
 
 namespace Resources
 {
+	class Camera;
 	class Mesh;
 	class Texture;
 	
@@ -17,6 +19,7 @@ namespace Resources
 		Mesh*    mesh    = nullptr;
 		Texture* texture = nullptr;
 		
+		VkDescriptorPool             vkDescriptorPool = nullptr;
 		std::vector<VkDescriptorSet> vkDescriptorSets;
 		std::vector<VkBuffer>        vkUniformBuffers;
 		std::vector<VkDeviceMemory>  vkUniformBuffersMemory;
@@ -25,14 +28,19 @@ namespace Resources
 	public:
 		Maths::Transform transform;
 
-		Model(Mesh* _mesh, Texture* _texture, Maths::Transform _transform = Maths::Transform())
-			: mesh(_mesh), texture(_texture), transform(std::move(_transform)) {}
+		Model(Mesh* _mesh, Texture* _texture, Maths::Transform _transform = Maths::Transform());
+		~Model();
+
+		void UpdateUniformBuffer(const Camera* camera, const uint32_t& currentFrame) const;
 
 		Mesh*    GetMesh   () const { return mesh;    }
 		Texture* GetTexture() const { return texture; }
 
+		const VkDescriptorSet& GetDescriptorSet(const uint32_t& currentFrame) const { return vkDescriptorSets[currentFrame]; }
+
 	private:
-		void CreateDescriptorSets();
 		void CreateUniformBuffers();
+		void CreateDescriptorPool();
+		void CreateDescriptorSets();
 	};
 }
