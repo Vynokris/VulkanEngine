@@ -47,6 +47,7 @@ typedef enum   VkPresentModeKHR      : int VkPresentModeKHR;
 typedef enum   VkFormat              : int VkFormat;
 typedef enum   VkImageTiling         : int VkImageTiling;
 typedef enum   VkImageLayout         : int VkImageLayout;
+typedef enum   VkSampleCountFlagBits : int VkSampleCountFlagBits;
 #pragma endregion 
 
 #pragma region VulkanUtils
@@ -83,6 +84,7 @@ namespace VulkanUtils
     QueueFamilyIndices      FindQueueFamilies          (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
     uint32_t                FindMemoryType             (const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties);
     VkFormat                FindSupportedFormat        (const VkPhysicalDevice& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    VkSampleCountFlagBits   GetMaxUsableSampleCount    (const VkPhysicalDevice& device);
     SwapChainSupportDetails QuerySwapChainSupport      (const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
     VkSurfaceFormatKHR      ChooseSwapSurfaceFormat    (const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR        ChooseSwapPresentMode      (const std::vector<VkPresentModeKHR  >& availablePresentModes);
@@ -93,7 +95,7 @@ namespace VulkanUtils
     void CreateShaderModule   (const VkDevice& device, const char* filename, VkShaderModule& shaderModule);
     void CreateBuffer         (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void CopyBuffer           (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size);
-    void CreateImage          (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory);
+    void CreateImage          (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory);
     void CreateImageView      (const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView);
     void TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout);
     void CopyBufferToImage    (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height);
@@ -139,6 +141,9 @@ namespace Core
         VkSampler                    vkTextureSampler      = nullptr;
         Resources::Texture*          texture               = nullptr;
         Resources::Mesh*             mesh                  = nullptr;
+        VkImage                      vkColorImage          = nullptr;
+        VkDeviceMemory               vkColorImageMemory    = nullptr;
+        VkImageView                  vkColorImageView      = nullptr;
         VkImage                      vkDepthImage          = nullptr;
         VkDeviceMemory               vkDepthImageMemory    = nullptr;
         VkImageView                  vkDepthImageView      = nullptr;
@@ -157,6 +162,7 @@ namespace Core
         VkFormat                     vkSwapChainImageFormat;
         uint32_t                     vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         uint32_t                     vkSwapchainImageIndex = 0;
+        VkSampleCountFlagBits        msaaSamples;
         uint32_t                     currentFrame = 0;
         bool                         framebufferResized = false;
         
@@ -187,6 +193,7 @@ namespace Core
         void CreateRenderPass();
         void CreateDescriptorSetLayout();
         void CreateGraphicsPipeline();
+        void CreateColorResources();
         void CreateDepthResources();
         void CreateFramebuffers();
         void CreateCommandPool();
