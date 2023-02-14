@@ -111,6 +111,9 @@
     <ClCompile Include="Sources\Resources\Model.cpp">
       <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Core\VulkanUtils.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">
@@ -178,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="Includes\Resources\Model.h">
       <Filter>Fichiers d%27en-tête\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\VulkanUtils.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

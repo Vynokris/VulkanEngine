@@ -29,7 +29,7 @@ namespace Core
 		~Engine();
 
 		void Awake();
-		void Start();
+		void Start() const;
 		void Update(const float& deltaTime) const;
 		void Render(const Renderer* renderer) const;
 	};
