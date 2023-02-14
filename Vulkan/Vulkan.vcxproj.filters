@@ -99,6 +99,18 @@
     <ClCompile Include="Sources\Resources\Mesh.cpp">
       <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Resources\Shader.cpp">
+      <Filter>Fichiers sources\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Core\Engine.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Resources\Camera.cpp">
+      <Filter>Fichiers sources\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Resources\Model.cpp">
+      <Filter>Fichiers sources\Resources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">
@@ -153,6 +165,18 @@
       <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
     <ClInclude Include="Includes\Resources\Mesh.h">
+      <Filter>Fichiers d%27en-tête\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Shader.h">
+      <Filter>Fichiers d%27en-tête\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\Engine.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Camera.h">
+      <Filter>Fichiers d%27en-tête\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Model.h">
       <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
   </ItemGroup>
