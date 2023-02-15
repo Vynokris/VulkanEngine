@@ -21,10 +21,10 @@ void    Transform::SetPosition(const Vector3& position) { pos  = position; Updat
 void    Transform::Move       (const Vector3& movement) { pos += movement; UpdateLocalMat(); }
 
 // ----- Forward ----- //
-Vector3 Transform::Forward() const                    { return rot.ToAngleAxis().axis; }
-Vector3 Transform::Up()      const                    { return Vector3(0); } // TODO: fix this.
-Vector3 Transform::Right()   const                    { return Vector3(0); } // TODO: fix this.
-void    Transform::SetForward(const Vector3& forward) { UpdateLocalMat(); }     // TODO: fix this.
+Vector3 Transform::Forward() const                    { return rot.RotateVec({ 0,0,1 }); }
+Vector3 Transform::Up()      const                    { return rot.RotateVec({ 0,1,0 }); }
+Vector3 Transform::Right()   const                    { return rot.RotateVec({ 1,0,0 }); }
+void    Transform::SetForward(const Vector3& forward) { UpdateLocalMat(); } // TODO: fix this.
 
 // ----- Rotation ----- //
 Quaternion Transform::GetRotation() const                     { return rot; }

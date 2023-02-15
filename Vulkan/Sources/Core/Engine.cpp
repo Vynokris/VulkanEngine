@@ -75,6 +75,15 @@ void Engine::Update(const float& deltaTime) const
     const Quaternion rotQuat = Quaternion::FromRoll(PI * 0.2f * deltaTime);
     for (Model* model : models)
         model->transform.Rotate(rotQuat);
+
+    // Update camera transform.
+    const WindowInputs inputs = app->GetWindow()->GetInputs();
+    if (inputs.mouseRightClick)
+    {
+        camera->transform.Move(camera->transform.GetRotation().RotateVec(inputs.dirMovement * 2 * deltaTime));
+        camera->transform.Rotate(Quaternion::FromAngleAxis({  inputs.mouseDelta.y * 2 * deltaTime, camera->transform.Right() }));
+        camera->transform.Rotate(Quaternion::FromRoll     (  -inputs.mouseDelta.x * 2 * deltaTime ));
+    }
 }
 
 void Engine::Render(const Renderer* renderer) const

@@ -17,6 +17,7 @@ Texture::Texture(const char* name)
     const VkDeviceSize imageSize = width * height * 4;
     if (!pixels) {
         std::cout << "WARNING (STBI): Unable to load texture " << name << std::endl;
+        return;
     }
     mipLevels = (uint32_t)std::floor(std::log2(std::max(width, height))) + 1;
 
