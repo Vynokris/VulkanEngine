@@ -161,8 +161,8 @@ Maths::Matrix<R, C> Maths::Matrix<R, C>::FromTransform(const Vector3& pos, const
     if (reverse)
     {
         // TODO: Untested.
-        return FromTranslation(pos)        *
-               rot.GetInverse().ToMatrix() *
+        return FromTranslation(pos)          *
+               rot.GetConjugate().ToMatrix() *
                FromScale(scale);
     }
     return FromScale(scale) *

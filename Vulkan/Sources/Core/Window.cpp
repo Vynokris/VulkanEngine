@@ -53,8 +53,10 @@ Window::Window(const WindowParams& windowParams)
             glfwGetFramebufferSize(_glfwWindow, &window->params.width, &window->params.height);
             glfwWaitEvents();
         }
-        
-        Application::Get()->GetRenderer()->ResizeSwapChain();
+
+        const Application* app = Application::Get();
+        app->GetRenderer()->ResizeSwapChain();
+        app->GetEngine()->ResizeCamera(window->params.width, window->params.height);
     });
     glfwSetWindowPosCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _posX, int _posY)
     {

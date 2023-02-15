@@ -31,7 +31,7 @@ Model::~Model()
 void Model::UpdateUniformBuffer(const Camera* camera, const uint32_t& currentFrame) const
 {
      // Copy the matrices to buffer memory.
-     const UniformBufferObject ubo = { transform.GetWorldMat(), camera->GetViewMat(), camera->GetProjMat() };
+     const UniformBufferObject ubo = { transform.GetLocalMat(), camera->GetViewMat(), camera->GetProjMat() };
      memcpy(vkUniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }
 

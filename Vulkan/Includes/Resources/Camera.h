@@ -23,6 +23,6 @@ namespace Resources
 		
 		CameraParams GetParams () const { return params;  }
 		Maths::Mat4  GetProjMat() const { return projMat; }
-		Maths::Mat4  GetViewMat() const { return transform.GetWorldMat(); }
+		Maths::Mat4  GetViewMat() const { return transform.GetLocalMat(); }
 	};
 }
