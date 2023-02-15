@@ -47,6 +47,7 @@ typedef enum   VkSampleCountFlagBits : int VkSampleCountFlagBits;
 
 namespace VulkanUtils
 {
+    extern const unsigned int MAX_FRAMES_IN_FLIGHT;
     extern const bool VALIDATION_LAYERS_ENABLED;
     extern const std::vector<const char*> VALIDATION_LAYERS;
     extern const std::vector<const char*> EXTENSIONS;

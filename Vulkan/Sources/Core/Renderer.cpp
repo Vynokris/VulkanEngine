@@ -111,7 +111,7 @@ void Renderer::BeginRender()
 
 void Renderer::DrawModel(const Resources::Model* model, const Resources::Camera* camera) const
 {
-    // Issue the command to draw the triangle.
+    // Issue the command to draw the model.
     model->UpdateUniformBuffer(camera, currentFrame);
     BindMeshBuffers(model->GetMesh()->GetVkVertexBuffer(), model->GetMesh()->GetVkIndexBuffer());
     vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &model->GetDescriptorSet(currentFrame), 0, nullptr);

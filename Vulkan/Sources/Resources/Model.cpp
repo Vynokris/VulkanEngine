@@ -6,6 +6,7 @@
 
 #include "Resources/Camera.h"
 using namespace Core;
+using namespace VulkanUtils;
 using namespace Resources;
 
 Model::Model(Mesh* _mesh, Texture* _texture, Maths::Transform _transform)
@@ -20,7 +21,7 @@ Model::~Model()
 {
      const VkDevice vkDevice = Application::Get()->GetRenderer()->GetVkDevice();
      
-     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
           vkDestroyBuffer(vkDevice, vkUniformBuffers[i],       nullptr);
           vkFreeMemory   (vkDevice, vkUniformBuffersMemory[i], nullptr);
      }
@@ -50,9 +51,9 @@ void Model::CreateUniformBuffers()
      // Create the buffers.
      for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
      {
-          VulkanUtils::CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
-                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                    vkUniformBuffers[i], vkUniformBuffersMemory[i]);
+          CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
+                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       vkUniformBuffers[i], vkUniformBuffersMemory[i]);
 
           vkMapMemory(vkDevice, vkUniformBuffersMemory[i], 0, bufferSize, 0, &vkUniformBuffersMapped[i]);
      }
@@ -99,7 +100,7 @@ void Model::CreateDescriptorSets()
     }
 
     // Populate the descriptor sets.
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = vkUniformBuffers[i];
