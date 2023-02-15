@@ -11,7 +11,6 @@ using namespace Maths;
 Engine::Engine()
 {
     app = Application::Get();
-    app->GetUi()->SetResourceRefs(camera, &models, &meshes, &textures);
 }
 
 Engine::~Engine()
@@ -49,6 +48,7 @@ void Engine::Awake()
     models.push_back(new Model("Rico",       meshes[3], textures[3]));
 
     UpdateVertexCount();
+    app->GetUi()->SetResourceRefs(camera, &models, &meshes, &textures);
 }
 
 void Engine::Start() const
@@ -98,9 +98,9 @@ void Engine::Update(const float& deltaTime)
     const WindowInputs inputs = app->GetWindow()->GetInputs();
     if (inputs.mouseRightClick)
     {
-        camera->transform.Move(camera->transform.GetRotation().RotateVec(inputs.dirMovement * 2 * deltaTime));
-        camera->transform.Rotate(Quaternion::FromAngleAxis({  inputs.mouseDelta.y * 2 * deltaTime, camera->transform.Right() }));
-        camera->transform.Rotate(Quaternion::FromRoll     (  -inputs.mouseDelta.x * 2 * deltaTime ));
+        camera->transform.Move(camera->transform.GetRotation().RotateVec(inputs.dirMovement * cameraSpeed * deltaTime));
+        camera->transform.Rotate(Quaternion::FromAngleAxis({  inputs.mouseDelta.y * cameraSensitivity * deltaTime, camera->transform.Right() }));
+        camera->transform.Rotate(Quaternion::FromRoll     (  -inputs.mouseDelta.x * cameraSensitivity * deltaTime ));
     }
 }
 
@@ -108,6 +108,12 @@ void Engine::Render(const Renderer* renderer) const
 {
     for (const Model* model : models)
         renderer->DrawModel(model, camera);
+}
+
+void Engine::ResizeCamera(const int& width, const int& height) const
+{
+    const CameraParams params = camera->GetParams();
+    camera->ChangeParams({ width, height, params.near, params.far, params.fov });
 }
 
 void Engine::UpdateVertexCount()

@@ -1,11 +1,10 @@
 #include "Resources/Mesh.h"
+#include "Core/Application.h"
 #include "Core/Renderer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include <vulkan/vulkan.h>
 #include <unordered_map>
-
-#include "Core/Application.h"
 using namespace Core;
 using namespace Resources;
 

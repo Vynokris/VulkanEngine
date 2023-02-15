@@ -25,12 +25,10 @@ namespace Resources
 		Mesh(const char* _filename);
 		~Mesh();
 
-		const char* GetFilename() const { return filename; }
-		uint32_t GetVertexCount() const { return (uint32_t)vertices.size(); }
-		uint32_t GetIndexCount () const { return (uint32_t)indices .size(); }
-		
+		const char* GetFilename   () const { return filename; }
+		uint32_t GetIndexCount    () const { return (uint32_t)indices.size(); }
 		VkBuffer GetVkVertexBuffer() const { return vkVertexBuffer; }
-		VkBuffer GetVkIndexBuffer()  const { return vkIndexBuffer; }
+		VkBuffer GetVkIndexBuffer () const { return vkIndexBuffer;  }
 
 	private:
 		void CreateVertexBuffer();

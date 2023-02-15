@@ -26,7 +26,9 @@ namespace Core
 		size_t vertexCount = 0;
 
 	public:
-		bool rotateModels = false;
+		float cameraSpeed       = 2;
+		float cameraSensitivity = 2;
+		bool  rotateModels      = false;
 		
 		Engine();
 		~Engine();
@@ -35,7 +37,8 @@ namespace Core
 		void Start() const;
 		void Update(const float& deltaTime);
 		void Render(const Renderer* renderer) const;
-
+		
+		void   ResizeCamera(const int& width, const int& height) const;
 		void   UpdateVertexCount();
 		size_t GetVertexCount() const { return vertexCount; }
 	};

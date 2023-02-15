@@ -20,7 +20,6 @@ UserInterface::UserInterface()
     CreateDescriptorPool();
     InitImGui();
     UploadImGuiFonts();
-    
 }
 
 UserInterface::~UserInterface()
@@ -163,7 +162,24 @@ void UserInterface::ShowSceneWindow() const
         if (ImGui::Begin("Scene View", NULL, ImGuiWindowFlags_NoMove))
         {
             ImGui::Checkbox("Rotate Models", &app->GetEngine()->rotateModels);
-            size_t i = 0;
+            if (ImGui::TreeNode("Camera"))
+            {
+                ShowTransformUi(camera->transform);
+                static Engine*      engine = app->GetEngine();
+                static CameraParams params = camera->GetParams();
+                if (ImGui::DragFloat2("Near/Far", &params.near, 0.1f, 0)) {
+                    params.near = clampAbove(params.near, 0);
+                    params.far  = clampAbove(params.far, 0);
+                    camera->ChangeParams(params);
+                }
+                if (ImGui::DragFloat("FOV", &params.fov, 0.1f, 0, 180)) {
+                    params.fov = clamp(params.fov, 0, 180);
+                    camera->ChangeParams(params);
+                }
+                ImGui::DragFloat("Speed", &engine->cameraSpeed, 0.1f);
+                ImGui::DragFloat("Sensitivity", &engine->cameraSensitivity, 0.1f);
+                ImGui::TreePop();
+            }
             for (Model* model : *models)
             {
                 if (ImGui::TreeNode(model->GetName()))
@@ -173,7 +189,6 @@ void UserInterface::ShowSceneWindow() const
                         model->shouldDelete = true;
                     ImGui::TreePop();
                 }
-                i++;
             }
         }
         ImGui::End();
