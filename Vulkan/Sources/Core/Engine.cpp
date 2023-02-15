@@ -11,6 +11,7 @@ using namespace Maths;
 Engine::Engine()
 {
     app = Application::Get();
+    app->GetUi()->SetResourceRefs(camera, &models, &meshes, &textures);
 }
 
 Engine::~Engine()
@@ -42,10 +43,12 @@ void Engine::Awake()
     meshes.push_back(new Mesh("Resources/Meshes/Rico.obj"));
     
     // Create models.
-    models.push_back(new Model(meshes[0], textures[0]));
-    models.push_back(new Model(meshes[1], textures[1]));
-    models.push_back(new Model(meshes[2], textures[2]));
-    models.push_back(new Model(meshes[3], textures[3]));
+    models.push_back(new Model("VikingRoom", meshes[0], textures[0]));
+    models.push_back(new Model("Banana",     meshes[1], textures[1]));
+    models.push_back(new Model("ItemBox",    meshes[2], textures[2]));
+    models.push_back(new Model("Rico",       meshes[3], textures[3]));
+
+    UpdateVertexCount();
 }
 
 void Engine::Start() const
@@ -57,7 +60,7 @@ void Engine::Start() const
     // Rotate all models because my matrices were made for OpenGL and not Vulkan.
     // TODO: Fix my matrices.
     for (Model* model : models) {
-        model->transform.Rotate(Quaternion::FromEuler({ PI, -PI*0.5f, 0 }));
+        model->transform.Rotate(Quaternion::FromEuler({ PI, 0, 0 }));
         model->transform.SetScale({ 0.7f });
     }
 
@@ -69,12 +72,27 @@ void Engine::Start() const
     models[1]->transform.SetScale({ 0.54f });
 }
 
-void Engine::Update(const float& deltaTime) const
+void Engine::Update(const float& deltaTime)
 {
+    // Remove out of date models.
+    bool wasModelRemoved = false;
+    for (int i = (int)models.size()-1; i >= 0; i--) {
+        if (models[i]->shouldDelete) {
+            delete models[i];
+            models.erase(models.begin()+i);
+            wasModelRemoved = true;
+        }
+    }
+    if (wasModelRemoved)
+        UpdateVertexCount();
+    
     // Update model transforms.
-    const Quaternion rotQuat = Quaternion::FromRoll(PI * 0.2f * deltaTime);
-    for (Model* model : models)
-        model->transform.Rotate(rotQuat);
+    if (rotateModels)
+    {
+        const Quaternion rotQuat = Quaternion::FromRoll(PI * 0.2f * deltaTime);
+        for (Model* model : models)
+            model->transform.Rotate(rotQuat);
+    }
 
     // Update camera transform.
     const WindowInputs inputs = app->GetWindow()->GetInputs();
@@ -90,4 +108,11 @@ void Engine::Render(const Renderer* renderer) const
 {
     for (const Model* model : models)
         renderer->DrawModel(model, camera);
+}
+
+void Engine::UpdateVertexCount()
+{
+    vertexCount = 0;
+    for (const Model* model : models)
+        vertexCount += model->GetMesh()->GetIndexCount();
 }

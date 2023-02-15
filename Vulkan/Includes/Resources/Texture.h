@@ -34,8 +34,9 @@ namespace Resources
         
         ~Texture();
 
-        int GetWidth () const { return width;  }
-        int GetHeight() const { return height; }
+        const char* GetFilename()    const { return filename; }
+        int         GetWidth ()      const { return width; }
+        int         GetHeight()      const { return height; }
         uint32_t    GetMipLevels()   const { return mipLevels; }
         VkImageView GetVkImageView() const { return vkImageView; }
         

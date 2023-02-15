@@ -114,6 +114,9 @@
     <ClCompile Include="Sources\Core\VulkanUtils.cpp">
       <Filter>Fichiers sources\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Externals\Sources\imgui\imgui_stdlib.cpp">
+      <Filter>Fichiers sources\Externals</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">

@@ -23,14 +23,20 @@ namespace Core
 		std::vector<Resources::Model*>   models;
 		std::vector<Resources::Mesh*>    meshes;
 		std::vector<Resources::Texture*> textures;
+		size_t vertexCount = 0;
 
 	public:
+		bool rotateModels = false;
+		
 		Engine();
 		~Engine();
 
 		void Awake();
 		void Start() const;
-		void Update(const float& deltaTime) const;
+		void Update(const float& deltaTime);
 		void Render(const Renderer* renderer) const;
+
+		void   UpdateVertexCount();
+		size_t GetVertexCount() const { return vertexCount; }
 	};
 }

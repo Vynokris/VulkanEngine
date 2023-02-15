@@ -9,21 +9,22 @@
 using namespace Core;
 using namespace Resources;
 
-Mesh::Mesh(std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices)
-    : vertices(std::move(_vertices)), indices(std::move(_indices))
+Mesh::Mesh(const char* _filename, std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices)
+    : filename(_filename), vertices(std::move(_vertices)), indices(std::move(_indices))
 {
     CreateVertexBuffer();
     CreateIndexBuffer();
 }
 
-Mesh::Mesh(const char* filename)
+Mesh::Mesh(const char* _filename)
+    : filename(_filename)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string err;
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename)) {
-        std::cout << "ERROR (OBJ): Unable to load OBJ " << filename << std::endl << err << std::endl;
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, _filename)) {
+        std::cout << "ERROR (OBJ): Unable to load OBJ " << _filename << std::endl << err << std::endl;
         throw std::runtime_error("OBJ_LOAD_ERROR");
     }
 

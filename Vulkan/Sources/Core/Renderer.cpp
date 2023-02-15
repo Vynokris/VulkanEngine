@@ -106,7 +106,7 @@ Renderer::~Renderer()
 void Renderer::BeginRender()
 {
     NewFrame();
-    BeginRecordCmdBuf();
+    BeginRenderPass();
 }
 
 void Renderer::DrawModel(const Resources::Model* model, const Resources::Camera* camera) const
@@ -120,7 +120,7 @@ void Renderer::DrawModel(const Resources::Model* model, const Resources::Camera*
 
 void Renderer::EndRender()
 {
-    EndRecordCmdBuf();
+    EndRenderPass();
     PresentFrame();
 }
 
@@ -248,11 +248,11 @@ void Renderer::PickPhysicalDevice()
 
 void Renderer::CreateLogicalDevice()
 {
-    const QueueFamilyIndices indices = FindQueueFamilies(vkPhysicalDevice, vkSurface);
+    vkQueueFamilyIndices = FindQueueFamilies(vkPhysicalDevice, vkSurface);
 
     // Set creation information for all required queues.
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    const std::set<uint32_t> uniqueQueueFamilies = { vkQueueFamilyIndices.graphicsFamily.value(), vkQueueFamilyIndices.presentFamily.value() };
     for (const uint32_t& queueFamily : uniqueQueueFamilies)
     {
         const float queuePriority = 1.0f;
@@ -291,8 +291,8 @@ void Renderer::CreateLogicalDevice()
     }
 
     // Get the graphics and present queue handles.
-    vkGetDeviceQueue(vkDevice, indices.graphicsFamily.value(), 0, &vkGraphicsQueue);
-    vkGetDeviceQueue(vkDevice, indices.presentFamily .value(), 0, &vkPresentQueue );
+    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.graphicsFamily.value(), 0, &vkGraphicsQueue);
+    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.presentFamily .value(), 0, &vkPresentQueue );
 }
 
 void Renderer::CreateSwapChain()
@@ -827,8 +827,8 @@ void Renderer::RecreateSwapChain()
 void Renderer::BindMeshBuffers(const VkBuffer& vertexBuffer, const VkBuffer& indexBuffer) const
 {
     // Bind the vertex and index buffers.
-    const VkBuffer vertexBuffers[] = { vertexBuffer };
-    const VkDeviceSize offsets[]   = { 0 };
+    const VkBuffer     vertexBuffers[] = { vertexBuffer };
+    const VkDeviceSize offsets[]       = { 0 };
     vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
@@ -857,7 +857,7 @@ void Renderer::NewFrame()
     vkResetFences(vkDevice, 1, &vkInFlightFences[currentFrame]);
 }
 
-void Renderer::BeginRecordCmdBuf() const
+void Renderer::BeginRenderPass() const
 {
     // Reset the command buffer.
     vkResetCommandBuffer(vkCommandBuffers[currentFrame],  0);
@@ -908,7 +908,7 @@ void Renderer::BeginRecordCmdBuf() const
     vkCmdSetScissor(vkCommandBuffers[currentFrame], 0, 1, &scissor);
 }
 
-void Renderer::EndRecordCmdBuf() const
+void Renderer::EndRenderPass() const
 {
     // End the render pass.
     vkCmdEndRenderPass(vkCommandBuffers[currentFrame]);

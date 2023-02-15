@@ -23,6 +23,7 @@
     <ClCompile Include="Externals\Sources\imgui\imgui_draw.cpp" />
     <ClCompile Include="Externals\Sources\imgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="Externals\Sources\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="Externals\Sources\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="Externals\Sources\imgui\imgui_tables.cpp" />
     <ClCompile Include="Externals\Sources\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Sources\Core\Application.cpp" />

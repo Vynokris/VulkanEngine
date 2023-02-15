@@ -10,6 +10,7 @@ namespace Resources
 	class Mesh
 	{
 	private:
+		const char* filename;
 		std::vector<Maths::TestVertex> vertices;
 		std::vector<uint32_t>          indices;
 		
@@ -20,10 +21,11 @@ namespace Resources
 
 	public:
 		Mesh() = default;
-		Mesh(std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices);
-		Mesh(const char* filename);
+		Mesh(const char* _filename, std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices);
+		Mesh(const char* _filename);
 		~Mesh();
 
+		const char* GetFilename() const { return filename; }
 		uint32_t GetVertexCount() const { return (uint32_t)vertices.size(); }
 		uint32_t GetIndexCount () const { return (uint32_t)indices .size(); }
 		

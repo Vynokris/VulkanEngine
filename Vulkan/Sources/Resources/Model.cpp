@@ -9,8 +9,8 @@ using namespace Core;
 using namespace VulkanUtils;
 using namespace Resources;
 
-Model::Model(Mesh* _mesh, Texture* _texture, Maths::Transform _transform)
-     : mesh(_mesh), texture(_texture), transform(std::move(_transform))
+Model::Model(const char* _name, Mesh* _mesh, Texture* _texture, Maths::Transform _transform)
+     : name(_name), mesh(_mesh), texture(_texture), transform(std::move(_transform))
 {
      CreateUniformBuffers();
      CreateDescriptorPool();
