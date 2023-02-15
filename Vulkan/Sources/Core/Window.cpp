@@ -1,9 +1,19 @@
-﻿#include "Core/Window.h"
+﻿#include "Core/Application.h"
+#include "Core/Window.h"
 #include "GLFW/glfw3.h"
 #include <iostream>
-
-#include "Core/Application.h"
 using namespace Core;
+
+InputKeys::InputKeys()
+{
+    exit        = GLFW_KEY_ESCAPE;
+    moveRight   = GLFW_KEY_D;
+    moveLeft    = GLFW_KEY_A;
+    moveUp      = GLFW_KEY_E;
+    moveDown    = GLFW_KEY_Q;
+    moveForward = GLFW_KEY_W;
+    moveBack    = GLFW_KEY_S;
+}
 
 Window::Window(const WindowParams& windowParams)
     : params(windowParams)
@@ -28,7 +38,6 @@ Window::Window(const WindowParams& windowParams)
     glfwMakeContextCurrent(glfwWindow);
     SetPos(params.posX, params.posY);
     glfwSwapInterval(params.vsync);
-    params.exitKey = GLFW_KEY_ESCAPE;
 
     // Set the minimum size of the window.
     glfwSetWindowSizeLimits(glfwWindow, 1, 1, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -74,10 +83,9 @@ void Window::Update()
     if (glfwWindow != glfwGetCurrentContext())
         glfwMakeContextCurrent(glfwWindow);
 
-    // Update glfw events and kill the window if the exit key is pressed.
+    // Update glfw events and update inputs.
     glfwPollEvents();
-    if (params.exitKey > 0 && glfwGetKey(glfwWindow, params.exitKey) == GLFW_PRESS)
-        Close();
+    UpdateInputs();
 }
 
 void Window::EndFrame() const
@@ -116,4 +124,45 @@ void Window::SetVsync(const bool& windowVsync)
 bool Window::ShouldClose() const
 {
     return glfwWindowShouldClose(glfwWindow);
+}
+
+void Window::UpdateInputs()
+{
+    // Close the window if the exit key was pressed.
+    if (inputKeys.exit > 0 && glfwGetKey(glfwWindow, inputKeys.exit) == GLFW_PRESS)
+        Close();
+    
+    // Get movement inputs.
+    inputs.dirMovement = {};
+    if (inputKeys.moveRight   > 0 && glfwGetKey(glfwWindow, inputKeys.moveRight  )) inputs.dirMovement.x += 1;
+    if (inputKeys.moveLeft    > 0 && glfwGetKey(glfwWindow, inputKeys.moveLeft   )) inputs.dirMovement.x -= 1;
+    if (inputKeys.moveUp      > 0 && glfwGetKey(glfwWindow, inputKeys.moveUp     )) inputs.dirMovement.y -= 1;
+    if (inputKeys.moveDown    > 0 && glfwGetKey(glfwWindow, inputKeys.moveDown   )) inputs.dirMovement.y += 1;
+    if (inputKeys.moveForward > 0 && glfwGetKey(glfwWindow, inputKeys.moveForward)) inputs.dirMovement.z -= 1;
+    if (inputKeys.moveBack    > 0 && glfwGetKey(glfwWindow, inputKeys.moveBack   )) inputs.dirMovement.z += 1;
+
+    // Get mouse button inputs.
+    inputs.mouseLeftClick   = glfwGetMouseButton(glfwWindow, GLFW_MOUSE_BUTTON_LEFT);
+    inputs.mouseMiddleClick = glfwGetMouseButton(glfwWindow, GLFW_MOUSE_BUTTON_MIDDLE);
+    inputs.mouseRightClick  = glfwGetMouseButton(glfwWindow, GLFW_MOUSE_BUTTON_RIGHT);
+
+    // Get mouse position and mouse delta.
+    double mouseX; double mouseY;
+    glfwGetCursorPos(glfwWindow, &mouseX, &mouseY);
+    const Maths::Vector2 prevMousePos = inputs.mousePos;
+    const Maths::Vector2 mousePos     = { (float)mouseX, (float)mouseY };
+    inputs.mouseDelta = mousePos - prevMousePos;
+    inputs.mousePos   = mousePos;
+
+    // Hide the mouse cursor and disable its movement when right clicking.
+    if (inputs.mouseRightClick)
+    {
+        glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetCursorPos(glfwWindow, (double)prevMousePos.x, (double)prevMousePos.y);
+        inputs.mousePos = prevMousePos;
+    }
+    else
+    {
+        glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
 }
