@@ -1,6 +1,7 @@
 ﻿#include "Core/Application.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <chrono>
 using namespace Core;
 
 Application* Application::Create()
@@ -43,7 +44,7 @@ void Application::Run() const
     while(!window->ShouldClose())
     {
         window->Update();
-        engine->Update(0.016f); // TODO: Get deltaTime.
+        engine->Update(window->GetDeltaTime());
         
         renderer->BeginRender();
         {

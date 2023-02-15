@@ -2,10 +2,6 @@
 #include "VulkanUtils.h"
 #include "Maths/Matrix.h"
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 3;
-
-// TODO: Try to enable alpha blending.
-
 namespace Resources
 {
     class Camera;

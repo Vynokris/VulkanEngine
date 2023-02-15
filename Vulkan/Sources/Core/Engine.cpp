@@ -21,6 +21,7 @@ Engine::~Engine()
     models  .clear();
     meshes  .clear();
     textures.clear();
+    delete camera;
 }
 
 void Engine::Awake()
@@ -30,14 +31,14 @@ void Engine::Awake()
     
     // Load textures.
     textures.push_back(new Texture("Resources/Textures/VikingRoom.png"));
-    textures.push_back(new Texture("Resources/Textures/ItemBox.png"));
     textures.push_back(new Texture("Resources/Textures/Banana.png"));
+    textures.push_back(new Texture("Resources/Textures/ItemBox.png"));
     textures.push_back(new Texture("Resources/Textures/Rico.png"));
 
     // Load meshes.
     meshes.push_back(new Mesh("Resources/Meshes/VikingRoom.obj"));
-    meshes.push_back(new Mesh("Resources/Meshes/ItemBox.obj"));
     meshes.push_back(new Mesh("Resources/Meshes/Banana.obj"));
+    meshes.push_back(new Mesh("Resources/Meshes/ItemBox.obj"));
     meshes.push_back(new Mesh("Resources/Meshes/Rico.obj"));
     
     // Create models.
@@ -65,7 +66,7 @@ void Engine::Start() const
     models[1]->transform.Move({ -1.5f, 0, 0 });
     models[2]->transform.Move({ -1.5f, 0, 0 });
     models[3]->transform.Move({  1.5f, 0, 0 });
-    models[2]->transform.SetScale({ 0.54f });
+    models[1]->transform.SetScale({ 0.54f });
 }
 
 void Engine::Update(const float& deltaTime) const

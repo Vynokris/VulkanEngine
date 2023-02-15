@@ -11,6 +11,8 @@
 using namespace Core;
 using namespace VulkanUtils;
 
+const unsigned int VulkanUtils::MAX_FRAMES_IN_FLIGHT = 3;
+
 #ifdef NDEBUG
     const bool VulkanUtils::VALIDATION_LAYERS_ENABLED = false;
 #else

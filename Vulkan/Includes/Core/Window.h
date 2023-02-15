@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <chrono>
 
 // Forward declaration of GLFW types to avoid include.
 typedef struct GLFWwindow GLFWwindow;
@@ -20,13 +21,15 @@ namespace Core
     {
     private:
         WindowParams params;
-        GLFWwindow* glfwWindow;
+        GLFWwindow*  glfwWindow;
+        float        deltaTime = 0;
+        std::chrono::time_point<std::chrono::high_resolution_clock> prevTime, curTime;
     
     public:
         Window(const WindowParams& windowParams);
         ~Window();
 
-        void Update()   const;
+        void Update();
         void EndFrame() const;
         void Close()    const;
 
@@ -46,6 +49,7 @@ namespace Core
         int         GetHeight()     const { return params.height; }
         int         GetPosX()       const { return params.posX;   }
         int         GetPosY()       const { return params.posY;   }
+        float       GetDeltaTime()  const { return deltaTime;     }
         GLFWwindow* GetGlfwWindow() const { return glfwWindow;    }
         bool        ShouldClose() const;
     };

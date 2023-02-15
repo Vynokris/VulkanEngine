@@ -52,6 +52,9 @@ Window::Window(const WindowParams& windowParams)
         Window* window = (Window*)glfwGetWindowUserPointer(_glfwWindow);
         window->params.posX = _posX; window->params.posY = _posY;
     });
+
+    // Initialize the time points.
+    prevTime = curTime = std::chrono::high_resolution_clock::now();
 }
 
 Window::~Window()
@@ -60,8 +63,13 @@ Window::~Window()
 }
 
 
-void Window::Update() const
+void Window::Update()
 {
+    // Update the delta time.
+    curTime   = std::chrono::high_resolution_clock::now();
+    deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(curTime - prevTime).count();
+    prevTime  = curTime;
+    
     // Make sure the current context is the window.
     if (glfwWindow != glfwGetCurrentContext())
         glfwMakeContextCurrent(glfwWindow);
