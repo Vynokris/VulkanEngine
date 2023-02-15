@@ -16,8 +16,9 @@ namespace Resources
 	class Model
 	{
 	private:
-		Mesh*    mesh    = nullptr;
-		Texture* texture = nullptr;
+		const char* name;
+		Mesh*       mesh    = nullptr;
+		Texture*    texture = nullptr;
 		
 		VkDescriptorPool             vkDescriptorPool = nullptr;
 		std::vector<VkDescriptorSet> vkDescriptorSets;
@@ -27,14 +28,16 @@ namespace Resources
 
 	public:
 		Maths::Transform transform;
+		bool shouldDelete = false;
 
-		Model(Mesh* _mesh, Texture* _texture, Maths::Transform _transform = Maths::Transform());
+		Model(const char* _name, Mesh* _mesh, Texture* _texture, Maths::Transform _transform = Maths::Transform());
 		~Model();
 
 		void UpdateUniformBuffer(const Camera* camera, const uint32_t& currentFrame) const;
 
-		Mesh*    GetMesh   () const { return mesh;    }
-		Texture* GetTexture() const { return texture; }
+		const char* GetName   () const { return name;    }
+		Mesh*       GetMesh   () const { return mesh;    }
+		Texture*    GetTexture() const { return texture; }
 
 		const VkDescriptorSet& GetDescriptorSet(const uint32_t& currentFrame) const { return vkDescriptorSets[currentFrame]; }
 

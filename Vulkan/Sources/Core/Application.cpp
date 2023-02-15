@@ -29,8 +29,8 @@ void Application::Init(const WindowParams& windowParams)
     }
     window   = new Window(windowParams);
     renderer = new Renderer(windowParams.name);
-    engine   = new Engine();
     ui       = new UserInterface();
+    engine   = new Engine();
 
     engine->Awake();
 }

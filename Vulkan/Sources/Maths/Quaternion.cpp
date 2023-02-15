@@ -9,9 +9,9 @@ Quaternion::Quaternion(const float& all)                                        
 Quaternion::Quaternion(const float& w, const float& x, const float& y, const float& z) : w(w),   x(x),   y(y),   z(z)   {}
 Quaternion::Quaternion(const Vector3& eulerAngles)                                     : w(1),   x(0),   y(0),   z(0)
 {
-    const float cX = cos(eulerAngles.x/2.f), sX = sin(eulerAngles.x/2.f);
-    const float cY = cos(eulerAngles.y/2.f), sY = sin(eulerAngles.y/2.f);
-    const float cZ = cos(eulerAngles.z/2.f), sZ = sin(eulerAngles.z/2.f);
+    const float cX = cos(eulerAngles.x*0.5f), sX = sin(eulerAngles.x*0.5f);
+    const float cY = cos(eulerAngles.y*0.5f), sY = sin(eulerAngles.y*0.5f);
+    const float cZ = cos(eulerAngles.z*0.5f), sZ = sin(eulerAngles.z*0.5f);
 
     w = cX*cY*cZ + sX*sY*sZ;
     x = sX*cY*cZ - cX*sY*sZ;
