@@ -16,6 +16,7 @@ using namespace Maths;
 UserInterface::UserInterface()
 {
     app = Application::Get();
+    engine = app->GetEngine();
     
     CreateDescriptorPool();
     InitImGui();
@@ -30,7 +31,7 @@ UserInterface::~UserInterface()
     vkDestroyDescriptorPool(app->GetRenderer()->GetVkDevice(), vkDescriptorPool, nullptr);
 }
 
-void UserInterface::SetResourceRefs(Camera* _camera, std::vector<Model*>* _models, std::vector<Mesh*>* _meshes, std::vector<Texture*>* _textures)
+void UserInterface::SetResourceRefs(Camera* _camera, std::unordered_map<std::string, Model*>* _models, std::unordered_map<std::string, Mesh*>* _meshes, std::unordered_map<std::string, Texture*>* _textures)
 {
     camera   = _camera;
     models   = _models;
@@ -117,7 +118,7 @@ void UserInterface::Render() const
     
     ShowStatsWindow();
     ShowSceneWindow();
-    ShowLoaderWindow();
+    ShowResourcesWindow();
     
     RenderFrame();
 }
@@ -147,7 +148,7 @@ void UserInterface::ShowStatsWindow() const
 {
     if (ImGui::Begin("Stats", NULL, ImGuiWindowFlags_NoMove))
     {
-        ImGui::Text("Vertex count: %lld", app->GetEngine()->GetVertexCount());
+        ImGui::Text("Vertex count: %lld", engine->GetVertexCount());
         const float deltaTime = app->GetWindow()->GetDeltaTime();
         ImGui::Text("FPS: %d | Delta Time: %.4fs", roundInt(1 / deltaTime), deltaTime);
     }
@@ -156,128 +157,156 @@ void UserInterface::ShowStatsWindow() const
 
 void UserInterface::ShowSceneWindow() const
 {
-    if (models)
+    if (ImGui::Begin("Scene View", NULL, ImGuiWindowFlags_NoMove) && models)
     {
-        if (ImGui::Begin("Scene View", NULL, ImGuiWindowFlags_NoMove))
+        // Show loaded scene.
+        ImGui::Text("Loaded scene: %s", engine->GetSceneName().c_str());
+
+        // New scene button.
+        if (ImGui::Button("New Scene")) {
+            ImGui::OpenPopup("SceneCreation");
+        }
+        if (ImGui::BeginPopup("SceneCreation"))
         {
-            ImGui::Checkbox("Rotate Models", &app->GetEngine()->rotateModels);
-            if (ImGui::TreeNode("Camera"))
-            {
-                ShowTransformUi(camera->transform);
-                static Engine*      engine = app->GetEngine();
-                static CameraParams params = camera->GetParams();
-                if (ImGui::DragFloat2("Near/Far", &params.near, 0.1f, 0)) {
-                    params.near = clampAbove(params.near, 0);
-                    params.far  = clampAbove(params.far, 0);
-                    camera->ChangeParams(params);
-                }
-                if (ImGui::DragFloat("FOV", &params.fov, 0.1f, 0, 180)) {
-                    params.fov = clamp(params.fov, 0, 180);
-                    camera->ChangeParams(params);
-                }
-                ImGui::DragFloat("Speed", &engine->cameraSpeed, 0.1f);
-                ImGui::DragFloat("Sensitivity", &engine->cameraSensitivity, 0.1f);
-                ImGui::TreePop();
+            static std::string filename;
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Scene filename");
+            ImGui::SameLine();
+            ImGui::InputText("##FilenameInput", &filename);
+            ImGui::SameLine();
+            if (ImGui::Button("Create")) {
+                engine->QueueSceneLoad(filename);
+                ImGui::CloseCurrentPopup();
             }
-            for (Model* model : *models)
-            {
-                if (ImGui::TreeNode(model->GetName().c_str()))
-                {
-                    ShowTransformUi(model->transform);
-                    if (ImGui::Button("Remove"))
-                        model->shouldDelete = true;
-                    ImGui::TreePop();
+            
+            ImGui::EndPopup();
+        }
+
+        // Save scene button.
+        ImGui::SameLine();
+        if (ImGui::Button("Save Scene"))
+            engine->SaveScene(engine->GetSceneName());
+
+        // Add model button.
+        ImGui::SameLine();
+        if (ImGui::Button("Add Model") && !meshes->empty() && !textures->empty()) {
+            ImGui::OpenPopup("ModelLoader");
+        }
+        if (ImGui::BeginPopup("ModelLoader"))
+        {
+            // Input for model name.
+            static std::string name;
+            ImGui::InputText("Model name", &name);
+
+            // Input for model mesh.
+            static std::unordered_map<std::string, Mesh*>::iterator meshIt = meshes->begin();
+            if (ImGui::BeginCombo("Mesh", meshIt->first.c_str())) {
+                for (auto it = meshes->begin(); it != meshes->end(); ++it) {
+                    const bool isSelected = (meshIt == it);
+                    if (ImGui::Selectable(it->first.c_str(), isSelected))
+                        meshIt = it;
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
                 }
+                ImGui::EndCombo();
+            }
+
+            // Input for model texture.
+            static std::unordered_map<std::string, Texture*>::iterator texIt = textures->begin();
+            if (ImGui::BeginCombo("Texture", texIt->first.c_str())) {
+                for (auto it = textures->begin(); it != textures->end(); ++it) {
+                    const bool isSelected = (texIt == it);
+                    if (ImGui::Selectable(it->first.c_str(), isSelected))
+                        texIt = it;
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            // Button to load model.
+            if (ImGui::Button("Load")) {
+                (*models)[name] = new Model(name, meshIt->second, texIt->second);
+                app->GetEngine()->UpdateVertexCount();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        // Checkbox to rotate model automatically.
+        ImGui::Checkbox("Rotate Models", &engine->rotateModels);
+
+        // Inputs for camera configuration.
+        if (ImGui::TreeNode("Camera"))
+        {
+            ShowTransformUi(camera->transform);
+            static CameraParams params = camera->GetParams();
+            if (ImGui::DragFloat2("Near/Far", &params.near, 0.1f, 0)) {
+                params.near = clampAbove(params.near, 0);
+                params.far  = clampAbove(params.far, 0);
+                camera->ChangeParams(params);
+            }
+            if (ImGui::DragFloat("FOV", &params.fov, 0.1f, 0, 180)) {
+                params.fov = clamp(params.fov, 0, 180);
+                camera->ChangeParams(params);
+            }
+            ImGui::DragFloat("Speed", &engine->cameraSpeed, 0.1f);
+            ImGui::DragFloat("Sensitivity", &engine->cameraSensitivity, 0.1f);
+            ImGui::TreePop();
+        }
+
+        // Inputs for models.
+        for (const auto& [name, model] : *models)
+        {
+            if (ImGui::TreeNode(name.c_str()))
+            {
+                ShowTransformUi(model->transform);
+                if (ImGui::Button("Remove"))
+                    model->shouldDelete = true;
+                ImGui::TreePop();
             }
         }
         ImGui::End();
     }
 }
 
-void UserInterface::ShowLoaderWindow() const
+void UserInterface::ShowResourcesWindow() const
 {
-    if (meshes && textures)
+    if (ImGui::Begin("Resource Viewer", NULL, ImGuiWindowFlags_NoMove))
     {
-        if (ImGui::Begin("Loader", NULL, ImGuiWindowFlags_NoMove))
+        if (ImGui::TreeNode("Meshes"))
         {
-            if (ImGui::Button("Load Texture")) {
-                ImGui::OpenPopup("TextureLoader");
-            }
-            if (ImGui::BeginPopup("TextureLoader"))
+            for (const auto& [name, mesh] : *meshes)
             {
-                static std::string filename;
+                if (std::count(engine->defaultResources.begin(), engine->defaultResources.end(), name) > 0)
+                    continue;
+                
+                if (ImGui::Button(("Unload##Mesh"+name).c_str()))
+                    mesh->shouldDelete = true;
+                ImGui::SameLine();
                 ImGui::AlignTextToFramePadding();
-                ImGui::Text("Path to texture:");
-                ImGui::SameLine();
-                ImGui::InputText("##FilenameInput", &filename);
-                ImGui::SameLine();
-                if (ImGui::Button("Load")) {
-                    textures->push_back(new Texture(filename));
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
+                ImGui::Text("%s", name.c_str());
             }
-            
-            if (ImGui::Button("Load Mesh")) {
-                ImGui::OpenPopup("MeshLoader");
-            }
-            if (ImGui::BeginPopup("MeshLoader"))
-            {
-                static std::string filename;
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Path to obj:");
-                ImGui::SameLine();
-                ImGui::InputText("##FilenameInput", &filename);
-                ImGui::SameLine();
-                if (ImGui::Button("Load")) {
-                    meshes->push_back(new Mesh(filename));
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
-            
-            if (ImGui::Button("Load Model")) {
-                ImGui::OpenPopup("ModelLoader");
-            }
-            if (ImGui::BeginPopup("ModelLoader"))
-            {
-                static std::string name;
-                ImGui::InputText("Model name", &name);
-                
-                static size_t meshIdx = 0;
-                if (ImGui::BeginCombo("Mesh", (*meshes)[meshIdx]->GetName().c_str())) {
-                    for (size_t i = 0; i < meshes->size(); i++) {
-                        const bool isSelected = (meshIdx == i);
-                        if (ImGui::Selectable((*meshes)[i]->GetName().c_str(), isSelected))
-                            meshIdx = i;
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-                
-                static size_t texIdx = 0;
-                if (ImGui::BeginCombo("Texture", (*textures)[texIdx]->GetName().c_str())) {
-                    for (size_t i = 0; i < textures->size(); i++) {
-                        const bool isSelected = (texIdx == i);
-                        if (ImGui::Selectable((*textures)[i]->GetName().c_str(), isSelected))
-                            texIdx = i;
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-                
-                if (ImGui::Button("Load")) {
-                    models->push_back(new Model(name.c_str(), (*meshes)[meshIdx], (*textures)[texIdx]));
-                    app->GetEngine()->UpdateVertexCount();
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
+            ImGui::TreePop();
         }
-        ImGui::End();
+        
+        if (ImGui::TreeNode("Textures"))
+        {
+            for (const auto& [name, texture] : *textures)
+            {
+                if (std::count(engine->defaultResources.begin(), engine->defaultResources.end(), name) > 0)
+                    continue;
+                
+                if (ImGui::Button(("Unload##Tex"+name).c_str()))
+                    texture->shouldDelete = true;
+                ImGui::SameLine();
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("%s", name.c_str());
+            }
+            ImGui::TreePop();
+        }
     }
+    ImGui::End();
 }
 
 void UserInterface::NewFrame() const

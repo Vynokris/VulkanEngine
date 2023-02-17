@@ -29,6 +29,8 @@ namespace Resources
         VkFormat       vkImageFormat;
         
     public:
+		bool shouldDelete = false;
+        
         Texture() = default;
         Texture(std::string filename);
         Texture(const int& width, const int& height);

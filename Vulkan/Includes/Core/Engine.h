@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 namespace Resources
 {
@@ -20,16 +20,22 @@ namespace Core
 	private:
         Application*       app    = nullptr;
         Resources::Camera* camera = nullptr;
-		
-		std::vector<Resources::Model*>   models;
-		std::vector<Resources::Mesh*>    meshes;
-		std::vector<Resources::Texture*> textures;
-		size_t vertexCount = 0;
+
+		std::string sceneName, sceneToLoad;
+		size_t      vertexCount = 0;
+		std::unordered_map<std::string, Resources::Model*>   models;
+		std::unordered_map<std::string, Resources::Mesh*>    meshes;
+		std::unordered_map<std::string, Resources::Texture*> textures;
 
 	public:
 		float cameraSpeed       = 2;
 		float cameraSensitivity = 2;
 		bool  rotateModels      = false;
+		const std::vector<std::string> defaultResources = {
+			"Resources\\Textures\\Default.png",
+			"Resources\\Meshes\\Quad.obj",
+			"Resources\\Meshes\\Cube.obj",
+		};
 		
 		Engine();
 		~Engine();
@@ -39,10 +45,19 @@ namespace Core
 		void Update(const float& deltaTime);
 		void Render(const Renderer* renderer) const;
 
-		void LoadFile(const std::string& filename);
+		void LoadFile (const std::string& filename);
+		void SaveScene(const std::string& filename) const;
+		void QueueSceneLoad(const std::string& filename) { sceneToLoad = filename; }
 		
 		void   ResizeCamera(const int& width, const int& height) const;
 		void   UpdateVertexCount();
-		size_t GetVertexCount() const { return vertexCount; }
+		std::string GetSceneName()   const { return sceneName; }
+		size_t      GetVertexCount() const { return vertexCount; }
+
+	private:
+		void UnloadOutdatedResources();
+		
+		void LoadScene(const std::string& filename);
+		void UnloadScene();
 	};
 }

@@ -20,6 +20,8 @@ namespace Resources
 		VkDeviceMemory vkIndexBufferMemory  = nullptr;
 
 	public:
+		bool shouldDelete = false;
+		
 		Mesh() = default;
 		Mesh(std::string _name, std::vector<Maths::Vertex> _vertices, std::vector<uint32_t> _indices);
 		Mesh(std::string filename);

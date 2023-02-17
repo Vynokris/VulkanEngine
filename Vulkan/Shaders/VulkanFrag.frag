@@ -10,6 +10,4 @@ layout(location = 0) out vec4 fragColor;
 void main()
 {
     fragColor = texture(texSampler, fragTexCoord);
-    if (fragColor.a == 0.0)
-        discard;
 }
