@@ -13,6 +13,7 @@ using namespace Maths;
 Model::Model(std::string _name, Mesh* _mesh, Texture* _texture, Maths::Transform _transform)
      : name(std::move(_name)), mesh(_mesh), texture(_texture), transform(std::move(_transform))
 {
+     transform.SetRotation({ 0, 1, 0, 0 });
      CreateMvpBuffers();
      CreateDescriptorPool();
      CreateDescriptorSets();

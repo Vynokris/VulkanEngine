@@ -49,13 +49,12 @@ void Engine::Start() const
 
 void Engine::Update(const float& deltaTime)
 {
+    UnloadOutdatedResources();
     if (!sceneToLoad.empty())
     {
         LoadScene(sceneToLoad);
         sceneToLoad = "";
     }
-    
-    UnloadOutdatedResources();
     
     // Update model transforms.
     if (rotateModels)
@@ -104,7 +103,7 @@ void Engine::LoadFile(const std::string& filename)
     }
     if (extension == ".scene")
     {
-        LoadScene(path.string());
+        QueueSceneLoad(path.string());
         return;
     }
 }
@@ -154,7 +153,7 @@ void Engine::LoadScene(const std::string& filename)
             const float xVal = std::stof(line.substr(nameEnd, xEnd-nameEnd));
             const float yVal = std::stof(line.substr(xEnd, yEnd-xEnd));
             const float zVal = std::stof(line.substr(yEnd, line.size()-yEnd));
-            models[modelName]->transform.Move({ xVal, yVal, zVal });
+            models[modelName]->transform.SetPosition({ xVal, yVal, zVal });
             break;
         }
         case 'r':
@@ -168,7 +167,7 @@ void Engine::LoadScene(const std::string& filename)
             const float xVal = std::stof(line.substr(wEnd, xEnd-wEnd));
             const float yVal = std::stof(line.substr(xEnd, yEnd-xEnd));
             const float zVal = std::stof(line.substr(yEnd, line.size()-yEnd));
-            models[modelName]->transform.Rotate({ wVal, xVal, yVal, zVal });
+            models[modelName]->transform.SetRotation({ wVal, xVal, yVal, zVal });
             break;
         }
         case 's':

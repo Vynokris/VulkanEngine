@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <unordered_map>
 #include <string>
-#include <vector>
 
 typedef struct VkDescriptorPool_T*      VkDescriptorPool;
 typedef struct VkDescriptorSetLayout_T* VkDescriptorSetLayout;

@@ -168,7 +168,7 @@ void UserInterface::ShowSceneWindow() const
         }
         if (ImGui::BeginPopup("SceneCreation"))
         {
-            static std::string filename;
+            static std::string filename = "Resources\\Scenes\\";
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Scene filename");
             ImGui::SameLine();
@@ -176,6 +176,7 @@ void UserInterface::ShowSceneWindow() const
             ImGui::SameLine();
             if (ImGui::Button("Create")) {
                 engine->QueueSceneLoad(filename);
+                filename = "Resources\\Scenes\\";
                 ImGui::CloseCurrentPopup();
             }
             
@@ -195,16 +196,16 @@ void UserInterface::ShowSceneWindow() const
         if (ImGui::BeginPopup("ModelLoader"))
         {
             // Input for model name.
-            static std::string name;
-            ImGui::InputText("Model name", &name);
+            static std::string modelName;
+            ImGui::InputText("Model name", &modelName);
 
             // Input for model mesh.
-            static std::unordered_map<std::string, Mesh*>::iterator meshIt = meshes->begin();
-            if (ImGui::BeginCombo("Mesh", meshIt->first.c_str())) {
+            static std::string meshName = meshes->begin()->first;
+            if (ImGui::BeginCombo("Mesh", meshName.c_str())) {
                 for (auto it = meshes->begin(); it != meshes->end(); ++it) {
-                    const bool isSelected = (meshIt == it);
+                    const bool isSelected = (meshName == it->first);
                     if (ImGui::Selectable(it->first.c_str(), isSelected))
-                        meshIt = it;
+                        meshName = it->first;
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
                 }
@@ -212,12 +213,12 @@ void UserInterface::ShowSceneWindow() const
             }
 
             // Input for model texture.
-            static std::unordered_map<std::string, Texture*>::iterator texIt = textures->begin();
-            if (ImGui::BeginCombo("Texture", texIt->first.c_str())) {
+            static std::string texName = textures->begin()->first;
+            if (ImGui::BeginCombo("Texture", texName.c_str())) {
                 for (auto it = textures->begin(); it != textures->end(); ++it) {
-                    const bool isSelected = (texIt == it);
+                    const bool isSelected = (texName == it->first);
                     if (ImGui::Selectable(it->first.c_str(), isSelected))
-                        texIt = it;
+                        texName = it->first;
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
                 }
@@ -225,8 +226,9 @@ void UserInterface::ShowSceneWindow() const
             }
 
             // Button to load model.
-            if (ImGui::Button("Load")) {
-                (*models)[name] = new Model(name, meshIt->second, texIt->second);
+            if (ImGui::Button("Load") && !modelName.empty()) {
+                (*models)[modelName] = new Model(modelName, (*meshes)[meshName], (*textures)[texName]);
+                modelName = "";
                 app->GetEngine()->UpdateVertexCount();
                 ImGui::CloseCurrentPopup();
             }
@@ -258,16 +260,36 @@ void UserInterface::ShowSceneWindow() const
         // Inputs for models.
         for (const auto& [name, model] : *models)
         {
-            if (ImGui::TreeNode(name.c_str()))
+            const bool treeNodeOpen = ImGui::TreeNode(name.c_str());
+            
+            if (ImGui::BeginPopupContextItem())
+            {
+                static std::string newName;
+                if (ImGui::Button("Rename") && !newName.empty())
+                {
+                    (*models)[newName] = new Model(newName, model->GetMesh(), model->GetTexture(), model->transform);
+                    model->shouldDelete = true;
+                    newName = "";
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(120);
+                ImGui::InputText("##NameInput", &newName);
+                if (ImGui::Button("Remove")) {
+                    model->shouldDelete = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
+            if (treeNodeOpen)
             {
                 ShowTransformUi(model->transform);
-                if (ImGui::Button("Remove"))
-                    model->shouldDelete = true;
                 ImGui::TreePop();
             }
         }
-        ImGui::End();
     }
+    ImGui::End();
 }
 
 void UserInterface::ShowResourcesWindow() const
@@ -276,33 +298,46 @@ void UserInterface::ShowResourcesWindow() const
     {
         if (ImGui::TreeNode("Meshes"))
         {
+            ImGui::Indent(7);
             for (const auto& [name, mesh] : *meshes)
             {
                 if (std::count(engine->defaultResources.begin(), engine->defaultResources.end(), name) > 0)
                     continue;
-                
-                if (ImGui::Button(("Unload##Mesh"+name).c_str()))
-                    mesh->shouldDelete = true;
-                ImGui::SameLine();
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("%s", name.c_str());
+
+                ImGui::Selectable(name.c_str());
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::Button(("Unload##Mesh"+name).c_str())) {
+                        mesh->shouldDelete = true;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
             }
+            ImGui::Unindent(7);
             ImGui::TreePop();
         }
-        
+
+        ImGui::AlignTextToFramePadding();
         if (ImGui::TreeNode("Textures"))
         {
+            ImGui::Indent(7);
             for (const auto& [name, texture] : *textures)
             {
                 if (std::count(engine->defaultResources.begin(), engine->defaultResources.end(), name) > 0)
                     continue;
                 
-                if (ImGui::Button(("Unload##Tex"+name).c_str()))
-                    texture->shouldDelete = true;
-                ImGui::SameLine();
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("%s", name.c_str());
+                ImGui::Selectable(name.c_str());
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::Button(("Unload##Tex"+name).c_str())) {
+                        texture->shouldDelete = true;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
             }
+            ImGui::Unindent(7);
             ImGui::TreePop();
         }
     }
