@@ -11,8 +11,8 @@ namespace Resources
 	{
 	private:
 		const char* filename;
-		std::vector<Maths::TestVertex> vertices;
-		std::vector<uint32_t>          indices;
+		std::vector<Maths::Vertex> vertices;
+		std::vector<uint32_t>      indices;
 		
 		VkBuffer       vkVertexBuffer       = nullptr;
 		VkDeviceMemory vkVertexBufferMemory = nullptr;
@@ -21,7 +21,7 @@ namespace Resources
 
 	public:
 		Mesh() = default;
-		Mesh(const char* _filename, std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices);
+		Mesh(const char* _filename, std::vector<Maths::Vertex> _vertices, std::vector<uint32_t> _indices);
 		Mesh(const char* _filename);
 		~Mesh();
 

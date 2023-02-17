@@ -4,6 +4,7 @@
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
+#include "Resources/Light.h"
 using namespace Core;
 using namespace Resources;
 using namespace Maths;
@@ -18,9 +19,11 @@ Engine::~Engine()
     for (const Model*   model   : models  ) delete model;
     for (const Mesh*    mesh    : meshes  ) delete mesh;
     for (const Texture* texture : textures) delete texture;
+    for (const Light*   light   : lights  ) delete light;
     models  .clear();
     meshes  .clear();
     textures.clear();
+    lights  .clear();
     delete camera;
 }
 

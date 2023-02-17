@@ -6,20 +6,42 @@ using namespace Maths;
 
 // ----- RGBA methods ----- //
 
-RGBA::RGBA()                                                                   { r = 0;     g = 0;     b = 0;     a = 1;  }
-RGBA::RGBA(const float& _r, const float& _g, const float& _b, const float& _a) { r = _r;    g = _g;    b = _b;    a = _a; }
-RGBA::RGBA(const RGB& rgb)                                                     { r = rgb.r; g = rgb.g; b = rgb.b; a = 1;  }
-RGB    RGBA::rgb() const { return RGB(*this); }
+RGBA::RGBA()                                                                   { r = 0;     g = 0;     b = 0;     a = 1;   }
+RGBA::RGBA(const float& all)                                                   { r = all;   g = all;   b = all;   a = all; }
+RGBA::RGBA(const float& _r, const float& _g, const float& _b, const float& _a) { r = _r;    g = _g;    b = _b;    a = _a;  }
+RGBA::RGBA(const RGB& rgb, const float& _a)                                    { r = rgb.r; g = rgb.g; b = rgb.b; a = _a;  }
+RGB    RGBA::toRGB() const { return RGB(*this); }
 float* RGBA::ptr()       { return &r; }
 
 
 // ----- RGB methods ----- //
 
 RGB::RGB()                                                  { r = 0;      g = 0;      b = 0;      }
+RGB::RGB(const float& all)                                  { r = all;    g = all;    b = all;    }
 RGB::RGB(const float& _r, const float& _g, const float& _b) { r = _r;     g = _g;     b = _b;     }
 RGB::RGB(const RGBA& rgba)                                  { r = rgba.r; g = rgba.g; b = rgba.b; }
-RGBA   RGB::rgba() const { return RGBA(*this); }
+RGBA   RGB::toRGBA() const { return RGBA(*this); }
 float* RGB::ptr ()       { return &r; }
+
+
+// ----- HSVA methods ----- //
+
+HSVA::HSVA()                                                                   { h = 0;     s = 0;     v = 0;     a = 0;   }
+HSVA::HSVA(const float& all)                                                   { h = all;   s = all;   v = all;   a = all; }
+HSVA::HSVA(const float& _h, const float& _s, const float& _v, const float& _a) { h = _h;    s = _s;    v = _v;    a = _a;  }
+HSVA::HSVA(const HSV& hsv, const float& _a)                                    { h = hsv.h; s = hsv.s; v = hsv.v; a = _a;  }
+HSV HSVA::toHSV() const { return HSV(*this); }
+float* HSVA::ptr() { return &h; }
+
+
+// ----- HSV methods ----- //
+
+HSV::HSV()                                                  { h = 0;      s = 0;      v = 0;      }
+HSV::HSV(const float& all)                                  { h = all;    s = all;    v = all;    }
+HSV::HSV(const float& _h, const float& _s, const float& _v) { h = _h;     s = _s;     v = _v;     }
+HSV::HSV(const HSVA& hsva)                                  { h = hsva.h; s = hsva.s; v = hsva.v; }
+HSVA HSV::toHSVA() const { return HSVA(*this); }
+float* HSV::ptr() { return &h; }
 
 
 // ----- Color arithmetics ----- //
@@ -75,82 +97,83 @@ HSV Maths::BlendHSV(const HSV& col0, const HSV& col1)
 }
 
 // Convert an RGB color (0 <= rgba <= 1) to HSV.
-HSV Maths::RGBAtoHSV(const RGBA& color)
+HSVA Maths::RGBAtoHSVA(const RGBA& rgba)
 {
-    HSV hsv = {};
+    HSVA hsva = {};
+    hsva.a = rgba.a;
 
-    const float minV = min(min(color.r, color.g), color.b);
-    const float maxV = max(max(color.r, color.g), color.b);
+    const float minV = min(min(rgba.r, rgba.g), rgba.b);
+    const float maxV = max(max(rgba.r, rgba.g), rgba.b);
     const float diff = maxV - minV;
 
-    const float r = color.r;
-    const float g = color.g;
-    const float b = color.b;
+    const float r = rgba.r;
+    const float g = rgba.g;
+    const float b = rgba.b;
 
     // Set Value.
-    hsv.v = maxV;
+    hsva.v = maxV;
 
     // If max and min are the same, return.
     if (diff < 0.00001f)
-        return { 0, 0, hsv.v };
+        return { 0, 0, hsva.v, hsva.a };
 
     // Set Saturation.
     if (maxV > 0)
-        hsv.s = diff / maxV;
+        hsva.s = diff / maxV;
     else
-        return { 0, 0, hsv.v };
+        return { 0, 0, hsva.v, hsva.a };
 
     // Set Hue.
     if (r >= maxV)
-        hsv.h = (g - b) / diff;
+        hsva.h = (g - b) / diff;
     else if (g >= maxV)
-        hsv.h = 2.0f + (b - r) / diff;
+        hsva.h = 2.0f + (b - r) / diff;
     else if (b >= maxV)
-        hsv.h = 4.0f + (r - g) / diff;
+        hsva.h = 4.0f + (r - g) / diff;
 
     // Keep Hue above 0.
-    if (hsv.h < 0)
-        hsv.h += 2 * PI;
+    if (hsva.h < 0)
+        hsva.h += 2 * PI;
 
-    return hsv;
+    return hsva;
 }
 
 // Convert an HSV color to RGB.
-RGBA Maths::HSVtoRGBA(const HSV& hsv, const float& alpha)
+RGBA Maths::HSVAtoRGBA(const HSVA& hsva)
 {
-    RGBA color = { 0, 0, 0, alpha };
+    RGBA rgba = { 0, 0, 0, hsva.a };
 
     // Red channel
-    float k = fmodf((5.0f + hsv.h), 6);
+    float k = fmodf((5.0f + hsva.h), 6);
     float t = 4.0f - k;
     k = (t < k) ? t : k;
     k = (k < 1) ? k : 1;
     k = (k > 0) ? k : 0;
-    color.r = hsv.v - hsv.v * hsv.s * k;
+    rgba.r = hsva.v - hsva.v * hsva.s * k;
 
     // Green channel
-    k = fmodf((3.0f + hsv.h), 6);
+    k = fmodf((3.0f + hsva.h), 6);
     t = 4.0f - k;
     k = (t < k) ? t : k;
     k = (k < 1) ? k : 1;
     k = (k > 0) ? k : 0;
-    color.g = hsv.v - hsv.v * hsv.s * k;
+    rgba.g = hsva.v - hsva.v * hsva.s * k;
 
     // Blue channel
-    k = fmodf((1.0f + hsv.h), 6);
+    k = fmodf((1.0f + hsva.h), 6);
     t = 4.0f - k;
     k = (t < k) ? t : k;
     k = (k < 1) ? k : 1;
     k = (k > 0) ? k : 0;
-    color.b = hsv.v - hsv.v * hsv.s * k;
+    rgba.b = hsva.v - hsva.v * hsva.s * k;
 
-    return color;
+    return rgba;
 }
 
 // Shifts the hue of the given color.
 RGBA Maths::ColorShift(const RGBA& color, const float& hue)
 {
-    HSV hsv = RGBAtoHSV(color);
+    HSV hsv = RGBAtoHSVA(color);
     
     hsv.h += hue;
     if (hsv.h >= 2 * PI)
@@ -158,5 +181,5 @@ RGBA Maths::ColorShift(const RGBA& color, const float& hue)
     else if (hsv.h < 0)
         hsv.h += 2 * PI;
     
-    return HSVtoRGBA(hsv);
+    return HSVAtoRGBA(hsv);
 }

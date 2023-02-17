@@ -1,10 +1,9 @@
 #include "Core/Application.h"
 #include "Resources/Model.h"
+#include "Resources/Camera.h"
 #include "Resources/Texture.h"
 #include <vulkan/vulkan.h>
 #include <array>
-
-#include "Resources/Camera.h"
 using namespace Core;
 using namespace VulkanUtils;
 using namespace Resources;
@@ -102,6 +101,8 @@ void Model::CreateDescriptorSets()
     // Populate the descriptor sets.
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
+          // TODO: Lights probably should be sent to GPU here.
+         
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = vkUniformBuffers[i];
         bufferInfo.offset = 0;

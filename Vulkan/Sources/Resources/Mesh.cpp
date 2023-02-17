@@ -8,7 +8,7 @@
 using namespace Core;
 using namespace Resources;
 
-Mesh::Mesh(const char* _filename, std::vector<Maths::TestVertex> _vertices, std::vector<uint32_t> _indices)
+Mesh::Mesh(const char* _filename, std::vector<Maths::Vertex> _vertices, std::vector<uint32_t> _indices)
     : filename(_filename), vertices(std::move(_vertices)), indices(std::move(_indices))
 {
     CreateVertexBuffer();
@@ -27,12 +27,12 @@ Mesh::Mesh(const char* _filename)
         throw std::runtime_error("OBJ_LOAD_ERROR");
     }
 
-    std::unordered_map<Maths::TestVertex, uint32_t> uniqueVertices{};
+    std::unordered_map<Maths::Vertex, uint32_t> uniqueVertices{};
     for (const auto& shape : shapes)
     {
         for (const auto& index : shape.mesh.indices)
         {
-            Maths::TestVertex vertex{};
+            Maths::Vertex vertex{};
 
             vertex.pos = {
                 attrib.vertices[3 * index.vertex_index + 0],
@@ -40,12 +40,16 @@ Mesh::Mesh(const char* _filename)
                 attrib.vertices[3 * index.vertex_index + 2]
             };
 
-            vertex.texCoord = {
+            vertex.uv = {
                 attrib.texcoords[2 * index.texcoord_index + 0],
                 1.f - attrib.texcoords[2 * index.texcoord_index + 1]
             };
 
-            vertex.color = { 1.f, 1.f, 1.f };
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2]
+            };
 
             if (uniqueVertices.count(vertex) == 0) {
                 uniqueVertices[vertex] = (uint32_t)vertices.size();
