@@ -3,6 +3,7 @@
 namespace Maths
 {
     class RGB;
+    class HSV;
 
     // RGBA color values between 0 and 1.
     class RGBA
@@ -11,9 +12,10 @@ namespace Maths
         float r, g, b, a = 1;
 
         RGBA();
+        RGBA(const float& all);
         RGBA(const float& _r, const float& _g, const float& _b, const float& _a);
-        RGBA(const RGB& rgb);
-        RGB rgb() const;
+        RGBA(const RGB& rgb, const float& _a = 1);
+        RGB toRGB() const;
         float* ptr();
 
         RGBA operator+ (const RGBA& c)  const { return { r + c.r,    g + c.g ,   b + c.b,    a + c.a }; }
@@ -43,14 +45,40 @@ namespace Maths
         float r, g, b; 
 
         RGB();
+        RGB(const float& all);
         RGB(const float& _r, const float& _g, const float& _b);
         RGB(const RGBA& rgba);
-        RGBA rgba() const;
+        RGBA toRGBA() const;
         float* ptr();
     };
+    
+    // HSVA color values (h in rad, sva between 0 and 1).
+    class HSVA
+    {
+    public:
+        float h, s, v, a;
 
+        HSVA();
+        HSVA(const float& all);
+        HSVA(const float& _h, const float& _s, const float& _v, const float& _a);
+        HSVA(const HSV& hsv, const float& _a = 1);
+        HSV toHSV() const;
+        float* ptr();
+    };
+    
     // HSV color values (h in rad, sv between 0 and 1).
-    struct HSV { float h, s, v; } ;
+    class HSV
+    {
+    public:
+        float h, s, v;
+
+        HSV();
+        HSV(const float& all);
+        HSV(const float& _h, const float& _s, const float& _v);
+        HSV(const HSVA& hsva);
+        HSVA toHSVA() const;
+        float* ptr();
+    };
 
 
     // -- Color Methods -- //
@@ -58,7 +86,7 @@ namespace Maths
     float ColorGetHue(const RGBA& rgb);                                      // Returns the given RGB color's hue.
     RGBA  ColorLerp  (const float& val, const RGBA& start, const RGBA& end); // Linear interpolation between two given colors.
     HSV   BlendHSV   (const HSV& col0, const HSV& col1);                     // Blend between two HSV colors.
-    HSV   RGBAtoHSV  (const RGBA& color);                                    // Convert an RGBA color (0 <= rgba <= 1) to HSV.
-    RGBA  HSVtoRGBA  (const HSV& hsv, const float& alpha = 1);               // Convert an HSV color to RGBA.
+    HSVA  RGBAtoHSVA (const RGBA& color);                                    // Convert an RGBA color (0 <= rgba <= 1) to HSVA.
+    RGBA  HSVAtoRGBA (const HSVA& hsva);                                     // Convert an HSVA color to RGBA.
     RGBA  ColorShift (const RGBA& color, const float& hue);                  // Shifts the hue of the given color.
 }

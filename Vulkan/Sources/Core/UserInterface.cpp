@@ -90,7 +90,7 @@ void UserInterface::InitImGui() const
     initInfo.PipelineCache   = VK_NULL_HANDLE;
     initInfo.DescriptorPool  = vkDescriptorPool;
     initInfo.Subpass         = 0;
-    initInfo.MinImageCount   = renderer->GetVkSwapchainImageCount()-1;
+    initInfo.MinImageCount   = renderer->GetVkSwapchainImageCount();
     initInfo.ImageCount      = renderer->GetVkSwapchainImageCount();
     initInfo.MSAASamples     = renderer->GetMsaaSamples();
     initInfo.Allocator       = nullptr;

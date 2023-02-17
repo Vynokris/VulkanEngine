@@ -21,7 +21,7 @@ static VkVertexInputBindingDescription GetBindingDescription()
 {
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding   = 0;
-    bindingDescription.stride    = sizeof(Maths::TestVertex);
+    bindingDescription.stride    = sizeof(Maths::Vertex);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return bindingDescription;
@@ -33,17 +33,17 @@ static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions
     attributeDescriptions[0].binding  = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset   = offsetof(Maths::TestVertex, pos);
+    attributeDescriptions[0].offset   = offsetof(Maths::Vertex, pos);
     
     attributeDescriptions[1].binding  = 0;
     attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset   = offsetof(Maths::TestVertex, color);
+    attributeDescriptions[1].format   = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset   = offsetof(Maths::Vertex, uv);
 
     attributeDescriptions[2].binding  = 0;
     attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format   = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset   = offsetof(Maths::TestVertex, texCoord);
+    attributeDescriptions[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[2].offset   = offsetof(Maths::Vertex, normal);
 
     return attributeDescriptions;
 }

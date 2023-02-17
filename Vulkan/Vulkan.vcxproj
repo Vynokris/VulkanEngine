@@ -67,6 +67,7 @@
     <ClInclude Include="Includes\Maths\Vector4.h" />
     <ClInclude Include="Includes\Maths\Vertex.h" />
     <ClInclude Include="Includes\Resources\Camera.h" />
+    <ClInclude Include="Includes\Resources\Light.h" />
     <ClInclude Include="Includes\Resources\Mesh.h" />
     <ClInclude Include="Includes\Resources\Model.h" />
     <ClInclude Include="Includes\Resources\Shader.h" />

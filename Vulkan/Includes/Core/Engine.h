@@ -1,12 +1,15 @@
 #pragma once
 #include <vector>
 
+constexpr unsigned int MAX_LIGHT_COUNT = 20;
+
 namespace Resources
 {
 	class Camera;
 	class Model;
 	class Mesh;
 	class Texture;
+	class Light;
 }
 
 namespace Core
@@ -23,6 +26,7 @@ namespace Core
 		std::vector<Resources::Model*>   models;
 		std::vector<Resources::Mesh*>    meshes;
 		std::vector<Resources::Texture*> textures;
+		std::vector<Resources::Light*>   lights;
 		size_t vertexCount = 0;
 
 	public:
