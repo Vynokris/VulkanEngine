@@ -49,8 +49,9 @@ namespace Core
 		void SaveScene(const std::string& filename) const;
 		void QueueSceneLoad(const std::string& filename) { sceneToLoad = filename; }
 		
-		void   ResizeCamera(const int& width, const int& height) const;
-		void   UpdateVertexCount();
+		void ResizeCamera(const int& width, const int& height) const;
+		void UpdateVertexCount();
+		
 		std::string GetSceneName()   const { return sceneName; }
 		size_t      GetVertexCount() const { return vertexCount; }
 

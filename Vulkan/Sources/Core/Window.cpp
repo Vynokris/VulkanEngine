@@ -1,5 +1,8 @@
 ﻿#include "Core/Application.h"
 #include "Core/Window.h"
+
+#include <imgui.h>
+
 #include "GLFW/glfw3.h"
 #include <iostream>
 using namespace Core;
@@ -144,6 +147,14 @@ void Window::UpdateInputs()
     // Close the window if the exit key was pressed.
     if (inputKeys.exit > 0 && glfwGetKey(glfwWindow, inputKeys.exit) == GLFW_PRESS)
         Close();
+
+    // Disable inputs if ImGui wants to use them.
+    const ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+    {
+        inputs = WindowInputs();
+        return;
+    }
     
     // Get movement inputs.
     inputs.dirMovement = {};
