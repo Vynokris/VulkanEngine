@@ -16,7 +16,6 @@ using namespace Core;
 using namespace VulkanUtils;
 
 
-// TODO: Temporary.
 static VkVertexInputBindingDescription GetBindingDescription()
 {
     VkVertexInputBindingDescription bindingDescription{};
@@ -47,7 +46,6 @@ static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions
 
     return attributeDescriptions;
 }
-// End temporary.
 
 
 Renderer::Renderer(const char* appName, const char* engineName)
@@ -112,7 +110,7 @@ void Renderer::BeginRender()
 void Renderer::DrawModel(const Resources::Model* model, const Resources::Camera* camera) const
 {
     // Issue the command to draw the model.
-    model->UpdateUniformBuffer(camera, currentFrame);
+    model->UpdateMvpBuffer(camera, currentFrame);
     BindMeshBuffers(model->GetMesh()->GetVkVertexBuffer(), model->GetMesh()->GetVkIndexBuffer());
     vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &model->GetDescriptorSet(currentFrame), 0, nullptr);
     vkCmdDrawIndexed(vkCommandBuffers[currentFrame], model->GetMesh()->GetIndexCount(), 1, 0, 0, 0);
@@ -458,13 +456,13 @@ void Renderer::CreateRenderPass()
 
 void Renderer::CreateDescriptorSetLayout()
 {
-    // Set the binding of the uniform buffer object.
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding            = 0;
-    uboLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount    = 1;
-    uboLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional.
+    // Set the binding of the mvp buffer object.
+    VkDescriptorSetLayoutBinding mvpLayoutBinding{};
+    mvpLayoutBinding.binding            = 0;
+    mvpLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    mvpLayoutBinding.descriptorCount    = 1;
+    mvpLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+    mvpLayoutBinding.pImmutableSamplers = nullptr; // Optional.
 
     // Set the binding for the texture sampler.
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
@@ -475,7 +473,7 @@ void Renderer::CreateDescriptorSetLayout()
     samplerLayoutBinding.stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     // Create the descriptor set layout.
-    const std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+    const std::array<VkDescriptorSetLayoutBinding, 2> bindings = { mvpLayoutBinding, samplerLayoutBinding };
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = (uint32_t)bindings.size();

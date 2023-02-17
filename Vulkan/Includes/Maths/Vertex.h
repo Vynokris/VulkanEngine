@@ -1,6 +1,7 @@
 #pragma once
 #include "Vector3.h"
 #include "Vector2.h"
+#include "Matrix.h"
 
 namespace Maths
 {
@@ -44,6 +45,13 @@ namespace Maths
         uint32_t pos;
         uint32_t uv;
         uint32_t normal;
+    };
+
+    // Holds model, view and projection matrices.
+    struct MvpBuffer {
+        Mat4 model;
+        Mat4 view;
+        Mat4 proj;
     };
 }
 
