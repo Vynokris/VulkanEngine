@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <cstdint>
+#include <string>
 
 typedef struct VkImage_T*        VkImage;
 typedef struct VkDeviceMemory_T* VkDeviceMemory;
@@ -16,7 +17,7 @@ namespace Resources
     class Texture
     {
     private:
-        const char* filename  = "";
+        std::string name;
         int         width     = 0;
         int         height    = 0;
         int         channels  = 0;
@@ -29,16 +30,16 @@ namespace Resources
         
     public:
         Texture() = default;
-        Texture(const char* name);
+        Texture(std::string filename);
         Texture(const int& width, const int& height);
         
         ~Texture();
 
-        const char* GetFilename()    const { return filename; }
-        int         GetWidth ()      const { return width; }
-        int         GetHeight()      const { return height; }
-        uint32_t    GetMipLevels()   const { return mipLevels; }
-        VkImageView GetVkImageView() const { return vkImageView; }
+        std::string  GetName()        const { return name; }
+        int          GetWidth ()      const { return width; }
+        int          GetHeight()      const { return height; }
+        uint32_t     GetMipLevels()   const { return mipLevels; }
+        VkImageView  GetVkImageView() const { return vkImageView; }
         
     private:
         void GenerateMipmaps() const;

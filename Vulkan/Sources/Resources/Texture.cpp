@@ -7,13 +7,13 @@
 using namespace Core;
 using namespace Resources;
 
-Texture::Texture(const char* name)
+Texture::Texture(std::string filename)
+    : name(std::move(filename))
 {
-    filename = name;
     vkImageFormat = VK_FORMAT_R8G8B8A8_SRGB;
     
     // Load the texture data.
-    stbi_uc* pixels = stbi_load(name, &width, &height, &channels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(name.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     const VkDeviceSize imageSize = width * height * 4;
     if (!pixels) {
         std::cout << "WARNING (STBI): Unable to load texture " << name << std::endl;

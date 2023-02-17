@@ -2,16 +2,18 @@
 #include "Resources/Model.h"
 #include "Resources/Camera.h"
 #include "Resources/Texture.h"
+#include "Maths/Vertex.h"
 #include <vulkan/vulkan.h>
 #include <array>
 using namespace Core;
 using namespace VulkanUtils;
 using namespace Resources;
+using namespace Maths;
 
-Model::Model(const char* _name, Mesh* _mesh, Texture* _texture, Maths::Transform _transform)
-     : name(_name), mesh(_mesh), texture(_texture), transform(std::move(_transform))
+Model::Model(std::string _name, Mesh* _mesh, Texture* _texture, Maths::Transform _transform)
+     : name(std::move(_name)), mesh(_mesh), texture(_texture), transform(std::move(_transform))
 {
-     CreateUniformBuffers();
+     CreateMvpBuffers();
      CreateDescriptorPool();
      CreateDescriptorSets();
 }
@@ -21,20 +23,20 @@ Model::~Model()
      const VkDevice vkDevice = Application::Get()->GetRenderer()->GetVkDevice();
      
      for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-          vkDestroyBuffer(vkDevice, vkUniformBuffers[i],       nullptr);
-          vkFreeMemory   (vkDevice, vkUniformBuffersMemory[i], nullptr);
+          vkDestroyBuffer(vkDevice, vkMvpBuffers[i],       nullptr);
+          vkFreeMemory   (vkDevice, vkMvpBuffersMemory[i], nullptr);
      }
      vkDestroyDescriptorPool(vkDevice, vkDescriptorPool, nullptr);
 }
 
-void Model::UpdateUniformBuffer(const Camera* camera, const uint32_t& currentFrame) const
+void Model::UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const
 {
      // Copy the matrices to buffer memory.
-     const UniformBufferObject ubo = { transform.GetLocalMat(), camera->GetViewMat(), camera->GetProjMat() };
-     memcpy(vkUniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+     const MvpBuffer mvp = { transform.GetLocalMat(), camera->GetViewMat(), camera->GetProjMat() };
+     memcpy(vkMvpBuffersMapped[currentFrame], &mvp, sizeof(mvp));
 }
 
-void Model::CreateUniformBuffers()
+void Model::CreateMvpBuffers()
 {
      // Get necessary vulkan variables.
      const Renderer*        renderer         = Application::Get()->GetRenderer();
@@ -42,19 +44,19 @@ void Model::CreateUniformBuffers()
      const VkPhysicalDevice vkPhysicalDevice = renderer->GetVkPhysicalDevice();
 
      // Find the size of the buffers and resize the buffer arrays.
-     const VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-     vkUniformBuffers      .resize(MAX_FRAMES_IN_FLIGHT);
-     vkUniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-     vkUniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+     const VkDeviceSize bufferSize = sizeof(MvpBuffer);
+     vkMvpBuffers      .resize(MAX_FRAMES_IN_FLIGHT);
+     vkMvpBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+     vkMvpBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
      // Create the buffers.
      for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
      {
           CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                       vkUniformBuffers[i], vkUniformBuffersMemory[i]);
+                       vkMvpBuffers[i], vkMvpBuffersMemory[i]);
 
-          vkMapMemory(vkDevice, vkUniformBuffersMemory[i], 0, bufferSize, 0, &vkUniformBuffersMapped[i]);
+          vkMapMemory(vkDevice, vkMvpBuffersMemory[i], 0, bufferSize, 0, &vkMvpBuffersMapped[i]);
      }
 }
 
@@ -101,12 +103,10 @@ void Model::CreateDescriptorSets()
     // Populate the descriptor sets.
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-          // TODO: Lights probably should be sent to GPU here.
-         
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = vkUniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range  = sizeof(UniformBufferObject);
+        VkDescriptorBufferInfo mvpBufferInfo{};
+        mvpBufferInfo.buffer = vkMvpBuffers[i];
+        mvpBufferInfo.offset = 0;
+        mvpBufferInfo.range  = sizeof(MvpBuffer);
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -120,7 +120,7 @@ void Model::CreateDescriptorSets()
         descriptorWrites[0].dstArrayElement  = 0;
         descriptorWrites[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrites[0].descriptorCount  = 1;
-        descriptorWrites[0].pBufferInfo      = &bufferInfo;
+        descriptorWrites[0].pBufferInfo      = &mvpBufferInfo;
 
         descriptorWrites[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[1].dstSet          = vkDescriptorSets[i];

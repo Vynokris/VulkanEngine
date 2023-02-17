@@ -1,7 +1,6 @@
 ﻿#include "Core/Application.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <chrono>
 using namespace Core;
 
 Application* Application::Create()
@@ -39,7 +38,7 @@ void Application::Run() const
 {
     if (!instance || !window)
         return;
-
+    
     engine->Start();
     while(!window->ShouldClose())
     {

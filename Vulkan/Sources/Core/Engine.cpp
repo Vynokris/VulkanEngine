@@ -4,7 +4,8 @@
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
-#include "Resources/Light.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 using namespace Core;
 using namespace Resources;
 using namespace Maths;
@@ -19,11 +20,9 @@ Engine::~Engine()
     for (const Model*   model   : models  ) delete model;
     for (const Mesh*    mesh    : meshes  ) delete mesh;
     for (const Texture* texture : textures) delete texture;
-    for (const Light*   light   : lights  ) delete light;
     models  .clear();
     meshes  .clear();
     textures.clear();
-    lights  .clear();
     delete camera;
 }
 
@@ -68,7 +67,6 @@ void Engine::Start() const
     }
 
     // Set model transforms.
-    models[0]->transform.Move({  0,    0, 0 });
     models[1]->transform.Move({ -1.5f, 0, 0 });
     models[2]->transform.Move({ -1.5f, 0, 0 });
     models[3]->transform.Move({  1.5f, 0, 0 });
@@ -111,6 +109,21 @@ void Engine::Render(const Renderer* renderer) const
 {
     for (const Model* model : models)
         renderer->DrawModel(model, camera);
+}
+
+void Engine::LoadFile(const std::string& filename)
+{
+    const fs::path    path = fs::relative(filename);
+    const std::string extension = path.extension().string();
+    if (extension == ".obj")
+    {
+        meshes.push_back(new Mesh(path.string()));
+    }
+    if (extension == ".jpg" ||
+        extension == ".png")
+    {
+        textures.push_back(new Texture(path.string()));
+    }
 }
 
 void Engine::ResizeCamera(const int& width, const int& height) const

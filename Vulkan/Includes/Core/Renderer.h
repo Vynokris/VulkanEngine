@@ -1,20 +1,11 @@
 ﻿#pragma once
 #include "VulkanUtils.h"
-#include "Maths/Matrix.h"
 
 namespace Resources
 {
     class Camera;
     class Model;
 }
-
-// TODO: Temporary.
-struct UniformBufferObject {
-    Maths::Mat4 model;
-    Maths::Mat4 view;
-    Maths::Mat4 proj;
-};
-// End temporary.
 
 namespace Core
 {

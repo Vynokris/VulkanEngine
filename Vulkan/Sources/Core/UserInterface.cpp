@@ -74,6 +74,7 @@ void UserInterface::InitImGui() const
     const Renderer* renderer = app->GetRenderer();
     
     // Create ImGui context.
+    IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGuiIO& io = ImGui::GetIO();
@@ -105,9 +106,7 @@ void UserInterface::UploadImGuiFonts() const
     const VkDevice        vkDevice        = renderer->GetVkDevice();
     const VkCommandPool   vkCommandPool   = renderer->GetVkCommandPool();
     const VkCommandBuffer vkCommandBuffer = VulkanUtils::BeginSingleTimeCommands(vkDevice, vkCommandPool);
-
     ImGui_ImplVulkan_CreateFontsTexture(vkCommandBuffer);
-
     VulkanUtils::EndSingleTimeCommands(vkDevice, vkCommandPool, renderer->GetVkGraphicsQueue(), vkCommandBuffer);
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
@@ -182,7 +181,7 @@ void UserInterface::ShowSceneWindow() const
             }
             for (Model* model : *models)
             {
-                if (ImGui::TreeNode(model->GetName()))
+                if (ImGui::TreeNode(model->GetName().c_str()))
                 {
                     ShowTransformUi(model->transform);
                     if (ImGui::Button("Remove"))
@@ -213,7 +212,7 @@ void UserInterface::ShowLoaderWindow() const
                 ImGui::InputText("##FilenameInput", &filename);
                 ImGui::SameLine();
                 if (ImGui::Button("Load")) {
-                    textures->push_back(new Texture(filename.c_str()));
+                    textures->push_back(new Texture(filename));
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();
@@ -231,7 +230,7 @@ void UserInterface::ShowLoaderWindow() const
                 ImGui::InputText("##FilenameInput", &filename);
                 ImGui::SameLine();
                 if (ImGui::Button("Load")) {
-                    meshes->push_back(new Mesh(filename.c_str()));
+                    meshes->push_back(new Mesh(filename));
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();
@@ -246,10 +245,10 @@ void UserInterface::ShowLoaderWindow() const
                 ImGui::InputText("Model name", &name);
                 
                 static size_t meshIdx = 0;
-                if (ImGui::BeginCombo("Mesh", (*meshes)[meshIdx]->GetFilename())) {
+                if (ImGui::BeginCombo("Mesh", (*meshes)[meshIdx]->GetName().c_str())) {
                     for (size_t i = 0; i < meshes->size(); i++) {
                         const bool isSelected = (meshIdx == i);
-                        if (ImGui::Selectable((*meshes)[i]->GetFilename(), isSelected))
+                        if (ImGui::Selectable((*meshes)[i]->GetName().c_str(), isSelected))
                             meshIdx = i;
                         if (isSelected)
                             ImGui::SetItemDefaultFocus();
@@ -258,10 +257,10 @@ void UserInterface::ShowLoaderWindow() const
                 }
                 
                 static size_t texIdx = 0;
-                if (ImGui::BeginCombo("Texture", (*textures)[texIdx]->GetFilename())) {
+                if (ImGui::BeginCombo("Texture", (*textures)[texIdx]->GetName().c_str())) {
                     for (size_t i = 0; i < textures->size(); i++) {
                         const bool isSelected = (texIdx == i);
-                        if (ImGui::Selectable((*textures)[i]->GetFilename(), isSelected))
+                        if (ImGui::Selectable((*textures)[i]->GetName().c_str(), isSelected))
                             texIdx = i;
                         if (isSelected)
                             ImGui::SetItemDefaultFocus();

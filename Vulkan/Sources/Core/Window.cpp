@@ -55,13 +55,24 @@ Window::Window(const WindowParams& windowParams)
         }
 
         const Application* app = Application::Get();
-        app->GetRenderer()->ResizeSwapChain();
-        app->GetEngine()->ResizeCamera(window->params.width, window->params.height);
+        if (app)
+        {
+            app->GetRenderer()->ResizeSwapChain();
+            app->GetEngine()->ResizeCamera(window->params.width, window->params.height);
+        }
     });
     glfwSetWindowPosCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _posX, int _posY)
     {
         Window* window = (Window*)glfwGetWindowUserPointer(_glfwWindow);
         window->params.posX = _posX; window->params.posY = _posY;
+    });
+    glfwSetDropCallback(glfwWindow, [](GLFWwindow* window, int count, const char** paths)
+    {
+        if (const Application* app = Application::Get()) {
+            for (int i = 0; i < count; i++) {
+                app->GetEngine()->LoadFile(paths[i]);
+            }
+        }
     });
 
     // Initialize the time points.
