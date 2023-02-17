@@ -1,0 +1,24 @@
+a Resources\Textures\VikingRoom.png
+a Resources\Textures\Banana.png
+a Resources\Textures\ItemBox.png
+a Resources\Textures\Rico.png
+a Resources\Meshes\Rico.obj
+a Resources\Meshes\VikingRoom.obj
+a Resources\Meshes\Banana.obj
+a Resources\Meshes\ItemBox.obj
+o VikingRoom Resources\Meshes\VikingRoom.obj Resources\Textures\VikingRoom.png
+t VikingRoom 0 0 0
+r VikingRoom 0 1 0 0
+s VikingRoom 0.7 0.7 0.7
+o Banana Resources\Meshes\Banana.obj Resources\Textures\Banana.png
+t Banana -1.5 0 0
+r Banana 0 1 0 0
+s Banana 0.54 0.54 0.54
+o ItemBox Resources\Meshes\ItemBox.obj Resources\Textures\ItemBox.png
+t ItemBox -1.5 0 0
+r ItemBox 0 1 0 0
+s ItemBox 0.7 0.7 0.7
+o Rico Resources\Meshes\Rico.obj Resources\Textures\Rico.png
+t Rico 1.5 0 0
+r Rico 0 1 0 0
+s Rico 0.7 0.7 0.7

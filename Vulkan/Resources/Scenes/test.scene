@@ -1,0 +1,6 @@
+a Resources\Textures\Banana.png
+a Resources\Meshes\Banana.obj
+o Banana Resources\Meshes\Banana.obj Resources\Textures\Banana.png
+t Banana 0 0 0
+r Banana 0 1 0 0
+s Banana 1 1 1

@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <unordered_map>
+#include <string>
 #include <vector>
 
 typedef struct VkDescriptorPool_T*      VkDescriptorPool;
@@ -23,24 +25,26 @@ namespace Resources
 namespace Core
 {
     class Application;
+    class Engine;
     
     class UserInterface
     {
     private:
-        Application*     app;
+        Application*     app              = nullptr;
+        Engine*          engine           = nullptr;
         VkDescriptorPool vkDescriptorPool = nullptr;
 
         // Pointers to engine resources.
         Resources::Camera*                camera   = nullptr;
-        std::vector<Resources::Model*>*   models   = nullptr;
-        std::vector<Resources::Mesh*>*    meshes   = nullptr;
-        std::vector<Resources::Texture*>* textures = nullptr;
+        std::unordered_map<std::string, Resources::Model*>*   models   = nullptr;
+        std::unordered_map<std::string, Resources::Mesh*>*    meshes   = nullptr;
+        std::unordered_map<std::string, Resources::Texture*>* textures = nullptr;
         
     public:
         UserInterface();
         ~UserInterface();
 
-        void SetResourceRefs(Resources::Camera* _camera, std::vector<Resources::Model*>* _models, std::vector<Resources::Mesh*>* _meshes, std::vector<Resources::Texture*>* _textures);
+        void SetResourceRefs(Resources::Camera* _camera, std::unordered_map<std::string, Resources::Model*>* _models, std::unordered_map<std::string, Resources::Mesh*>* _meshes, std::unordered_map<std::string, Resources::Texture*>* _textures);
         void Render() const;
 
     private:
@@ -50,9 +54,9 @@ namespace Core
         
         void ShowTransformUi(Maths::Transform& transform) const;
 
-        void ShowStatsWindow()  const;
-        void ShowSceneWindow()  const;
-        void ShowLoaderWindow() const;
+        void ShowStatsWindow()     const;
+        void ShowSceneWindow()     const;
+        void ShowResourcesWindow() const;
         
         void NewFrame()    const;
         void RenderFrame() const;

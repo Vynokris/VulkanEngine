@@ -34,7 +34,7 @@ namespace Resources
 		~Model();
 
 		void UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const;
-
+		
 		std::string GetName   () const { return name;    }
 		Mesh*       GetMesh   () const { return mesh;    }
 		Texture*    GetTexture() const { return texture; }
