@@ -2,7 +2,9 @@
 
 namespace Maths
 {
-    // Rounds the given value to the nearest int.
+    // - Arithmetic fuctions - //
+    
+    // Rounds the given value to the nearest integer.
     int roundInt(const float& val);
 
     // Rounds down the given value.
@@ -39,7 +41,7 @@ namespace Maths
     float getLerp(const float& start, const float& dest, const float& val);
 
     // Remaps the given value from one range to another.
-    float remap(const float& val, const float& inputStart, const float& inputEnd, const float& outputStart, const float& outputEnd);
+    float remap(const float& inputStart, const float& inputEnd, const float& outputStart, const float& outputEnd, const float& val);
 
     // Returns true if the given number is a power of 2.
     bool isPowerOf2(const int& val);

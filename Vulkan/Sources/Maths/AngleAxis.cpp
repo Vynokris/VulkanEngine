@@ -19,9 +19,10 @@ AngleAxis AngleAxis::FromMatrix    (const Mat4&       matrix    ) { return matri
 
 Quaternion AngleAxis::ToQuaternion() const
 {
-    const Vector3 nAxis = axis.GetNormalized();
-    const float sinTemp = sin(angle*0.5f);
-    return { cos(angle*0.5f), sinTemp*nAxis.x, sinTemp*nAxis.y, sinTemp*nAxis.z };
+    const Vector3 nAxis        = axis.GetNormalized();
+    const float   halfAngle    = angle * 0.5f;
+    const float   sinHalfAngle = sin(halfAngle);
+    return { cos(halfAngle), sinHalfAngle*nAxis.x, sinHalfAngle*nAxis.y, sinHalfAngle*nAxis.z };
 }
 
 Mat4 AngleAxis::ToMatrix() const

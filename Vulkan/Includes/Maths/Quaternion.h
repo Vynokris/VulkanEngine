@@ -6,14 +6,12 @@ namespace Maths
     class AngleAxis;
     typedef Matrix<4, 4> Mat4;
 
-    // Quaternion class that holds values for w, x, y and z (4 dimensions of rotation).
+    // - Quaternion: used for rotation in 4 dimensions - //
 	class Quaternion
 	{
 	public:
-		float w;
-		float x;
-		float y;
-		float z;
+		// -- Attributes -- //
+		float w, x, y, z; // Quaternion components.
         
         // -- Constructors -- //
 		Quaternion();                                                               // Null quaternion.
@@ -43,35 +41,33 @@ namespace Maths
         template <typename T> void       operator-=(const T& val);
         template <typename T> void       operator*=(const T& val);
 		template <typename T> void       operator/=(const T& val);
-							  float      Dot       (const Quaternion& q) const;
+							  float      Dot       (const Quaternion& q) const; // Computes dot product with another quaternion.
         
-        // -- Methods -- //
-        
-        // Returns the absolute value of the quaternion.
-        float GetModulus() const;
+        // -- Modulus -- //
+        float GetModulus() const; // Returns the absolute value of the quaternion.
 
-		// Normalization.
+		// -- Normalization -- //
         void       Normalize();           // Normalizes this quaternion so that its modulus is 1.
         Quaternion GetNormalized() const; // Returns a normalized copy of the quaternion.
 
-		// Conjugation.
+		// -- Conjugation -- //
         void       Conjugate();          // Conjugates the quaternion by inverting the sign of its x, y and z values.
         Quaternion GetConjugate() const; // Returns the conjugate of the quaternion.
 
-		// Inversion.
+		// -- Inversion -- //
         void       Inverse();          // Inverses the quaternion.
         Quaternion GetInverse() const; // Returns the inverse of the quaternion.
 
-		// Rotation.
-        Quaternion RotateQuat(const Quaternion& q) const; // Applies this quaternion's rotation to the given quaternion.
-        Vector3    RotateVec (const Vector3&    v) const; // Applies this quaternion's rotation to the given 3D vector.
+		// -- Rotation -- //
+        Quaternion RotateQuat(const Quaternion& q) const; // Applies this quaternion's rotation to the given quaternion and returns it.
+        Vector3    RotateVec (const Vector3&    v) const; // Applies this quaternion's rotation to the given 3D vector and returns it.
 
-		// Interpolation.
+		// -- Interpolation -- //
 		static Quaternion Lerp (const Quaternion& start, const Quaternion& dest, const float& val);                                     // Interpolates between start and dest without normalizing the output.
 		static Quaternion NLerp(const Quaternion& start, const Quaternion& dest, const float& val);                                     // Normalized interpolation of start and dest.
 		static Quaternion SLerp(const Quaternion& start, const Quaternion& dest, const float& val, const bool& useShortestPath = true); // Spherical interpolation of start and dest.
 
-		// Conversion.
+		// -- Conversions -- //
         AngleAxis   ToAngleAxis()                      const; // Returns the angle-axis rotation that corresponds to this quaternion.
         Mat4        ToMatrix()                         const; // Returns the rotation matrix that corresponds to this quaternion.
 		Vector3     ToEuler ()                         const; // Returns the euler angles that correspond to this quaternion.

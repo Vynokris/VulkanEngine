@@ -233,6 +233,9 @@ void Renderer::PickPhysicalDevice()
         if (IsDeviceSuitable(device, vkSurface)) {
             vkPhysicalDevice = device;
             msaaSamples = GetMaxUsableSampleCount(vkPhysicalDevice);
+            VkPhysicalDeviceProperties properties;
+            vkGetPhysicalDeviceProperties(device, &properties);
+            std::cout << "Using GPU: " << properties.deviceName << std::endl;
             break;
         }
     }

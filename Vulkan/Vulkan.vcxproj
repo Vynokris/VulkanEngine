@@ -36,6 +36,7 @@
     <ClCompile Include="Sources\Maths\AngleAxis.cpp" />
     <ClCompile Include="Sources\Maths\Arithmetic.cpp" />
     <ClCompile Include="Sources\Maths\Color.cpp" />
+    <ClCompile Include="Sources\Maths\Matrix.cpp" />
     <ClCompile Include="Sources\Maths\Quaternion.cpp" />
     <ClCompile Include="Sources\Maths\Transform.cpp" />
     <ClCompile Include="Sources\Maths\Vector2.cpp" />

@@ -1,4 +1,5 @@
 #include "Vector4.h"
+#include "Matrix.h"
 
 // Vector4 equality.
 template <typename T>
