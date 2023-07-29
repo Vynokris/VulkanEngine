@@ -5,6 +5,7 @@ using namespace Maths;
 
 // Constructors.
 Vector2::Vector2() : x(0), y(0) {}; // Null vector.
+Vector2::Vector2(const float& all) : x(all), y(all) {}; // Vector with equal coordinates.
 Vector2::Vector2(const float& _x, const float& _y) : x(_x), y(_y) {}; // Vector with 2 coordinates.
 Vector2::Vector2(const Vector2& p1, const Vector2& p2) : x(p2.x - p1.x), y(p2.y - p1.y) {}; // Vector from 2 points.
 Vector2::Vector2(const float& rad, const float& length, const bool& isAngle) : x(cos(rad)* length), y(sin(rad)* length) {}; // Vector from angle (useless bool).
@@ -23,8 +24,10 @@ float Vector2::Cross(const Vector2& v) const { return (x * v.y) - (y * v.x); }
 // ------------ VECTOR2 METHODS ----------- //
 
 // Length.
-float Vector2::GetLength()              const { return sqrt(sqpow(x) + sqpow(y)); }
-void  Vector2::SetLength(const float& length) { Normalize(); *this *= length; }
+float   Vector2::GetLength  () const { return sqrt(GetLengthSq()); }
+float   Vector2::GetLengthSq() const { return sqpow(x) + sqpow(y); }
+void    Vector2::SetLength        (const float& length)       { *this = GetModifiedLength(length); }
+Vector2 Vector2::GetModifiedLength(const float& length) const { return  GetNormalized() * length;  }
 
 // Normalization.
 void    Vector2::Normalize    ()       { x /= GetLength(); y /= GetLength(); }
@@ -45,12 +48,16 @@ Vector2 Vector2::GetNormal() const { return Vector2(-y, x); }
 float Vector2::GetDistanceFromPoint(const Vector2& p) const { return Vector2(*this, p).GetLength(); }
 
 // Angle.
-float Vector2::GetAngle() const { return std::copysign(std::acos(GetNormalized().x), std::asin(GetNormalized().y)); }
-float Vector2::GetAngleWithVector2(const Vector2& v)  const
+float Vector2::GetAngle() const { const Vector2 n = GetNormalized(); return std::copysign(std::acos(n.x), std::asin(n.y)); }
+float Vector2::GetAngle(const Vector2& v)  const
 {
     const float thisAngle  = GetAngle();
     const float otherAngle = v.GetAngle();
     return (thisAngle >= otherAngle ? (thisAngle - otherAngle) : (otherAngle - thisAngle));
+}
+float Vector2::GetAngleSigned(const Vector2& v) const
+{
+    return GetAngle() - v.GetAngle();
 }
 
 // Rotation.

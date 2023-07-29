@@ -1,5 +1,7 @@
 #include "Core/Engine.h"
 #include "Core/Application.h"
+#include "Maths/MathConstants.h"
+#include "Maths/AngleAxis.h"
 #include "Resources/Camera.h"
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
@@ -30,7 +32,7 @@ Engine::~Engine()
 void Engine::Awake()
 {
     // Create camera.
-    camera = new Camera({ app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), 0, 1, 60 });
+    camera = new Camera({ app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), 0.1f, 10, 80 });
 
     // Load the default scene.
     LoadScene("Resources\\Scenes\\default.scene");
@@ -69,8 +71,8 @@ void Engine::Update(const float& deltaTime)
     if (inputs.mouseRightClick)
     {
         camera->transform.Move(camera->transform.GetRotation().RotateVec(inputs.dirMovement * cameraSpeed * deltaTime));
-        camera->transform.Rotate(Quaternion::FromAngleAxis({  inputs.mouseDelta.y * cameraSensitivity * deltaTime, camera->transform.Right() }));
-        camera->transform.Rotate(Quaternion::FromRoll     (  -inputs.mouseDelta.x * cameraSensitivity * deltaTime ));
+        camera->transform.Rotate(Quaternion::FromAngleAxis({  inputs.mouseDelta.y * cameraSensitivity, camera->transform.Right() }));
+        camera->transform.Rotate(Quaternion::FromRoll     (  -inputs.mouseDelta.x * cameraSensitivity ));
     }
 }
 

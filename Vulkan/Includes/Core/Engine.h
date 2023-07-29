@@ -29,7 +29,7 @@ namespace Core
 
 	public:
 		float cameraSpeed       = 2;
-		float cameraSensitivity = 2;
+		float cameraSensitivity = 5e-3f;
 		bool  rotateModels      = false;
 		const std::vector<std::string> defaultResources = {
 			"Resources\\Textures\\Default.png",

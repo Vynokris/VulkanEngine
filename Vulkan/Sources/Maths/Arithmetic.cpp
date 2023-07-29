@@ -16,13 +16,13 @@ int Maths::ceilInt(const float& val) { return (int)ceil(val); }
 float Maths::sqpow(const float& val) { return val * val; }
 
 // Returns 1 if the given value is positive or null, and -1 if it is negative.
-int Maths::signof(const float& val) { if (val == 0) return 1; return (int)(val / abs((int)val)); }
+int Maths::signof(const float& val) { if (val == 0) return 1; return (0 < val) - (val < 0); }
 
 // Converts the given angle from degrees to radians.
-float Maths::degToRad(const float& deg) { return deg * (PI / 180.0f); }
+float Maths::degToRad(const float& deg) { return deg * DEGTORAD; }
 
 // Converts the given angle from radians to degrees.
-float Maths::radToDeg(const float& rad) { return rad * (180.0f / PI); }
+float Maths::radToDeg(const float& rad) { return rad * RADTODEG; }
 
 // Clamps the given value to be superior or equal to the minimum value and inferior or equal to the maximum value.
 float Maths::clamp(float val, const float& min, const float& max)
@@ -54,7 +54,7 @@ float Maths::getLerp(const float& start, const float& dest, const float& val)
 }
 
 // Remaps the given value from one range to another.
-float Maths::remap(const float& val, const float& inputStart, const float& inputEnd, const float& outputStart, const float& outputEnd)
+float Maths::remap(const float& inputStart, const float& inputEnd, const float& outputStart, const float& outputEnd, const float& val)
 {
     return outputStart + (val - inputStart) * (outputEnd - outputStart) / (inputEnd - inputStart);
 }

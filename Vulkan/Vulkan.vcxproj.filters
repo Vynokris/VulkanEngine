@@ -117,8 +117,8 @@
     <ClCompile Include="Externals\Sources\imgui\imgui_stdlib.cpp">
       <Filter>Fichiers sources\Externals</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Resources\Light.cpp">
-      <Filter>Fichiers sources\Resources</Filter>
+    <ClCompile Include="Sources\Maths\Matrix.cpp">
+      <Filter>Fichiers sources\Maths</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -190,9 +190,6 @@
     </ClInclude>
     <ClInclude Include="Includes\Core\VulkanUtils.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Includes\Resources\Light.h">
-      <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

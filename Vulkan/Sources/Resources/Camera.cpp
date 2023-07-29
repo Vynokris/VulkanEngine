@@ -19,7 +19,7 @@ void Camera::ChangeParams(const CameraParams& parameters)
     projMat = Mat4(
         xScale, 0, 0, 0,
         0, yScale, 0, 0,
-        0, 0, -params.far / (params.far - params.near), -1,
-        0, 0, -params.far * params.near / (params.far - params.near), 1
+        0, 0, params.far / (params.near - params.far), -1,
+        0, 0, params.far * params.near / (params.near - params.far), 0
     );
 }
