@@ -16,8 +16,17 @@ namespace Core
         Renderer*      renderer = nullptr;
         Engine*        engine   = nullptr;
         UserInterface* ui       = nullptr;
+
+    private:
+        Application() = default;
         
     public:
+        Application(const Application& other)      = delete;
+        Application(Application&&)                 = delete;
+        Application& operator=(const Application&) = delete;
+        Application& operator=(Application&&)      = delete;
+        ~Application()                             = default;
+        
         static Application* Create();
         static Application* Get();
         static void         Destroy();

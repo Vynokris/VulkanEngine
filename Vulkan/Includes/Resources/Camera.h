@@ -19,6 +19,10 @@ namespace Resources
 		Maths::Transform transform;
 
 		Camera(const CameraParams& parameters);
+		Camera(const Camera& other)      = delete;
+		Camera(Camera&&)                 = delete;
+		Camera& operator=(const Camera&) = delete;
+		Camera& operator=(Camera&&)      = delete;
         void ChangeParams(const CameraParams& parameters);
 		
 		CameraParams GetParams () const { return params;  }

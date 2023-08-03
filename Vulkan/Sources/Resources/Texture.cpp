@@ -13,6 +13,7 @@ Texture::Texture(std::string filename)
     vkImageFormat = VK_FORMAT_R8G8B8A8_SRGB;
     
     // Load the texture data.
+    stbi_set_flip_vertically_on_load_thread(true);
     stbi_uc* pixels = stbi_load(name.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     const VkDeviceSize imageSize = width * height * 4;
     if (!pixels) {

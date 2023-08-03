@@ -31,6 +31,7 @@
     <ClCompile Include="Sources\Core\Renderer.cpp" />
     <ClCompile Include="Sources\Core\UserInterface.cpp" />
     <ClCompile Include="Sources\Core\VulkanUtils.cpp" />
+    <ClCompile Include="Sources\Core\WavefrontParser.cpp" />
     <ClCompile Include="Sources\Core\Window.cpp" />
     <ClCompile Include="Sources\main.cpp" />
     <ClCompile Include="Sources\Maths\AngleAxis.cpp" />
@@ -54,6 +55,7 @@
     <ClInclude Include="Includes\Core\Renderer.h" />
     <ClInclude Include="Includes\Core\UserInterface.h" />
     <ClInclude Include="Includes\Core\VulkanUtils.h" />
+    <ClInclude Include="Includes\Core\WavefrontParser.h" />
     <ClInclude Include="Includes\Core\Window.h" />
     <ClInclude Include="Includes\Maths\AngleAxis.h" />
     <ClInclude Include="Includes\Maths\Arithmetic.h" />
@@ -68,6 +70,7 @@
     <ClInclude Include="Includes\Maths\Vector4.h" />
     <ClInclude Include="Includes\Maths\Vertex.h" />
     <ClInclude Include="Includes\Resources\Camera.h" />
+    <ClInclude Include="Includes\Resources\Material.h" />
     <ClInclude Include="Includes\Resources\Mesh.h" />
     <ClInclude Include="Includes\Resources\Model.h" />
     <ClInclude Include="Includes\Resources\Shader.h" />
