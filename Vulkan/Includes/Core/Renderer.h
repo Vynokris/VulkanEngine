@@ -52,6 +52,10 @@ namespace Core
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
+        Renderer(const Renderer& other)      = delete;
+        Renderer(Renderer&&)                 = delete;
+        Renderer& operator=(const Renderer&) = delete;
+        Renderer& operator=(Renderer&&)      = delete;
         ~Renderer();
 
         void BeginRender();

@@ -34,7 +34,10 @@ namespace Resources
         Texture() = default;
         Texture(std::string filename);
         Texture(const int& width, const int& height);
-        
+        Texture(const Texture& other)      = delete;
+        Texture(Texture&&)                 = delete;
+        Texture& operator=(const Texture&) = delete;
+        Texture& operator=(Texture&&)      = delete;
         ~Texture();
 
         std::string  GetName()        const { return name; }

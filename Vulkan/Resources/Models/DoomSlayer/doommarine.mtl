@@ -1,0 +1,79 @@
+# Blender MTL File: 'None'
+# Material Count: 6
+
+newmtl mt_doomslayer_legs
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd models_characters_doommarine_doommarine_legs_c.png
+map_Ks models_characters_doommarine_doommarine_legs_s.png
+map_bump models_characters_doommarine_doommarine_legs_n.png
+
+newmtl mt_doomslayer_arms
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd models_characters_doommarine_doommarine_arms_c.png
+map_Ks models_characters_doommarine_doommarine_arms_s.png
+map_bump models_characters_doommarine_doommarine_arms_n.png
+
+newmtl mt_doomslayer_cowl
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd models_characters_doommarine_doommarine_cowl_c.png
+map_Ks models_characters_doommarine_doommarine_cowl_s.png
+map_bump models_characters_doommarine_doommarine_cowl_n.png
+
+newmtl mt_doomslayer_helmet
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd models_characters_doommarine_doommarine_helmet_c.png
+map_Ks models_characters_doommarine_doommarine_helmet_s.png
+map_bump models_characters_doommarine_doommarine_helmet_n.png
+
+newmtl mt_doomslayer_torso
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd models_characters_doommarine_doommarine_torso_c.png
+map_Ks models_characters_doommarine_doommarine_torso_s.png
+map_bump models_characters_doommarine_doommarine_torso_n.png
+
+newmtl mt_doomslayer_visor
+Ns 4.000000
+Ka 0.100000 0.200000 0.100000
+Kd 0.100000 0.200000 0.100000
+Ks 0.700000 1.000000 0.700000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd models_characters_doommarine_doommarine_visor_c.png
+map_bump models_characters_doommarine_doommarine_visor_n.png

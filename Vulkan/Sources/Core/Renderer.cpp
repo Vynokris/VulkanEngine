@@ -109,11 +109,15 @@ void Renderer::BeginRender()
 
 void Renderer::DrawModel(const Resources::Model* model, const Resources::Camera* camera) const
 {
-    // Issue the command to draw the model.
     model->UpdateMvpBuffer(camera, currentFrame);
-    BindMeshBuffers(model->GetMesh()->GetVkVertexBuffer(), model->GetMesh()->GetVkIndexBuffer());
-    vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &model->GetDescriptorSet(currentFrame), 0, nullptr);
-    vkCmdDrawIndexed(vkCommandBuffers[currentFrame], model->GetMesh()->GetIndexCount(), 1, 0, 0, 0);
+    
+    const std::vector<Resources::Mesh>& meshes = model->GetMeshes();
+    for (const Resources::Mesh& mesh : meshes)
+    {
+        BindMeshBuffers(mesh.GetVkVertexBuffer(), mesh.GetVkIndexBuffer());
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &mesh.GetVkDescriptorSet(currentFrame), 0, nullptr);
+        vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
+    }
 }
 
 void Renderer::EndRender()
@@ -664,7 +668,7 @@ void Renderer::CreateGraphicsPipeline()
 
 void Renderer::CreateColorResources()
 {
-    // Create the depth image and image view.
+    // Create the color image and image view.
     CreateImage(vkDevice, vkPhysicalDevice, vkSwapChainWidth, vkSwapChainHeight, 1, msaaSamples, vkSwapChainImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vkColorImage, vkColorImageMemory);
     CreateImageView(vkDevice, vkColorImage, vkSwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, vkColorImageView);
 }

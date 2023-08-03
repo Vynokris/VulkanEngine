@@ -51,6 +51,10 @@ namespace Core
     
     public:
         Window(const WindowParams& windowParams);
+        Window(const Window& other)      = delete;
+        Window(Window&&)                 = delete;
+        Window& operator=(const Window&) = delete;
+        Window& operator=(Window&&)      = delete;
         ~Window();
 
         void Update();
