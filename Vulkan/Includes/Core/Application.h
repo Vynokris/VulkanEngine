@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Window.h"
+#include "Logger.h"
 #include "Renderer.h"
 #include "Engine.h"
 #include "UserInterface.h"
@@ -13,6 +14,7 @@ namespace Core
         inline static Application* instance = nullptr;
         
         Window*        window   = nullptr;
+        Logger*        logger   = nullptr;
         Renderer*      renderer = nullptr;
         Engine*        engine   = nullptr;
         UserInterface* ui       = nullptr;
@@ -36,9 +38,10 @@ namespace Core
         void Quit() const;
         void Release() const;
 
-        Window*        GetWindow()   const { return window; }
+        Window*        GetWindow()   const { return window;   }
+        Logger*        GetLogger()   const { return logger;   }
         Renderer*      GetRenderer() const { return renderer; }
-        Engine*        GetEngine()   const { return engine; }
-        UserInterface* GetUi()       const { return ui; }
+        Engine*        GetEngine()   const { return engine;   }
+        UserInterface* GetUi()       const { return ui;       }
     };
 }

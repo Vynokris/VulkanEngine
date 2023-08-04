@@ -87,7 +87,7 @@ void Engine::LoadFile(const std::string& filename)
             if (models.count(name) <= 0)
                 models[name] = model;
             else
-                std::cout << "WARNING (Resources): Tried to create model " << name << " multiple times." << std::endl;
+                LogError(LogType::Resources, "Tried to create model " + name + " multiple times.");
         }
         return;
     }
@@ -97,7 +97,7 @@ void Engine::LoadFile(const std::string& filename)
         if (textures.count(path.string()) <= 0)
             textures[path.string()] = new Texture(path.string());
         else
-            std::cout << "WARNING (Resources): Tried to create " << path.string() << " multiple times." << std::endl;
+            LogError(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
         return;
     }
 }

@@ -1,4 +1,7 @@
 ﻿#include "Core/UserInterface.h"
+
+#include <filesystem>
+
 #include "Core/Application.h"
 #include "Resources/Camera.h"
 #include "Resources/Model.h"
@@ -15,7 +18,7 @@ using namespace Maths;
 
 UserInterface::UserInterface()
 {
-    app = Application::Get();
+    app    = Application::Get();
     engine = app->GetEngine();
     
     CreateDescriptorPool();
@@ -64,7 +67,7 @@ void UserInterface::CreateDescriptorPool()
     poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(poolSizes);
     poolInfo.pPoolSizes    = poolSizes;
     if (vkCreateDescriptorPool(app->GetRenderer()->GetVkDevice(), &poolInfo, nullptr, &vkDescriptorPool) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create a descriptor pool." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create a descriptor pool.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
     }
 }
@@ -95,7 +98,7 @@ void UserInterface::InitImGui() const
     initInfo.ImageCount      = renderer->GetVkSwapchainImageCount();
     initInfo.MSAASamples     = renderer->GetMsaaSamples();
     initInfo.Allocator       = nullptr;
-    initInfo.CheckVkResultFn = [](VkResult res){ if (res==0) return; std::cout << "Error (Vulkan): result = " << res << std::endl; throw std::runtime_error("VULKAN_ERROR"); };
+    initInfo.CheckVkResultFn = [](VkResult res){ if (res==0) return; LogError(LogType::Vulkan, "result = " + std::to_string(res)); throw std::runtime_error("VULKAN_ERROR"); };
     ImGui_ImplVulkan_Init(&initInfo, renderer->GetVkRenderPass());
 }
 
@@ -116,6 +119,7 @@ void UserInterface::Render() const
     NewFrame();
     
     ShowStatsWindow();
+    ShowLogsWindow();
     ShowResourcesWindow();
     
     RenderFrame();
@@ -127,6 +131,60 @@ void UserInterface::ShowStatsWindow() const
     {
         const float deltaTime = app->GetWindow()->GetDeltaTime();
         ImGui::Text("FPS: %d | Delta Time: %.4fs", roundInt(1 / deltaTime), deltaTime);
+    }
+    ImGui::End();
+}
+
+void UserInterface::ShowLogsWindow() const
+{
+    if (ImGui::Begin("Logs", NULL))
+    {
+        const std::vector<Log>& logs = Logger::GetLogs();
+        for (const Log& log : logs)
+        {
+            // Set log color in function of log severity.
+            ImVec4 textColor;
+            switch (log.severity)
+            {
+            case LogSeverity::Info:
+                textColor = { 0, 1, 0, 1 };
+                break;
+            case LogSeverity::Warning:
+                textColor = { 1, 1, 0, 1 };
+                break;
+            case LogSeverity::Error:
+                textColor = { 1, 0, 0, 1 };
+                break;
+            default:
+                textColor = { 1, 1, 1, 1 };
+                break;
+            }
+
+            // Show log type and severity.
+            ImGui::NewLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+            ImGui::TextWrapped("%s %s:", LogTypeToStr(log.type).c_str(), LogSeverityToStr(log.severity).c_str());
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+
+            // Show log source file, line and function.
+            ImGui::PushStyleColor(ImGuiCol_Text, { 0.5, 0.5, 0.5, 1 });
+            ImGui::TextWrapped("%s(%s) in %s", std::filesystem::path(log.sourceFile).filename().string().c_str(),
+                                               std::to_string(log.sourceLine).c_str(), log.sourceFunction.c_str());
+            ImGui::PopStyleColor();
+
+            // Show log message.
+            ImGui::TextWrapped("%s", log.message.c_str());
+        }
+
+        // Scroll to the bottom when new logs arrive.
+        static size_t prevLogCount = 0;
+        const  size_t logCount     = logs.size();
+        if (prevLogCount != logCount)
+        {
+            ImGui::SetScrollHereY(1.0);
+            prevLogCount = logCount;
+        }
     }
     ImGui::End();
 }

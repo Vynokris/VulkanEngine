@@ -87,7 +87,7 @@ uint32_t VulkanUtils::FindMemoryType(const VkPhysicalDevice& device, const uint3
         }
     }
 
-    std::cout << "ERROR (Vulkan): Failed to find suitable memory type." << std::endl;
+    LogError(LogType::Vulkan, "Failed to find suitable memory type.");
     throw std::runtime_error("VULKAN_FIND_MEMORY_TYPE_ERROR");
 }
 
@@ -103,7 +103,7 @@ VkFormat VulkanUtils::FindSupportedFormat(const VkPhysicalDevice& device, const 
             return format;
     }
 
-    std::cout << "ERROR (Vulkan): Failed to find supported format." << std::endl;
+    LogError(LogType::Vulkan, "Failed to find supported format.");
     throw std::runtime_error("VULKAN_NO_SUPPORTED_FORMAT_ERROR");
 }
 
@@ -240,7 +240,7 @@ static std::vector<char> ReadBinFile(const std::string& filename)
     // Open the binary file and place the cursor at its end.
     std::ifstream f(filename, std::ios::ate | std::ios::binary);
     if (!f.is_open()) {
-        std::cout << "ERROR (File IO): Failed to open file: " << filename << std::endl;
+        LogError(LogType::FileIO, "Failed to open file: " + filename);
         throw std::runtime_error("FILE_IO_ERROR");
     }
 
@@ -300,7 +300,7 @@ void VulkanUtils::CreateShaderModule(const VkDevice& device, const char* filenam
 
     // Create and return the shader module.
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create shader module." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create shader module.");
         throw std::runtime_error("VULKAN_SHADER_MODULE_ERROR");
     }
 }
@@ -315,7 +315,7 @@ void VulkanUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& p
 
     // Create the buffer.
     if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create buffer." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create buffer.");
         throw std::runtime_error("VULKAN_BUFFER_CREATION_ERROR");
     }
 
@@ -331,7 +331,7 @@ void VulkanUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& p
 
     // Allocate the buffer's memory.
     if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to allocate buffer memory." << std::endl;
+        LogError(LogType::Vulkan, "Failed to allocate buffer memory.");
         throw std::runtime_error("VULKAN_BUFFER_ALLOCATION_ERROR");
     }
 
@@ -371,7 +371,7 @@ void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& ph
     imageInfo.samples       = numSamples;
     imageInfo.flags         = 0; // Optional.
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create texture image." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create texture image.");
         throw std::runtime_error("VULKAN_TEXTURE_IMAGE_ERROR");
     }
 
@@ -383,7 +383,7 @@ void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& ph
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to allocate texture image memory." << std::endl;
+        LogError(LogType::Vulkan, "Failed to allocate texture image memory.");
         throw std::runtime_error("VULKAN_TEXTURE_IMAGE_MEMORY_ERROR");
     }
     vkBindImageMemory(device, image, imageMemory, 0);
@@ -413,7 +413,7 @@ void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, 
 
     // Create the image view.
     if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create image view." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create image view.");
         throw std::runtime_error("VULKAN_IMAGE_VIEW_ERROR");
     }
 }
@@ -455,7 +455,7 @@ void VulkanUtils::TransitionImageLayout(const VkDevice& device, const VkCommandP
     }
     else
     {
-        std::cout << "ERROR (Vulkan): Unsupported layout transition." << std::endl;
+        LogError(LogType::Vulkan, "Unsupported layout transition.");
         throw std::runtime_error("VULKAN_UNSUPPORTED_LAYOUT_TRANSITION_ERROR");
     }
     

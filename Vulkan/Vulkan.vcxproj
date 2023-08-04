@@ -28,6 +28,7 @@
     <ClCompile Include="Externals\Sources\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Sources\Core\Application.cpp" />
     <ClCompile Include="Sources\Core\Engine.cpp" />
+    <ClCompile Include="Sources\Core\Logger.cpp" />
     <ClCompile Include="Sources\Core\Renderer.cpp" />
     <ClCompile Include="Sources\Core\UserInterface.cpp" />
     <ClCompile Include="Sources\Core\VulkanUtils.cpp" />
@@ -52,6 +53,7 @@
   <ItemGroup>
     <ClInclude Include="Includes\Core\Application.h" />
     <ClInclude Include="Includes\Core\Engine.h" />
+    <ClInclude Include="Includes\Core\Logger.h" />
     <ClInclude Include="Includes\Core\Renderer.h" />
     <ClInclude Include="Includes\Core\UserInterface.h" />
     <ClInclude Include="Includes\Core\VulkanUtils.h" />

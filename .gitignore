@@ -8,3 +8,5 @@ hooks/
 **/Debug/*
 **/Release/*
 **/x64/*
+
+Vulkan/Resources/app.log

@@ -165,7 +165,7 @@ void Renderer::CheckValidationLayers() const
 
     // Throw and error if a validation layer hasn't been found.
     if (VALIDATION_LAYERS_ENABLED && validationLayersError) {
-        std::cout << "ERROR (Vulkan): Some of the requested validation layers are not available." << std::endl;
+        LogError(LogType::Vulkan, "Some of the requested validation layers are not available.");
         throw std::runtime_error("VK_VALIDATION_LAYERS_ERROR");
     }
 }
@@ -203,7 +203,7 @@ void Renderer::CreateVkInstance(const char* appName, const char* engineName)
 
     // Create the vulkan instance.
     if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Unable to create a Vulkan instance." << std::endl;
+        LogError(LogType::Vulkan, "Unable to create a Vulkan instance.");
         throw std::runtime_error("VULKAN_INIT_ERROR");
     }
 }
@@ -211,7 +211,7 @@ void Renderer::CreateVkInstance(const char* appName, const char* engineName)
 void Renderer::CreateSurface()
 {
     if (glfwCreateWindowSurface(vkInstance, app->GetWindow()->GetGlfwWindow(), nullptr, &vkSurface) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Unable to create a  window surface." << std::endl;
+        LogError(LogType::Vulkan, "Unable to create a  window surface.");
         throw std::runtime_error("VULKAN_WINDOW_SURFACE_ERROR");
     }
 }
@@ -224,7 +224,7 @@ void Renderer::PickPhysicalDevice()
 
     // Make sure at least one GPU supports Vulkan.
     if (deviceCount == 0) {
-        std::cout << "ERROR (Vulkan): Couldn't find a GPU with Vulkan support." << std::endl;
+        LogError(LogType::Vulkan, "Couldn't find a GPU with Vulkan support.");
         throw std::runtime_error("GPU_NO_VULKAN_SUPPORT_ERROR");
     }
 
@@ -239,14 +239,14 @@ void Renderer::PickPhysicalDevice()
             msaaSamples = GetMaxUsableSampleCount(vkPhysicalDevice);
             VkPhysicalDeviceProperties properties;
             vkGetPhysicalDeviceProperties(device, &properties);
-            std::cout << "Using GPU: " << properties.deviceName << std::endl;
+            LogInfo(LogType::Vulkan, "Using rendering device " + std::string(properties.deviceName));
             break;
         }
     }
 
     // Make sure a suitable GPU was found.
     if (vkPhysicalDevice == VK_NULL_HANDLE) {
-        std::cout << "ERROR (Vulkan): Couldn't find a GPU with Vulkan support." << std::endl;
+        LogError(LogType::Vulkan, "Couldn't find a GPU with Vulkan support.");
         throw std::runtime_error("GPU_NO_VULKAN_SUPPORT_ERROR");
     }
 }
@@ -291,7 +291,7 @@ void Renderer::CreateLogicalDevice()
 
     // Create the logical device.
     if (vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create a logical device." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create a logical device.");
         throw std::runtime_error("VULKAN_LOGICAL_DEVICE_ERROR");
     }
 
@@ -360,7 +360,7 @@ void Renderer::CreateSwapChain()
 
     // Create the swap chain.
     if (vkCreateSwapchainKHR(vkDevice, &createInfo, nullptr, &vkSwapChain) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create a swap chain." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create a swap chain.");
         throw std::runtime_error("VULKAN_SWAP_CHAIN_ERROR");
     }
 
@@ -456,7 +456,7 @@ void Renderer::CreateRenderPass()
 
     // Create the render pass.
     if (vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create render pass." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create render pass.");
         throw std::runtime_error("VULKAN_RENDER_PASS_ERROR");
     }
 }
@@ -486,7 +486,7 @@ void Renderer::CreateDescriptorSetLayout()
     layoutInfo.bindingCount = (uint32_t)bindings.size();
     layoutInfo.pBindings    = bindings.data();
     if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &vkDescriptorSetLayout) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create descriptor set layout." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_SET_LAYOUT_ERROR");
     }
 }
@@ -632,7 +632,7 @@ void Renderer::CreateGraphicsPipeline()
 
     // Create the pipeline layout.
     if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create pipeline layout." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create pipeline layout.");
         throw std::runtime_error("VULKAN_PIPELINE_LAYOUT_ERROR");
     }
 
@@ -657,7 +657,7 @@ void Renderer::CreateGraphicsPipeline()
 
     // Create the graphics pipeline.
     if (vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create graphics pipeline." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create graphics pipeline.");
         throw std::runtime_error("VULKAN_GRAPHICS_PIPELINE_ERROR");
     }
     
@@ -704,7 +704,7 @@ void Renderer::CreateFramebuffers()
 
         // Create the current framebuffer.
         if (vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &vkSwapChainFramebuffers[i]) != VK_SUCCESS) {
-            std::cout << "ERROR (Vulkan): Failed to create framebuffer." << std::endl;
+            LogError(LogType::Vulkan, "Failed to create framebuffer.");
             throw std::runtime_error("VULKAN_FRAMEBUFFER_ERROR");
         }
     }
@@ -722,7 +722,7 @@ void Renderer::CreateCommandPool()
 
     // Create the command pool.
     if (vkCreateCommandPool(vkDevice, &poolInfo, nullptr, &vkCommandPool) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create command pool." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create command pool.");
         throw std::runtime_error("VULKAN_COMMAND_POOL_ERROR");
     }
 }
@@ -750,7 +750,7 @@ void Renderer::CreateTextureSampler()
     samplerInfo.maxLod                  = (float)std::floor(std::log2(std::max(vkSwapChainWidth, vkSwapChainHeight))) + 1; // (float)texture->GetMipLevels();
     samplerInfo.mipLodBias              = 0.f; // Optional.
     if (vkCreateSampler(vkDevice, &samplerInfo, nullptr, &vkTextureSampler) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create texture sampler." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create texture sampler.");
         throw std::runtime_error("VULKAN_TEXTURE_SAMPLER_ERROR");
     }
 }
@@ -767,7 +767,7 @@ void Renderer::CreateCommandBuffers()
     // Allocate the command buffer.
     vkCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     if (vkAllocateCommandBuffers(vkDevice, &allocInfo, vkCommandBuffers.data()) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to allocate command buffers." << std::endl;
+        LogError(LogType::Vulkan, "Failed to allocate command buffers.");
         throw std::runtime_error("VULKAN_COMMAND_BUFFER_ERROR");
     }
 }
@@ -792,7 +792,7 @@ void Renderer::CreateSyncObjects()
             vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphores[i]) != VK_SUCCESS ||
             vkCreateFence    (vkDevice, &fenceInfo,     nullptr, &vkInFlightFences[i])           != VK_SUCCESS)
         {
-            std::cout << "ERROR (Vulkan): Failed to create semaphores and fence." << std::endl;
+            LogError(LogType::Vulkan, "Failed to create semaphores and fence.");
             throw std::runtime_error("VULKAN_SYNC_OBJECTS_ERROR");
         }
     }
@@ -854,7 +854,7 @@ void Renderer::NewFrame()
         return;
     }
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        std::cout << "ERROR (Vulkan): Failed to acquire swap chain image." << std::endl;
+        LogError(LogType::Vulkan, "Failed to acquire swap chain image.");
         throw std::runtime_error("VULKAN_IMAGE_ACQUISITION_ERROR");
     }
 
@@ -873,7 +873,7 @@ void Renderer::BeginRenderPass() const
     beginInfo.flags            = 0;       // Optional.
     beginInfo.pInheritanceInfo = nullptr; // Optional.
     if (vkBeginCommandBuffer(vkCommandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to begin recording command buffer." << std::endl;
+        LogError(LogType::Vulkan, "Failed to begin recording command buffer.");
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
     }
 
@@ -920,7 +920,7 @@ void Renderer::EndRenderPass() const
 
     // Stop recording the command buffer.
     if (vkEndCommandBuffer(vkCommandBuffers[currentFrame]) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to record command buffer." << std::endl;
+        LogError(LogType::Vulkan, "Failed to record command buffer.");
         throw std::runtime_error("VULKAN_RECORD_COMMAND_BUFFER_ERROR");
     }
 }
@@ -943,7 +943,7 @@ void Renderer::PresentFrame()
 
     // Submit the graphics command queue.
     if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, vkInFlightFences[currentFrame]) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to submit draw command buffer." << std::endl;
+        LogError(LogType::Vulkan, "Failed to submit draw command buffer.");
         throw std::runtime_error("VULKAN_SUBMIT_COMMAND_BUFFER_ERROR");
     }
 
@@ -965,7 +965,7 @@ void Renderer::PresentFrame()
         RecreateSwapChain();
     }
     else if (result != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to present swap chain image." << std::endl;
+        LogError(LogType::Vulkan, "Failed to present swap chain image.");
         throw std::runtime_error("VULKAN_PRESENTATION_ERROR");
     }
 
