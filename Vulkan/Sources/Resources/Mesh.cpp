@@ -127,7 +127,7 @@ void Mesh::CreateDescriptors()
     poolInfo.pPoolSizes    = poolSizes.data();
     poolInfo.maxSets       = (uint32_t)MAX_FRAMES_IN_FLIGHT;
     if (vkCreateDescriptorPool(Application::Get()->GetRenderer()->GetVkDevice(), &poolInfo, nullptr, &vkDescriptorPool) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to create descriptor pool." << std::endl;
+        LogError(LogType::Vulkan, "Failed to create descriptor pool.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
     }
     
@@ -140,7 +140,7 @@ void Mesh::CreateDescriptors()
     allocInfo.pSetLayouts        = layouts.data();
     vkDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
     if (vkAllocateDescriptorSets(vkDevice, &allocInfo, vkDescriptorSets.data()) != VK_SUCCESS) {
-        std::cout << "ERROR (Vulkan): Failed to allocate descriptor sets." << std::endl;
+        LogError(LogType::Vulkan, "Failed to allocate descriptor sets.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_SETS_ERROR");
     }
 

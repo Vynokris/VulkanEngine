@@ -123,6 +123,9 @@
     <ClCompile Include="Sources\Core\WavefrontParser.cpp">
       <Filter>Fichiers sources\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Core\Logger.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">
@@ -195,6 +198,12 @@
       <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
     <ClInclude Include="Includes\Core\WavefrontParser.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Material.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\Logger.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
   </ItemGroup>

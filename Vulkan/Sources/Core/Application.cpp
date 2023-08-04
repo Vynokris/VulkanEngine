@@ -23,10 +23,11 @@ void Application::Destroy()
 void Application::Init(const WindowParams& windowParams)
 {
     if (!glfwInit()) {
-        std::cout << "ERROR (GLFW): Unable to initialize GLFW." <<std::endl;
+        LogError(LogType::GLFW, "Unable to initialize GLFW.");
         throw std::runtime_error("GLFW_INIT_ERROR");
     }
     window   = new Window(windowParams);
+    logger   = new Logger("Resources/app.log");
     renderer = new Renderer(windowParams.name);
     engine   = new Engine();
     ui       = new UserInterface();
@@ -66,6 +67,7 @@ void Application::Release() const
     delete ui;
     delete engine;
     delete renderer;
+    delete logger;
     delete window;
     glfwTerminate();
 }

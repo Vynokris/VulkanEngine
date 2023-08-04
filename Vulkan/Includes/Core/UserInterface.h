@@ -25,6 +25,7 @@ namespace Core
 {
     class Application;
     class Engine;
+    class Logger;
     
     class UserInterface
     {
@@ -51,16 +52,14 @@ namespace Core
 
     private:
         void CreateDescriptorPool();
-        void InitImGui() const;
+        void InitImGui       () const;
         void UploadImGuiFonts() const;
-        
-        void ShowTransformUi(Maths::Transform& transform) const;
 
-        void ShowStatsWindow()     const;
-        void ShowSceneWindow()     const;
+        void ShowStatsWindow    () const;
+        void ShowLogsWindow     () const;
         void ShowResourcesWindow() const;
         
-        void NewFrame()    const;
+        void NewFrame   () const;
         void RenderFrame() const;
     };
 }

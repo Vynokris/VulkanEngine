@@ -17,7 +17,7 @@ Texture::Texture(std::string filename)
     stbi_uc* pixels = stbi_load(name.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     const VkDeviceSize imageSize = width * height * 4;
     if (!pixels) {
-        std::cout << "WARNING (STBI): Unable to load texture " << name << std::endl;
+        LogError(LogType::Resources, "Unable to load texture " + name);
         return;
     }
     mipLevels = (uint32_t)std::floor(std::log2(std::max(width, height))) + 1;
@@ -63,7 +63,7 @@ Texture::Texture(std::string filename)
 
 Texture::Texture(const int& width, const int& height)
 {
-    std::cout << "WARNING (Texture): Texture creation from width and height isn't implemented." << std::endl;
+    LogError(LogType::Resources, "Texture creation from width and height isn't implemented.");
 }
 
 Texture::~Texture()
@@ -89,7 +89,7 @@ void Texture::GenerateMipmaps() const
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, vkImageFormat, &formatProperties);
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        std::cout << "ERROR (Texture): Texture image format does not support linear blitting." << std::endl;
+        LogError(LogType::Resources, "Texture image format does not support linear blitting.");
         throw std::runtime_error("TEXTURE_BLITTING_ERROR");
     }
 

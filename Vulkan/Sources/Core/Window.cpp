@@ -35,7 +35,7 @@ Window::Window(const WindowParams& windowParams)
     // Create a new glfw window with the given parameters.
     glfwWindow = glfwCreateWindow(params.width, params.height, params.name, NULL, NULL);
     if (!glfwWindow) {
-        std::cout << "ERROR (GLFW): Unable to create a window." <<std::endl;
+        LogError(LogType::GLFW, "Unable to create a window.");
         return;
     }
     glfwMakeContextCurrent(glfwWindow);

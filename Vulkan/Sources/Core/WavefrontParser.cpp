@@ -244,7 +244,7 @@ std::unordered_map<std::string, Model*> WavefrontParser::ParseObj(const std::str
         }
     }
     if (model == nullptr || model->meshes.empty()) {
-        std::cout << "ERROR (Wavefront): Mesh has no sub-meshes after being loaded from obj file " << filename << std::endl;
+        LogError(LogType::Resources, "Mesh has no sub-meshes after being loaded from obj file " + filename);
     }
     else {
         model->meshes.back().FinalizeLoading();
@@ -253,7 +253,7 @@ std::unordered_map<std::string, Model*> WavefrontParser::ParseObj(const std::str
     // End chrono.
     cr::steady_clock::time_point chronoEnd = cr::high_resolution_clock::now();
     cr::nanoseconds elapsed = cr::duration_cast<cr::nanoseconds>(chronoEnd - chronoStart);
-    std::cout << "Loading file " << filename << " took " << std::to_string((double)elapsed.count() * 1e-9) << " seconds." << std::endl;
+    LogInfo(LogType::Resources, "Loading file " + filename + " took " + std::to_string((double)elapsed.count() * 1e-9) + " seconds.");
 
     return newModels;
 }
