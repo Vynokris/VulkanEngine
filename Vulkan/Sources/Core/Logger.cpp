@@ -19,8 +19,9 @@ std::string Core::LogSeverityToStr(const LogSeverity& severity)
         return "Warning";
     case LogSeverity::Error:
         return "Error";
+    case LogSeverity::None:
     default:
-        return "Uncategorized";
+        return "";
     }
 }
 std::string Core::LogTypeToStr(const LogType& type)
@@ -59,10 +60,15 @@ Log::operator std::string() const
 {
     std::string output;
     if (type != LogType::Default) {
-        output += LogTypeToStr(type) + " ";
+        output += LogTypeToStr(type);
+        output += severity != LogSeverity::None ? " " : ": ";
     }
-    output += LogSeverityToStr(severity) + ": ";
-    output += std::filesystem::path(sourceFile).filename().string();
+    if (severity != LogSeverity::None) {
+        output += LogSeverityToStr(severity) + ": ";
+    }
+    if (sourceFile[0] != '\0') {
+        output += std::filesystem::path(sourceFile).filename().string();
+    }
     if (sourceLine >= 0) {
         output += "(";
         output += std::to_string(sourceLine);
@@ -72,7 +78,9 @@ Log::operator std::string() const
         output += " in ";
         output += sourceFunction;
     }
-    output += "\n";
+    if (!output.empty()) {
+        output += "\n";
+    }
     output += message;
     return output;
 }

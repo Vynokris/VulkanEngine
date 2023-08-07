@@ -61,9 +61,37 @@ Texture::Texture(std::string filename)
     VulkanUtils::CreateImageView(device, vkImage, vkImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, vkImageView);
 }
 
-Texture::Texture(const int& width, const int& height)
+Texture::Texture(Texture&& other) noexcept
+    : name(std::move(other.name)), width(other.width), height(other.height), channels(other.channels), mipLevels(other.mipLevels),
+      vkImage(other.vkImage), vkImageMemory(other.vkImageMemory), vkImageView(other.vkImageView), vkImageFormat(other.vkImageFormat)
 {
-    LogError(LogType::Resources, "Texture creation from width and height isn't implemented.");
+    other.vkImage       = nullptr;
+    other.vkImageMemory = nullptr;
+    other.vkImageView   = nullptr;
+    other.vkImageFormat = {};
+}
+
+Texture& Texture::operator=(Texture&& other) noexcept
+{
+    name          = std::move(other.name);
+    width         = other.width;
+    height        = other.height;
+    channels      = other.channels;
+    mipLevels     = other.mipLevels;
+    vkImage       = other.vkImage;
+    vkImageMemory = other.vkImageMemory;
+    vkImageView   = other.vkImageView;
+    vkImageFormat = other.vkImageFormat;
+    other.name          = "";
+    other.width         = 0;
+    other.height        = 0;
+    other.channels      = 0;
+    other.mipLevels     = 0;
+    other.vkImage       = nullptr;
+    other.vkImageMemory = nullptr;
+    other.vkImageView   = nullptr;
+    other.vkImageFormat = {};
+    return *this;
 }
 
 Texture::~Texture()

@@ -37,7 +37,7 @@ namespace Resources
 
 	public:
 		Mesh(std::string _name, Model& _parentModel) : name(std::move(_name)), parentModel(_parentModel) {}
-		Mesh(const Mesh& other)      = delete;
+		Mesh(const Mesh&)            = delete;
 		Mesh(Mesh&&) noexcept;
 		Mesh& operator=(const Mesh&) = delete;
 		Mesh& operator=(Mesh&&)      = delete;

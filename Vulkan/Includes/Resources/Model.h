@@ -28,13 +28,13 @@ namespace Resources
 
 	public:
 		Maths::Transform transform;
-		bool shouldDelete = false;
 
+		Model() = default;
 		Model(std::string _name, Maths::Transform _transform = Maths::Transform());
-		Model(const Model& other)      = delete;
+		Model(const Model&)            = delete;
 		Model(Model&&)                 = delete;
 		Model& operator=(const Model&) = delete;
-		Model& operator=(Model&&)      = delete;
+		Model& operator=(Model&&) noexcept;
 		~Model();
 
 		void UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const;

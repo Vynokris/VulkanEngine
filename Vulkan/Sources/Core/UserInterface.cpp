@@ -34,7 +34,7 @@ UserInterface::~UserInterface()
     vkDestroyDescriptorPool(app->GetRenderer()->GetVkDevice(), vkDescriptorPool, nullptr);
 }
 
-void UserInterface::SetResourceRefs(Camera* _camera, std::unordered_map<std::string, Model*>* _models, std::unordered_map<std::string, Texture*>* _textures)
+void UserInterface::SetResourceRefs(Camera* _camera, std::unordered_map<std::string, Model>* _models, std::unordered_map<std::string, Texture>* _textures)
 {
     camera   = _camera;
     models   = _models;
@@ -155,23 +155,51 @@ void UserInterface::ShowLogsWindow() const
             case LogSeverity::Error:
                 textColor = { 1, 0, 0, 1 };
                 break;
+            case LogSeverity::None:
             default:
                 textColor = { 1, 1, 1, 1 };
                 break;
             }
 
             // Show log type and severity.
+            std::string strTypeSeverity;
+            if (log.type != LogType::Default) {
+                strTypeSeverity += LogTypeToStr(log.type);
+                strTypeSeverity += log.severity != LogSeverity::None ? " " : ": ";
+            }
+            if (log.severity != LogSeverity::None) {
+                strTypeSeverity += LogSeverityToStr(log.severity) + ": ";
+            }
             ImGui::NewLine();
-            ImGui::PushStyleColor(ImGuiCol_Text, textColor);
-            ImGui::TextWrapped("%s %s:", LogTypeToStr(log.type).c_str(), LogSeverityToStr(log.severity).c_str());
-            ImGui::PopStyleColor();
-            ImGui::SameLine();
+            if (!strTypeSeverity.empty())
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+                ImGui::TextWrapped("%s", strTypeSeverity.c_str());
+                ImGui::PopStyleColor();
+            }
 
             // Show log source file, line and function.
-            ImGui::PushStyleColor(ImGuiCol_Text, { 0.5, 0.5, 0.5, 1 });
-            ImGui::TextWrapped("%s(%s) in %s", std::filesystem::path(log.sourceFile).filename().string().c_str(),
-                                               std::to_string(log.sourceLine).c_str(), log.sourceFunction.c_str());
-            ImGui::PopStyleColor();
+            std::string strFileFuncLine;
+            if (log.sourceFile[0] != '\0') {
+                strFileFuncLine += std::filesystem::path(log.sourceFile).filename().string();
+            }
+            if (log.sourceLine >= 0) {
+                strFileFuncLine += "(";
+                strFileFuncLine += std::to_string(log.sourceLine);
+                strFileFuncLine += ")";
+            }
+            if (log.sourceFunction[0] != '\0') {
+                strFileFuncLine += " in ";
+                strFileFuncLine += log.sourceFunction;
+            }
+            if (!strFileFuncLine.empty())
+            {
+                if (!strTypeSeverity.empty())
+                    ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, { 0.5, 0.5, 0.5, 1 });
+                ImGui::TextWrapped("%s", strFileFuncLine.c_str());
+                ImGui::PopStyleColor();
+            }
 
             // Show log message.
             ImGui::TextWrapped("%s", log.message.c_str());
@@ -228,7 +256,7 @@ void UserInterface::ShowResourcesWindow() const
                 if (ImGui::BeginPopupContextItem())
                 {
                     if (ImGui::Button(("Unload##Tex"+name).c_str())) {
-                        texture->shouldDelete = true;
+                        // TODO.
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::EndPopup();

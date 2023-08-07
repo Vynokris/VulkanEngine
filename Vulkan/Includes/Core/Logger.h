@@ -26,6 +26,7 @@ namespace Core
 {
     enum class LogSeverity
     {
+        None,
         Info,
         Warning,
         Error,

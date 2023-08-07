@@ -22,10 +22,6 @@ Engine::Engine()
 
 Engine::~Engine()
 {
-    for (const auto& [name, model]   : models  ) delete model;
-    for (const auto& [name, texture] : textures) delete texture;
-    models  .clear();
-    textures.clear();
     delete camera;
 }
 
@@ -55,8 +51,8 @@ void Engine::Update(const float& deltaTime)
     if (rotateModels)
     {
         const Quaternion rotQuat = Quaternion::FromRoll(PI * 0.2f * deltaTime);
-        for (const auto& [name, model] : models)
-            model->transform.Rotate(rotQuat);
+        for (auto& [name, model] : models)
+            model.transform.Rotate(rotQuat);
     }
 
     // Update camera transform.
@@ -81,11 +77,11 @@ void Engine::LoadFile(const std::string& filename)
     const std::string extension = path.extension().string();
     if (extension == ".obj")
     {
-        const std::unordered_map<std::string, Model*> newModels = WavefrontParser::ParseObj(path.string());
-        for (auto [name, model] : newModels)
+        std::unordered_map<std::string, Model> newModels = WavefrontParser::ParseObj(path.string());
+        for (auto& [name, model] : newModels)
         {
             if (models.count(name) <= 0)
-                models[name] = model;
+                models[name] = std::move(model);
             else
                 LogError(LogType::Resources, "Tried to create model " + name + " multiple times.");
         }
@@ -95,7 +91,7 @@ void Engine::LoadFile(const std::string& filename)
         extension == ".png")
     {
         if (textures.count(path.string()) <= 0)
-            textures[path.string()] = new Texture(path.string());
+            textures[path.string()] = Texture(path.string());
         else
             LogError(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
         return;
@@ -105,14 +101,14 @@ void Engine::LoadFile(const std::string& filename)
 Model* Engine::GetModel(const std::string& name)
 {
     if (models.count(name) > 0)
-        return models[name];
+        return &models[name];
     return nullptr;
 }
 
 Texture* Engine::GetTexture(const std::string& name)
 {
     if (textures.count(name) > 0)
-        return textures[name];
+        return &textures[name];
     return nullptr;
 }
 
