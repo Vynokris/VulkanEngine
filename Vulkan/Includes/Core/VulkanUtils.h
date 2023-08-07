@@ -13,6 +13,7 @@ typedef VkFlags  VkImageUsageFlags;
 typedef VkFlags  VkImageAspectFlags;
 typedef VkFlags  VkFormatFeatureFlags;
 typedef struct VkInstance_T*               VkInstance;
+typedef struct VkDebugUtilsMessengerEXT_T* VkDebugUtilsMessengerEXT;
 typedef struct VkPhysicalDevice_T*         VkPhysicalDevice;
 typedef struct VkDevice_T*                 VkDevice;
 typedef struct VkQueue_T*                  VkQueue;

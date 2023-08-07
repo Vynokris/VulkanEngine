@@ -21,10 +21,8 @@ namespace Core
         Application*       app    = nullptr;
         Resources::Camera* camera = nullptr;
 
-		std::string sceneName, sceneToLoad;
-		size_t      vertexCount = 0;
-		std::unordered_map<std::string, Resources::Model  *> models;
-		std::unordered_map<std::string, Resources::Texture*> textures;
+		std::unordered_map<std::string, Resources::Model  > models;
+		std::unordered_map<std::string, Resources::Texture> textures;
 
 	public:
 		float cameraSpeed       = 2;
@@ -37,7 +35,7 @@ namespace Core
 		};
 		
 		Engine();
-		Engine(const Engine& other)      = delete;
+		Engine(const Engine&)            = delete;
 		Engine(Engine&&)                 = delete;
 		Engine& operator=(const Engine&) = delete;
 		Engine& operator=(Engine&&)      = delete;

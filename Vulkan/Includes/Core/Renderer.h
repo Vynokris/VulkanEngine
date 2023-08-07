@@ -16,6 +16,7 @@ namespace Core
     private:
         Application*                    app;
         VkInstance                      vkInstance            = nullptr;
+        VkDebugUtilsMessengerEXT        vkDebugMessenger     = nullptr;
         VkSurfaceKHR                    vkSurface             = nullptr;
         VkPhysicalDevice                vkPhysicalDevice      = nullptr;
         VkDevice                        vkDevice              = nullptr;
@@ -52,14 +53,14 @@ namespace Core
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
-        Renderer(const Renderer& other)      = delete;
+        Renderer(const Renderer&)            = delete;
         Renderer(Renderer&&)                 = delete;
         Renderer& operator=(const Renderer&) = delete;
         Renderer& operator=(Renderer&&)      = delete;
         ~Renderer();
 
         void BeginRender();
-        void DrawModel(const Resources::Model* model, const Resources::Camera* camera) const;
+        void DrawModel(const Resources::Model& model, const Resources::Camera* camera) const;
         void EndRender();
 
         void WaitUntilIdle() const;
@@ -81,6 +82,7 @@ namespace Core
     private:
         void CheckValidationLayers() const;
         void CreateVkInstance(const char* appName, const char* engineName);
+        void CreateDebugMessenger();
         void CreateSurface();
         void PickPhysicalDevice();
         void CreateLogicalDevice();

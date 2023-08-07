@@ -4,6 +4,20 @@
 namespace Resources
 {
     class Texture;
+
+    // Enumerates all unique material texture/map types.
+    namespace MaterialTextureType
+    {
+        enum
+        {
+            Albedo,    // Texture used for the overall color of the object.
+            Emissive,  // Texture used for the color of light emitted by the object.
+            Shininess, // Texture map used to modify the object's shininess.
+            Alpha,     // Texture map used to modify the object's transparency.
+            Normal,    // Texture map used to modify the object's normals.
+        };
+    };
+    
     class Material
     {
     public:
@@ -14,18 +28,22 @@ namespace Resources
         float shininess     = 32; // The intensity of highlights on the object.
         float alpha         = 1;  // Defines how see-through the object is.
 
-        Texture* albedoTexture   = nullptr; // Texture used for the overall color of the object.
-        Texture* emissiveTexture = nullptr; // Texture used for the color of light emitted by the object.
-        Texture* shininessMap    = nullptr; // Texture used to modify the object's shininess.
-        Texture* alphaMap        = nullptr; // Texture used to modify the object's transparency.
+        static constexpr size_t textureTypesCount = 5;
+        Texture* textures[textureTypesCount] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 
     public:
         Material(const Maths::RGB& _albedo = 1, const Maths::RGB& _emissive = 0, const float& _shininess = 32, const float& _alpha = 1,
-                 Texture* _albedoTexture = nullptr, Texture* _emissiveTexture = nullptr, Texture* _shininessMap = nullptr, Texture* _alphaMap = nullptr)
-            : albedo(_albedo), emissive(_emissive), shininess(_shininess), alpha(_alpha),
-              albedoTexture(_albedoTexture), emissiveTexture(_emissiveTexture), shininessMap(_shininessMap), alphaMap(_alphaMap) {}
+                 Texture* albedoTexture = nullptr, Texture* emissiveTexture = nullptr,
+                 Texture* shininessMap = nullptr, Texture* alphaMap = nullptr, Texture* normalMap = nullptr)
+            : albedo(_albedo), emissive(_emissive), shininess(_shininess), alpha(_alpha)
+        {
+            textures[MaterialTextureType::Albedo   ] = albedoTexture;
+            textures[MaterialTextureType::Emissive ] = emissiveTexture;
+            textures[MaterialTextureType::Shininess] = shininessMap;
+            textures[MaterialTextureType::Alpha    ] = alphaMap;
+            textures[MaterialTextureType::Normal   ] = normalMap;
+        }
 
-        
         void SetParams(const Maths::RGB& _albedo, const Maths::RGB& _emissive, const float& _shininess, const float& _alpha)
         {
             albedo    = _albedo;

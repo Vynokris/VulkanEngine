@@ -47,7 +47,6 @@
     <ClCompile Include="Sources\Resources\Camera.cpp" />
     <ClCompile Include="Sources\Resources\Mesh.cpp" />
     <ClCompile Include="Sources\Resources\Model.cpp" />
-    <ClCompile Include="Sources\Resources\Shader.cpp" />
     <ClCompile Include="Sources\Resources\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -75,7 +74,6 @@
     <ClInclude Include="Includes\Resources\Material.h" />
     <ClInclude Include="Includes\Resources\Mesh.h" />
     <ClInclude Include="Includes\Resources\Model.h" />
-    <ClInclude Include="Includes\Resources\Shader.h" />
     <ClInclude Include="Includes\Resources\Texture.h" />
   </ItemGroup>
   <ItemGroup>

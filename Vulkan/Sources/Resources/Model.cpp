@@ -16,13 +16,31 @@ Model::Model(std::string _name, Transform _transform)
      CreateMvpBuffers();
 }
 
+Model& Model::operator=(Model&& other) noexcept
+{
+     name               = other.name;
+     meshes             = std::move(other.meshes);
+     vkMvpBuffers       = std::move(other.vkMvpBuffers);
+     vkMvpBuffersMemory = std::move(other.vkMvpBuffersMemory);
+     vkMvpBuffersMapped = std::move(other.vkMvpBuffersMapped);
+     transform          = std::move(other.transform);
+     other.name = "";
+     other.meshes            .clear();
+     other.vkMvpBuffers      .clear();
+     other.vkMvpBuffersMemory.clear();
+     other.vkMvpBuffersMapped.clear();
+     other.transform = {};
+     return *this;
+}
+
 Model::~Model()
 {
      const VkDevice vkDevice = Application::Get()->GetRenderer()->GetVkDevice();
-     
+
+     if (vkMvpBuffers.empty() && vkMvpBuffersMemory.empty()) return;
      for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-          vkDestroyBuffer(vkDevice, vkMvpBuffers[i],       nullptr);
-          vkFreeMemory   (vkDevice, vkMvpBuffersMemory[i], nullptr);
+          if (vkMvpBuffers[i])       vkDestroyBuffer(vkDevice, vkMvpBuffers[i],       nullptr);
+          if (vkMvpBuffersMemory[i]) vkFreeMemory   (vkDevice, vkMvpBuffersMemory[i], nullptr);
      }
 }
 

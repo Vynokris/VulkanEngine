@@ -11,6 +11,7 @@
 #include <array>
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iostream>
 using namespace Core;
 using namespace VulkanUtils;
@@ -58,6 +59,7 @@ Renderer::Renderer(const char* appName, const char* engineName)
 
     CheckValidationLayers();
     CreateVkInstance(appName, engineName);
+    CreateDebugMessenger();
     CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
@@ -83,6 +85,7 @@ Renderer::Renderer(const char* appName, const char* engineName)
 Renderer::~Renderer()
 {
     WaitUntilIdle();
+    const auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugUtilsMessengerEXT");
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphores[i], nullptr);
@@ -90,15 +93,16 @@ Renderer::~Renderer()
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
     }
     DestroySwapChain();
-    vkDestroySampler            (vkDevice,   vkTextureSampler,      nullptr);
-    vkDestroyCommandPool        (vkDevice,   vkCommandPool,         nullptr);
-    vkDestroyPipeline           (vkDevice,   vkGraphicsPipeline,    nullptr);
-    vkDestroyPipelineLayout     (vkDevice,   vkPipelineLayout,      nullptr);
-    vkDestroyDescriptorSetLayout(vkDevice,   vkDescriptorSetLayout, nullptr);
-    vkDestroyRenderPass         (vkDevice,   vkRenderPass,          nullptr);
-    vkDestroyDevice             (vkDevice,                          nullptr);
-    vkDestroySurfaceKHR         (vkInstance, vkSurface,             nullptr);
-    vkDestroyInstance           (vkInstance,                        nullptr);
+    vkDestroySampler               (vkDevice,   vkTextureSampler,      nullptr);
+    vkDestroyCommandPool           (vkDevice,   vkCommandPool,         nullptr);
+    vkDestroyPipeline              (vkDevice,   vkGraphicsPipeline,    nullptr);
+    vkDestroyPipelineLayout        (vkDevice,   vkPipelineLayout,      nullptr);
+    vkDestroyDescriptorSetLayout   (vkDevice,   vkDescriptorSetLayout, nullptr);
+    vkDestroyRenderPass            (vkDevice,   vkRenderPass,          nullptr);
+    vkDestroyDevice                (vkDevice,                          nullptr);
+    vkDestroySurfaceKHR            (vkInstance, vkSurface,             nullptr);
+    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger,     nullptr);
+    vkDestroyInstance              (vkInstance,                        nullptr);
 }
 
 void Renderer::BeginRender()
@@ -107,11 +111,11 @@ void Renderer::BeginRender()
     BeginRenderPass();
 }
 
-void Renderer::DrawModel(const Resources::Model* model, const Resources::Camera* camera) const
+void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera* camera) const
 {
-    model->UpdateMvpBuffer(camera, currentFrame);
+    model.UpdateMvpBuffer(camera, currentFrame);
     
-    const std::vector<Resources::Mesh>& meshes = model->GetMeshes();
+    const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
     for (const Resources::Mesh& mesh : meshes)
     {
         BindMeshBuffers(mesh.GetVkVertexBuffer(), mesh.GetVkIndexBuffer());
@@ -166,7 +170,7 @@ void Renderer::CheckValidationLayers() const
     // Throw and error if a validation layer hasn't been found.
     if (VALIDATION_LAYERS_ENABLED && validationLayersError) {
         LogError(LogType::Vulkan, "Some of the requested validation layers are not available.");
-        throw std::runtime_error("VK_VALIDATION_LAYERS_ERROR");
+        throw std::runtime_error("VULKAN_VALIDATION_LAYERS_ERROR");
     }
 }
 
@@ -198,13 +202,60 @@ void Renderer::CreateVkInstance(const char* appName, const char* engineName)
     // Set glfw extension information.
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    createInfo.enabledExtensionCount   = glfwExtensionCount;
-    createInfo.ppEnabledExtensionNames = glfwExtensions;
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    createInfo.enabledExtensionCount   = (uint32_t)extensions.size();
+    createInfo.ppEnabledExtensionNames = extensions.data();
 
     // Create the vulkan instance.
     if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Unable to create a Vulkan instance.");
         throw std::runtime_error("VULKAN_INIT_ERROR");
+    }
+}
+
+VkBool32 VkDebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+{
+    LogSeverity logSeverity;
+    switch (messageSeverity)
+    {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        logSeverity = LogSeverity::Info;
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        logSeverity = LogSeverity::Warning;
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        logSeverity = LogSeverity::Error;
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
+    default:
+        logSeverity = LogSeverity::None;
+        break;
+    }
+
+    Logger::PushLog({ LogType::Vulkan, logSeverity, pCallbackData->pMessage, "", "", -1 });
+    return false;
+}
+
+void Renderer::CreateDebugMessenger()
+{
+    // Setup debug messenger properties.
+    VkDebugUtilsMessengerCreateInfoEXT messengerInfo{};
+    messengerInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    messengerInfo.pfnUserCallback = VkDebugMessengerCallback;
+    messengerInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    messengerInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                   VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    messengerInfo.pUserData       = nullptr;
+    
+    const auto vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkInstance, "vkCreateDebugUtilsMessengerEXT");
+    if (vkCreateDebugUtilsMessengerEXT(vkInstance, &messengerInfo, nullptr, &vkDebugMessenger) != VK_SUCCESS) {
+        LogError(LogType::Vulkan, "Unable to link engine logger to Vulkan log outputs.");
+        throw std::runtime_error("VULKAN_LOGGER_INIT_ERROR");
     }
 }
 
@@ -274,6 +325,18 @@ void Renderer::CreateLogicalDevice()
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.sampleRateShading = VK_TRUE;
 
+    // Specify the descriptor indexing features to be used (enable non-uniform indexing).
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
+    descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    descriptorIndexingFeatures.runtimeDescriptorArray                    = VK_TRUE;
+    descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount  = VK_TRUE;
+    descriptorIndexingFeatures.descriptorBindingPartiallyBound           = VK_TRUE;
+
+    VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustnessFeatures{};
+    deviceRobustnessFeatures.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+    deviceRobustnessFeatures.nullDescriptor = VK_TRUE;
+
     // Set the logical device creation information.
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -282,6 +345,7 @@ void Renderer::CreateLogicalDevice()
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
     deviceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(EXTENSIONS.size());
     deviceCreateInfo.ppEnabledExtensionNames = EXTENSIONS.data();
+    deviceCreateInfo.pNext                   = &deviceRobustnessFeatures;
     if (VALIDATION_LAYERS_ENABLED) {
         deviceCreateInfo.enabledLayerCount   = static_cast<uint32_t>(VALIDATION_LAYERS.size());
         deviceCreateInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
@@ -465,19 +529,17 @@ void Renderer::CreateDescriptorSetLayout()
 {
     // Set the binding of the mvp buffer object.
     VkDescriptorSetLayoutBinding mvpLayoutBinding{};
-    mvpLayoutBinding.binding            = 0;
-    mvpLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    mvpLayoutBinding.descriptorCount    = 1;
-    mvpLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
-    mvpLayoutBinding.pImmutableSamplers = nullptr; // Optional.
+    mvpLayoutBinding.binding         = 0;
+    mvpLayoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    mvpLayoutBinding.descriptorCount = 1;
+    mvpLayoutBinding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
 
     // Set the binding for the texture sampler.
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding            = 1;
-    samplerLayoutBinding.descriptorCount    = 1;
-    samplerLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+    samplerLayoutBinding.binding         = 1;
+    samplerLayoutBinding.descriptorCount = Resources::Material::textureTypesCount;
+    samplerLayoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     // Create the descriptor set layout.
     const std::array<VkDescriptorSetLayoutBinding, 2> bindings = { mvpLayoutBinding, samplerLayoutBinding };

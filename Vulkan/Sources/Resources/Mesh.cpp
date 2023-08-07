@@ -152,10 +152,14 @@ void Mesh::CreateDescriptors()
         mvpBufferInfo.offset = 0;
         mvpBufferInfo.range  = sizeof(Maths::MvpBuffer);
         
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView   = material.albedoTexture->GetVkImageView();
-        imageInfo.sampler     = renderer->GetVkTextureSampler();
+        VkDescriptorImageInfo imagesInfo[Material::textureTypesCount];
+        for (size_t j = 0; j < Material::textureTypesCount; j++)
+        {
+            const Texture* texture    = material.textures[MaterialTextureType::Albedo+j];
+            imagesInfo[j].imageView   = texture ? texture->GetVkImageView() : VK_NULL_HANDLE;
+            imagesInfo[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imagesInfo[j].sampler     = renderer->GetVkTextureSampler();
+        }
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -170,8 +174,8 @@ void Mesh::CreateDescriptors()
         descriptorWrites[1].dstBinding      = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo      = &imageInfo;
+        descriptorWrites[1].descriptorCount = Material::textureTypesCount;
+        descriptorWrites[1].pImageInfo      = imagesInfo;
         
         vkUpdateDescriptorSets(vkDevice, (uint32_t)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
     }

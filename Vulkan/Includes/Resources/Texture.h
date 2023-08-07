@@ -7,11 +7,7 @@ typedef struct VkDeviceMemory_T* VkDeviceMemory;
 typedef struct VkImageView_T*    VkImageView;
 typedef enum   VkFormat : int    VkFormat;
 
-namespace Core
-{
-    class Renderer;
-}
-
+namespace Core { class Renderer; }
 namespace Resources
 {
     class Texture
@@ -29,15 +25,12 @@ namespace Resources
         VkFormat       vkImageFormat;
         
     public:
-		bool shouldDelete = false;
-        
         Texture() = default;
         Texture(std::string filename);
-        Texture(const int& width, const int& height);
-        Texture(const Texture& other)      = delete;
-        Texture(Texture&&)                 = delete;
+        Texture(const Texture&) = delete;
+        Texture(Texture&&) noexcept;
         Texture& operator=(const Texture&) = delete;
-        Texture& operator=(Texture&&)      = delete;
+        Texture& operator=(Texture&&) noexcept;
         ~Texture();
 
         std::string  GetName()        const { return name; }
