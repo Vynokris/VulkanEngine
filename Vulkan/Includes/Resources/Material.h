@@ -1,5 +1,13 @@
 ﻿#pragma once
 #include "Maths/Color.h"
+#include <string>
+#include <vector>
+
+#include "Core/VulkanUtils.h"
+
+typedef struct VkDescriptorSetLayout_T* VkDescriptorSetLayout;
+typedef struct VkDescriptorPool_T*      VkDescriptorPool;
+typedef struct VkDescriptorSet_T*       VkDescriptorSet;
 
 namespace Resources
 {
@@ -30,26 +38,24 @@ namespace Resources
 
         static constexpr size_t textureTypesCount = 5;
         Texture* textures[textureTypesCount] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+        
+    private:
+        inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
+        inline static VkDescriptorPool      vkDescriptorPool      = nullptr;
+        VkDescriptorSet vkDescriptorSets[VulkanUtils::MAX_FRAMES_IN_FLIGHT];
 
     public:
         Material(const Maths::RGB& _albedo = 1, const Maths::RGB& _emissive = 0, const float& _shininess = 32, const float& _alpha = 1,
-                 Texture* albedoTexture = nullptr, Texture* emissiveTexture = nullptr,
-                 Texture* shininessMap = nullptr, Texture* alphaMap = nullptr, Texture* normalMap = nullptr)
-            : albedo(_albedo), emissive(_emissive), shininess(_shininess), alpha(_alpha)
-        {
-            textures[MaterialTextureType::Albedo   ] = albedoTexture;
-            textures[MaterialTextureType::Emissive ] = emissiveTexture;
-            textures[MaterialTextureType::Shininess] = shininessMap;
-            textures[MaterialTextureType::Alpha    ] = alphaMap;
-            textures[MaterialTextureType::Normal   ] = normalMap;
-        }
+                 Texture* albedoTexture = nullptr, Texture* emissiveTexture = nullptr, Texture* shininessMap = nullptr, Texture* alphaMap = nullptr, Texture* normalMap = nullptr);
 
-        void SetParams(const Maths::RGB& _albedo, const Maths::RGB& _emissive, const float& _shininess, const float& _alpha)
-        {
-            albedo    = _albedo;
-            emissive  = _emissive;
-            shininess = _shininess;
-            alpha     = _alpha;
-        }
+        void SetParams(const Maths::RGB& _albedo, const Maths::RGB& _emissive, const float& _shininess, const float& _alpha);
+        bool IsLoadingFinalized() const;
+        void FinalizeLoading();
+        
+		static void CreateDescriptorLayoutAndPool (const VkDevice& vkDevice);
+		static void DestroyDescriptorLayoutAndPool(const VkDevice& vkDevice);
+        static VkDescriptorSetLayout GetVkDescriptorSetLayout() { return vkDescriptorSetLayout; }
+        static VkDescriptorPool      GetVkDescriptorPool     () { return vkDescriptorPool;      }
+               VkDescriptorSet       GetVkDescriptorSet(const uint32_t& currentFrame) const;
     };
 }

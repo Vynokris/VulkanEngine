@@ -6,8 +6,8 @@ namespace Resources
 {
 	class Camera;
 	class Model;
-	class Mesh;
 	class Texture;
+	class Light;
 }
 
 namespace Core
@@ -21,7 +21,8 @@ namespace Core
         Application*       app    = nullptr;
         Resources::Camera* camera = nullptr;
 
-		std::unordered_map<std::string, Resources::Model  > models;
+		std::vector<Resources::Light>                       lights;
+		std::unordered_map<std::string, Resources::Model>   models;
 		std::unordered_map<std::string, Resources::Texture> textures;
 
 	public:
