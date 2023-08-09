@@ -25,7 +25,6 @@ namespace Core
         VkQueue                         vkPresentQueue        = nullptr;
         VkSwapchainKHR                  vkSwapChain           = nullptr;
         VkRenderPass                    vkRenderPass          = nullptr;
-        VkDescriptorSetLayout           vkDescriptorSetLayout = nullptr;
         VkPipelineLayout                vkPipelineLayout      = nullptr;
         VkPipeline                      vkGraphicsPipeline    = nullptr;
         VkCommandPool                   vkCommandPool         = nullptr;
@@ -76,7 +75,6 @@ namespace Core
         VkCommandPool         GetVkCommandPool()         const { return vkCommandPool;                               }
         VkCommandBuffer       GetCurVkCommandBuffer()    const { return vkCommandBuffers[currentFrame];              }
         VkSampler             GetVkTextureSampler()      const { return vkTextureSampler;                            }
-        VkDescriptorSetLayout GetVkDescriptorSetLayout() const { return vkDescriptorSetLayout;                       }
         VkSampleCountFlagBits GetMsaaSamples()           const { return msaaSamples;                                 }
 
     private:
@@ -89,7 +87,7 @@ namespace Core
         void CreateSwapChain();
         void CreateImageViews();
         void CreateRenderPass();
-        void CreateDescriptorSetLayout();
+        void CreateDescriptorLayoutsAndPools() const;
         void CreateGraphicsPipeline();
         void CreateColorResources();
         void CreateDepthResources();
@@ -101,8 +99,6 @@ namespace Core
 
         void DestroySwapChain() const;
         void RecreateSwapChain();
-
-        void BindMeshBuffers(const VkBuffer& vertexBuffer, const VkBuffer& indexBuffer) const;
 
         void NewFrame();
         void BeginRenderPass() const;

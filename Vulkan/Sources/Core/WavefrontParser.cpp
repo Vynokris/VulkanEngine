@@ -38,6 +38,7 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
         // Create new material.
         if (line[0] == 'n' && line[1] == 'e' && line[2] == 'w')
         {
+            if (!curMatName.empty()) newMaterials[curMatName].FinalizeLoading();
             curMatName = line.substr(7, line.size() - 7);
             newMaterials[curMatName] = Material();
             newMaterials[curMatName].name = curMatName;
@@ -161,7 +162,8 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             }
         }
     }
-    
+
+    if (!curMatName.empty()) newMaterials[curMatName].FinalizeLoading();
     return newMaterials;
 }
 

@@ -10,6 +10,7 @@
 #include <fstream>
 
 #include "Core/WavefrontParser.h"
+#include "Resources/Light.h"
 namespace fs = std::filesystem;
 using namespace Core;
 using namespace Resources;
@@ -36,6 +37,9 @@ void Engine::Awake()
     // Load default resources.
     for (const std::string& filename : defaultResources)
         LoadFile(filename);
+
+    // Add default directional light.
+    lights.emplace_back(Light::Directional({ 1,1,1 }, Vector3(1,-1,1).GetNormalized()));
 }
 
 void Engine::Start() const

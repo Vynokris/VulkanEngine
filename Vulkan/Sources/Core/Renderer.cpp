@@ -71,7 +71,7 @@ Renderer::Renderer(const char* appName, const char* engineName)
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
     CreateRenderPass();
-    CreateDescriptorSetLayout();
+    CreateDescriptorLayoutsAndPools();
     CreateGraphicsPipeline();
     CreateColorResources();
     CreateDepthResources();
@@ -93,11 +93,12 @@ Renderer::~Renderer()
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
     }
     DestroySwapChain();
+    Resources::Model   ::DestroyDescriptorLayoutAndPool(vkDevice);
+    Resources::Material::DestroyDescriptorLayoutAndPool(vkDevice);
     vkDestroySampler               (vkDevice,   vkTextureSampler,      nullptr);
     vkDestroyCommandPool           (vkDevice,   vkCommandPool,         nullptr);
     vkDestroyPipeline              (vkDevice,   vkGraphicsPipeline,    nullptr);
     vkDestroyPipelineLayout        (vkDevice,   vkPipelineLayout,      nullptr);
-    vkDestroyDescriptorSetLayout   (vkDevice,   vkDescriptorSetLayout, nullptr);
     vkDestroyRenderPass            (vkDevice,   vkRenderPass,          nullptr);
     vkDestroyDevice                (vkDevice,                          nullptr);
     vkDestroySurfaceKHR            (vkInstance, vkSurface,             nullptr);
@@ -113,13 +114,22 @@ void Renderer::BeginRender()
 
 void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera* camera) const
 {
+    static const auto vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(vkDevice, "vkCmdPushDescriptorSetKHR");
     model.UpdateMvpBuffer(camera, currentFrame);
     
     const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
     for (const Resources::Mesh& mesh : meshes)
     {
-        BindMeshBuffers(mesh.GetVkVertexBuffer(), mesh.GetVkIndexBuffer());
-        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &mesh.GetVkDescriptorSet(currentFrame), 0, nullptr);
+        // Bind the vertex and index buffers.
+        const VkDeviceSize vertexOffset = 0;
+        const VkBuffer     vertexBuffer = mesh.GetVkVertexBuffer();
+        const VkBuffer     indexBuffer  = mesh.GetVkIndexBuffer ();
+        vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, &vertexBuffer, &vertexOffset);
+        vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        // Bind the descriptor sets and draw.
+        const VkDescriptorSet descriptorSets[2] = { model.GetVkDescriptorSet(currentFrame), mesh.GetMaterial().GetVkDescriptorSet(currentFrame) };
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 2, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 }
@@ -525,32 +535,10 @@ void Renderer::CreateRenderPass()
     }
 }
 
-void Renderer::CreateDescriptorSetLayout()
+void Renderer::CreateDescriptorLayoutsAndPools() const
 {
-    // Set the binding of the mvp buffer object.
-    VkDescriptorSetLayoutBinding mvpLayoutBinding{};
-    mvpLayoutBinding.binding         = 0;
-    mvpLayoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    mvpLayoutBinding.descriptorCount = 1;
-    mvpLayoutBinding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
-
-    // Set the binding for the texture sampler.
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding         = 1;
-    samplerLayoutBinding.descriptorCount = Resources::Material::textureTypesCount;
-    samplerLayoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    // Create the descriptor set layout.
-    const std::array<VkDescriptorSetLayoutBinding, 2> bindings = { mvpLayoutBinding, samplerLayoutBinding };
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = (uint32_t)bindings.size();
-    layoutInfo.pBindings    = bindings.data();
-    if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &vkDescriptorSetLayout) != VK_SUCCESS) {
-        LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
-        throw std::runtime_error("VULKAN_DESCRIPTOR_SET_LAYOUT_ERROR");
-    }
+    Resources::Model   ::CreateDescriptorLayoutAndPool(vkDevice);
+    Resources::Material::CreateDescriptorLayoutAndPool(vkDevice);
 }
 
 void Renderer::CreateGraphicsPipeline()
@@ -685,12 +673,11 @@ void Renderer::CreateGraphicsPipeline()
     colorBlending.blendConstants[3] = 0.f; // Optional.
 
     // Set the pipeline layout creation information.
+    const VkDescriptorSetLayout setLayouts[2] = { Resources::Model::GetVkDescriptorSetLayout(), Resources::Material::GetVkDescriptorSetLayout() };
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount         = 1;
-    pipelineLayoutInfo.pSetLayouts            = &vkDescriptorSetLayout;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;       // Optional.
-    pipelineLayoutInfo.pPushConstantRanges    = nullptr; // Optional.
+    pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 2;
+    pipelineLayoutInfo.pSetLayouts    = setLayouts;
 
     // Create the pipeline layout.
     if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {
@@ -714,8 +701,6 @@ void Renderer::CreateGraphicsPipeline()
     pipelineInfo.layout              = vkPipelineLayout;
     pipelineInfo.renderPass          = vkRenderPass;
     pipelineInfo.subpass             = 0;
-    pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE; // Optional.
-    pipelineInfo.basePipelineIndex   = -1;             // Optional.
 
     // Create the graphics pipeline.
     if (vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline) != VK_SUCCESS) {
@@ -824,7 +809,7 @@ void Renderer::CreateCommandBuffers()
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool        = vkCommandPool;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
+    allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
     // Allocate the command buffer.
     vkCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -889,17 +874,6 @@ void Renderer::RecreateSwapChain()
     CreateFramebuffers();
 }
 #pragma endregion 
-
-#pragma region Update
-void Renderer::BindMeshBuffers(const VkBuffer& vertexBuffer, const VkBuffer& indexBuffer) const
-{
-    // Bind the vertex and index buffers.
-    const VkBuffer     vertexBuffers[] = { vertexBuffer };
-    const VkDeviceSize offsets[]       = { 0 };
-    vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-}
-#pragma endregion
 
 #pragma region Rendering
 void Renderer::NewFrame()

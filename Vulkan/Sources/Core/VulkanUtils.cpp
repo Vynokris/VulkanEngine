@@ -11,8 +11,6 @@
 using namespace Core;
 using namespace VulkanUtils;
 
-const unsigned int VulkanUtils::MAX_FRAMES_IN_FLIGHT = 3;
-
 #ifdef NDEBUG
     const bool VulkanUtils::VALIDATION_LAYERS_ENABLED = false;
 #else
@@ -26,6 +24,7 @@ const std::vector<const char*> VulkanUtils::VALIDATION_LAYERS = {
 const std::vector<const char*> VulkanUtils::EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+    VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 
 SwapChainSupportDetails::SwapChainSupportDetails()

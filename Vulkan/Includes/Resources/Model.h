@@ -2,10 +2,10 @@
 #include "Maths/Transform.h"
 #include <vector>
 
-typedef struct VkDescriptorPool_T* VkDescriptorPool;
-typedef struct VkDescriptorSet_T*  VkDescriptorSet;
-typedef struct VkBuffer_T*         VkBuffer;
-typedef struct VkDeviceMemory_T*   VkDeviceMemory;
+typedef struct VkDescriptorSetLayout_T* VkDescriptorSetLayout;
+typedef struct VkDescriptorPool_T*      VkDescriptorPool;
+typedef struct VkBuffer_T*              VkBuffer;
+typedef struct VkDeviceMemory_T*        VkDeviceMemory;
 
 namespace Core { class WavefrontParser; }
 namespace Resources
@@ -22,13 +22,16 @@ namespace Resources
 		std::string name;
 		std::vector<Mesh> meshes;
 		
-		std::vector<VkBuffer>        vkMvpBuffers;
-		std::vector<VkDeviceMemory>  vkMvpBuffersMemory;
-		std::vector<void*>           vkMvpBuffersMapped;
+		inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
+		inline static VkDescriptorPool      vkDescriptorPool      = nullptr;
+        VkDescriptorSet vkDescriptorSets  [VulkanUtils::MAX_FRAMES_IN_FLIGHT];
+		VkBuffer        vkMvpBuffers      [VulkanUtils::MAX_FRAMES_IN_FLIGHT];
+		VkDeviceMemory  vkMvpBuffersMemory[VulkanUtils::MAX_FRAMES_IN_FLIGHT];
+		void*           vkMvpBuffersMapped[VulkanUtils::MAX_FRAMES_IN_FLIGHT];
 
 	public:
 		Maths::Transform transform;
-
+		
 		Model() = default;
 		Model(std::string _name, Maths::Transform _transform = Maths::Transform());
 		Model(const Model&)            = delete;
@@ -39,10 +42,17 @@ namespace Resources
 
 		void UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const;
 		
+		static void CreateDescriptorLayoutAndPool (const VkDevice& vkDevice);
+		static void DestroyDescriptorLayoutAndPool(const VkDevice& vkDevice);
+		static VkDescriptorSetLayout GetVkDescriptorSetLayout() { return vkDescriptorSetLayout; }
+		static VkDescriptorPool      GetVkDescriptorPool     () { return vkDescriptorPool;      }
+               VkDescriptorSet       GetVkDescriptorSet(const uint32_t& currentFrame) const;
+		
 		std::string              GetName  () const { return name;    }
 		const std::vector<Mesh>& GetMeshes() const { return meshes;  }
-
+		
 	private:
+		void CreateDescriptorSets();
 		void CreateMvpBuffers();
 	};
 }

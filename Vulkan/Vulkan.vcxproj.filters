@@ -99,9 +99,6 @@
     <ClCompile Include="Sources\Resources\Mesh.cpp">
       <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Resources\Shader.cpp">
-      <Filter>Fichiers sources\Resources</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Core\Engine.cpp">
       <Filter>Fichiers sources\Core</Filter>
     </ClCompile>
@@ -125,6 +122,9 @@
     </ClCompile>
     <ClCompile Include="Sources\Core\Logger.cpp">
       <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Resources\Light.cpp">
+      <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -182,9 +182,6 @@
     <ClInclude Include="Includes\Resources\Mesh.h">
       <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
-    <ClInclude Include="Includes\Resources\Shader.h">
-      <Filter>Fichiers d%27en-tête\Resources</Filter>
-    </ClInclude>
     <ClInclude Include="Includes\Core\Engine.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
@@ -205,6 +202,9 @@
     </ClInclude>
     <ClInclude Include="Includes\Core\Logger.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Light.h">
+      <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

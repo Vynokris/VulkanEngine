@@ -45,6 +45,8 @@
     <ClCompile Include="Sources\Maths\Vector3.cpp" />
     <ClCompile Include="Sources\Maths\Vector4.cpp" />
     <ClCompile Include="Sources\Resources\Camera.cpp" />
+    <ClCompile Include="Sources\Resources\Light.cpp" />
+    <ClCompile Include="Sources\Resources\Material.cpp" />
     <ClCompile Include="Sources\Resources\Mesh.cpp" />
     <ClCompile Include="Sources\Resources\Model.cpp" />
     <ClCompile Include="Sources\Resources\Texture.cpp" />
@@ -71,6 +73,7 @@
     <ClInclude Include="Includes\Maths\Vector4.h" />
     <ClInclude Include="Includes\Maths\Vertex.h" />
     <ClInclude Include="Includes\Resources\Camera.h" />
+    <ClInclude Include="Includes\Resources\Light.h" />
     <ClInclude Include="Includes\Resources\Material.h" />
     <ClInclude Include="Includes\Resources\Mesh.h" />
     <ClInclude Include="Includes\Resources\Model.h" />
