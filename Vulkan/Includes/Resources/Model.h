@@ -19,7 +19,7 @@ namespace Resources
 		friend Core::WavefrontParser;
 		friend Mesh;
 		
-		std::string name;
+		std::string       name;
 		std::vector<Mesh> meshes;
 		
 		inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
@@ -52,7 +52,7 @@ namespace Resources
 		const std::vector<Mesh>& GetMeshes() const { return meshes;  }
 		
 	private:
-		void CreateDescriptorSets();
 		void CreateMvpBuffers();
+		void CreateDescriptorSets();
 	};
 }

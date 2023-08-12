@@ -6,6 +6,7 @@ namespace Resources
 {
 	class Camera;
 	class Model;
+	class Material;
 	class Texture;
 	class Light;
 }
@@ -21,9 +22,10 @@ namespace Core
         Application*       app    = nullptr;
         Resources::Camera* camera = nullptr;
 
-		std::vector<Resources::Light>                       lights;
-		std::unordered_map<std::string, Resources::Model>   models;
-		std::unordered_map<std::string, Resources::Texture> textures;
+		std::vector<Resources::Light>                        lights;
+		std::unordered_map<std::string, Resources::Model>    models;
+		std::unordered_map<std::string, Resources::Material> materials;
+		std::unordered_map<std::string, Resources::Texture>  textures;
 
 	public:
 		float cameraSpeed       = 2;
@@ -31,8 +33,8 @@ namespace Core
 		bool  rotateModels      = false;
 		const std::vector<std::string> defaultResources = {
 			// "Resources\\Models\\VikingRoom\\VikingRoom.obj",
-			// "Resources\\Models\\Stadium\\stadium.obj"
-			"Resources\\Models\\DoomSlayer\\doommarine.obj"
+			"Resources\\Models\\Stadium\\stadium.obj",
+			"Resources\\Models\\DoomSlayer\\doommarine.obj",
 		};
 		
 		Engine();
@@ -49,8 +51,9 @@ namespace Core
 
 		void LoadFile(const std::string& filename);
 
-		Resources::Model*   GetModel  (const std::string& name);
-		Resources::Texture* GetTexture(const std::string& name);
+		Resources::Model*    GetModel   (const std::string& name);
+		Resources::Material* GetMaterial(const std::string& name);
+		Resources::Texture*  GetTexture (const std::string& name);
 		
 		void ResizeCamera(const int& width, const int& height) const;
 	};

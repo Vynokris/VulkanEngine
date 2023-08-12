@@ -19,21 +19,17 @@ Model::Model(std::string _name, Transform _transform)
 
 Model& Model::operator=(Model&& other) noexcept
 {
-     // TODO: memmove & memset might crash, to test.
-     name      = other.name;
-     meshes    = std::move(other.meshes);
-     transform = std::move(other.transform);
+     name      = other.name;                 other.name = "";
+     meshes    = std::move(other.meshes);    other.meshes.clear();
+     transform = std::move(other.transform); other.transform = {};
      memmove(vkDescriptorSets,   other.vkDescriptorSets,   sizeof(vkDescriptorSets));
-     memmove(vkMvpBuffers,       other.vkMvpBuffers,       sizeof(vkMvpBuffers));       // vkMvpBuffers       = std::move(other.vkMvpBuffers);
-     memmove(vkMvpBuffersMemory, other.vkMvpBuffersMemory, sizeof(vkMvpBuffersMemory)); // vkMvpBuffersMemory = std::move(other.vkMvpBuffersMemory);
-     memmove(vkMvpBuffersMapped, other.vkMvpBuffersMapped, sizeof(vkMvpBuffersMapped)); // vkMvpBuffersMapped = std::move(other.vkMvpBuffersMapped);
-     other.name = "";
-     other.meshes.clear();
-     other.transform = {};
+     memmove(vkMvpBuffers,       other.vkMvpBuffers,       sizeof(vkMvpBuffers));
+     memmove(vkMvpBuffersMemory, other.vkMvpBuffersMemory, sizeof(vkMvpBuffersMemory));
+     memmove(vkMvpBuffersMapped, other.vkMvpBuffersMapped, sizeof(vkMvpBuffersMapped));
      memset(other.vkDescriptorSets,   NULL, sizeof(vkDescriptorSets));
-     memset(other.vkMvpBuffers,       NULL, sizeof(vkMvpBuffers));       // other.vkMvpBuffers      .clear();
-     memset(other.vkMvpBuffersMemory, NULL, sizeof(vkMvpBuffersMemory)); // other.vkMvpBuffersMemory.clear();
-     memset(other.vkMvpBuffersMapped, NULL, sizeof(vkMvpBuffersMapped)); // other.vkMvpBuffersMapped.clear();
+     memset(other.vkMvpBuffers,       NULL, sizeof(vkMvpBuffers));
+     memset(other.vkMvpBuffersMemory, NULL, sizeof(vkMvpBuffersMemory));
+     memset(other.vkMvpBuffersMapped, NULL, sizeof(vkMvpBuffersMapped));
      return *this;
 }
 
@@ -85,7 +81,7 @@ void Model::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
      poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
      poolInfo.poolSizeCount = 1;
      poolInfo.pPoolSizes    = &poolSize;
-     poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * 1000;
+     poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * 1000; // TODO: Multiply by the max number of materials in the scene.
      if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &vkDescriptorPool) != VK_SUCCESS) {
           LogError(LogType::Vulkan, "Failed to create descriptor pool.");
           throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
@@ -103,6 +99,24 @@ VkDescriptorSet Model::GetVkDescriptorSet(const uint32_t& currentFrame) const
      if (currentFrame > MAX_FRAMES_IN_FLIGHT)
           return nullptr;
      return vkDescriptorSets[currentFrame];
+}
+
+void Model::CreateMvpBuffers()
+{
+     // Get necessary vulkan variables.
+     const Renderer*        renderer         = Application::Get()->GetRenderer();
+     const VkDevice         vkDevice         = renderer->GetVkDevice();
+     const VkPhysicalDevice vkPhysicalDevice = renderer->GetVkPhysicalDevice();
+
+     // Create the buffers.
+     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+     {
+          CreateBuffer(vkDevice, vkPhysicalDevice, sizeof(MvpBuffer),
+                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       vkMvpBuffers[i], vkMvpBuffersMemory[i]);
+
+          vkMapMemory(vkDevice, vkMvpBuffersMemory[i], 0, sizeof(MvpBuffer), 0, &vkMvpBuffersMapped[i]);
+     }
 }
 
 void Model::CreateDescriptorSets()
@@ -141,23 +155,5 @@ void Model::CreateDescriptorSets()
           descriptorWrite.pBufferInfo     = &mvpBufferInfo;
         
           vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
-     }
-}
-
-void Model::CreateMvpBuffers()
-{
-     // Get necessary vulkan variables.
-     const Renderer*        renderer         = Application::Get()->GetRenderer();
-     const VkDevice         vkDevice         = renderer->GetVkDevice();
-     const VkPhysicalDevice vkPhysicalDevice = renderer->GetVkPhysicalDevice();
-
-     // Create the buffers.
-     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-     {
-          CreateBuffer(vkDevice, vkPhysicalDevice, sizeof(MvpBuffer),
-                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                       vkMvpBuffers[i], vkMvpBuffersMemory[i]);
-
-          vkMapMemory(vkDevice, vkMvpBuffersMemory[i], 0, sizeof(MvpBuffer), 0, &vkMvpBuffersMapped[i]);
      }
 }

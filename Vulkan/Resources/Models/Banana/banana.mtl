@@ -1,0 +1,12 @@
+newmtl mt_banana
+Ns 250
+Ka 1 1 1
+Kd 0.7 0.7 0.7
+Ks 0 0 0
+Ke 0 0 0
+Ni 1
+d 1
+illum 1
+map_Ka banana_alb.png
+map_Kd banana_alb.png
+map_Bump banana_nrm.png

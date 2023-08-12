@@ -3,6 +3,8 @@
 #include <optional>
 #include <vector>
 
+#include "Maths/Color.h"
+
 #pragma region Forward Declarations
 // Forward declaration of Vulkan types to avoid include inside header.
 typedef uint64_t VkDeviceSize;
@@ -52,6 +54,14 @@ namespace VulkanUtils
     extern const bool VALIDATION_LAYERS_ENABLED;
     extern const std::vector<const char*> VALIDATION_LAYERS;
     extern const std::vector<const char*> EXTENSIONS;
+
+    struct MaterialData
+    {
+        alignas(16) Maths::RGB albedo;
+        alignas(16) Maths::RGB emissive;
+        float shininess;
+        float alpha;
+    };
     
     struct QueueFamilyIndices
     {

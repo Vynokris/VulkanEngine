@@ -1,0 +1,9 @@
+newmtl mt_cubemap
+Ns 250
+Ka 0 0 0
+Kd 0 0 0
+Ks 0 0 0
+Ke 1 1 1
+Ni 1
+d 1
+illum 1

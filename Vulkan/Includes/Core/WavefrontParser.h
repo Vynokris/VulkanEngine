@@ -34,9 +34,9 @@ namespace Core
         static void                 ParseObjTriangle    (const std::string& line, std::array<std::vector<uint32_t>, 3>& indices);
         
         static void ParseObjObjectLine  (                             const std::string& line, Resources::Model& model, std::unordered_map<std::string, Resources::Model>& newModels);
-        static void ParseObjGroupLine   (const std::string& filename, const std::string& line, Resources::Model& model, std::unordered_map<std::string, Resources::Model>& newModels);
-        static void ParseObjUsemtlLine  (const std::string& filename, const std::string& line, Resources::Model& model, std::unordered_map<std::string, Resources::Model>& newModels, std::unordered_map<std::string, Resources::Material>& newMaterials);
-        static void ParseObjIndicesLine (const std::string& filename, const std::string& line, std::stringstream& fileContents, Resources::Model& model, std::unordered_map<std::string, Resources::Model>& newModels, const std::array<std::vector<float>, 3>& vertexData);
+        static void ParseObjGroupLine   (const std::string& filename, const std::string& line, Resources::Model& model);
+        static void ParseObjUsemtlLine  (const std::string& filename, const std::string& line, Resources::Model& model);
+        static void ParseObjIndicesLine (const std::string& filename, const std::string& line, std::stringstream& fileContents, Resources::Model& model, const std::array<std::vector<float>, 3>& vertexData);
         static std::array<std::vector<uint32_t>, 3> ParseObjMeshIndices(std::stringstream& fileContents);
         static void ParseObjMeshVertices(Resources::Mesh* mesh, const std::array<std::vector<float>, 3>& vertexData, const std::array<std::vector<uint32_t>, 3>& vertexIndices);
     };

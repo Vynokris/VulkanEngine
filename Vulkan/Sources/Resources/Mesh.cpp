@@ -9,11 +9,12 @@ using namespace Resources;
 using namespace VulkanUtils;
 
 Mesh::Mesh(Mesh&& other) noexcept
-    : name(std::move(other.name)), material(std::move(other.material)), parentModel(other.parentModel),
+    : name(std::move(other.name)), material(other.material), parentModel(other.parentModel),
       vertices(std::move(other.vertices)), indices(std::move(other.indices)),
       vkVertexBuffer(other.vkVertexBuffer), vkVertexBufferMemory(other.vkVertexBufferMemory),
       vkIndexBuffer (other.vkIndexBuffer ), vkIndexBufferMemory (other.vkIndexBufferMemory )
 {
+    other.material       = nullptr;
     other.vkVertexBuffer = nullptr; other.vkVertexBufferMemory = nullptr;
     other.vkIndexBuffer  = nullptr; other.vkIndexBufferMemory  = nullptr;
 }
