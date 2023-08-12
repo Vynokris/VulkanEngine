@@ -87,7 +87,7 @@ Renderer::~Renderer()
     WaitUntilIdle();
     const auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugUtilsMessengerEXT");
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(vkDevice, vkImageAvailableSemaphores[i], nullptr);
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
@@ -128,7 +128,7 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera*
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[2] = { model.GetVkDescriptorSet(currentFrame), mesh.GetMaterial().GetVkDescriptorSet(currentFrame) };
+        const VkDescriptorSet descriptorSets[2] = { model.GetVkDescriptorSet(currentFrame), mesh.GetMaterial()->GetVkDescriptorSet() };
         vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 2, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
@@ -783,6 +783,7 @@ void Renderer::CreateTextureSampler()
     samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter               = VK_FILTER_LINEAR;
     samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -792,10 +793,8 @@ void Renderer::CreateTextureSampler()
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable           = VK_FALSE;
     samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.minLod                  = 0.f; // Optional.
+    samplerInfo.minLod                  = 0.f;
     samplerInfo.maxLod                  = (float)std::floor(std::log2(std::max(vkSwapChainWidth, vkSwapChainHeight))) + 1; // (float)texture->GetMipLevels();
-    samplerInfo.mipLodBias              = 0.f; // Optional.
     if (vkCreateSampler(vkDevice, &samplerInfo, nullptr, &vkTextureSampler) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create texture sampler.");
         throw std::runtime_error("VULKAN_TEXTURE_SAMPLER_ERROR");
@@ -833,7 +832,7 @@ void Renderer::CreateSyncObjects()
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     // Create the semaphores and fence.
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphores[i]) != VK_SUCCESS ||

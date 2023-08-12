@@ -19,7 +19,7 @@ namespace Resources
 		friend Core::WavefrontParser;
 		
 		std::string name;
-		Material    material;
+		Material*   material = nullptr;
 		Model&      parentModel;
 		
 		std::vector<Maths::Vertex> vertices;
@@ -41,9 +41,9 @@ namespace Resources
 		bool IsLoadingFinalized() const { return vkVertexBuffer && vkVertexBufferMemory && vkIndexBuffer && vkIndexBufferMemory; }
 		void FinalizeLoading   ()       { if (IsLoadingFinalized()) return; CreateVertexBuffers(); }
 
-		std::string GetName    () const { return name;     }
-		Material    GetMaterial() const { return material; }
-		void        SetMaterial(const Material& mat) { material = mat; }
+		std::string     GetName    () const { return name;     }
+		const Material* GetMaterial() const { return material; }
+		void            SetMaterial(Material* _material) { material = _material; }
 		
 		uint32_t GetIndexCount    () const { return (uint32_t)indices.size(); }
 		VkBuffer GetVkVertexBuffer() const { return vkVertexBuffer; }

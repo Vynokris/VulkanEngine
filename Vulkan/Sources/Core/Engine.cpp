@@ -87,7 +87,19 @@ void Engine::LoadFile(const std::string& filename)
             if (models.count(name) <= 0)
                 models[name] = std::move(model);
             else
-                LogError(LogType::Resources, "Tried to create model " + name + " multiple times.");
+                LogWarning(LogType::Resources, "Tried to create model " + name + " multiple times.");
+        }
+        return;
+    }
+    if (extension == ".mtl")
+    {
+        std::unordered_map<std::string, Material> newMaterials = WavefrontParser::ParseMtl(path.string());
+        for (auto& [name, material] : newMaterials)
+        {
+            if (materials.count(name) <= 0)
+                materials[name] = std::move(material);
+            else
+                LogWarning(LogType::Resources, "Tried to create material " + name + " multiple times.");
         }
         return;
     }
@@ -97,7 +109,7 @@ void Engine::LoadFile(const std::string& filename)
         if (textures.count(path.string()) <= 0)
             textures[path.string()] = Texture(path.string());
         else
-            LogError(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
+            LogWarning(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
         return;
     }
 }
@@ -106,6 +118,13 @@ Model* Engine::GetModel(const std::string& name)
 {
     if (models.count(name) > 0)
         return &models[name];
+    return nullptr;
+}
+
+Material* Engine::GetMaterial(const std::string& name)
+{
+    if (materials.count(name) > 0)
+        return &materials[name];
     return nullptr;
 }
 

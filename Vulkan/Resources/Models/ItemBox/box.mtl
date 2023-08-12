@@ -1,0 +1,11 @@
+newmtl mt_itembox
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.778039 0.778039 0.778039
+Ks 0.400000 0.400000 0.400000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Ka box_mat.png
+map_Kd box_mat.png
+map_d box_mat.png

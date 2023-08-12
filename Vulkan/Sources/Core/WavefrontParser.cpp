@@ -182,8 +182,7 @@ std::unordered_map<std::string, Model> WavefrontParser::ParseObj(const std::stri
         f.close();
     }
     std::string filepath = fs::path(filename).parent_path().string() + "\\";
-    std::unordered_map<std::string, Model   > newModels    = {};
-    std::unordered_map<std::string, Material> newMaterials = {};
+    std::unordered_map<std::string, Model> newModels = {};
 
     // Define dynamic arrays for positions, uvs, and normals.
     // Format: vertexData[0] = positions, vertexData[1] = uvs, vertexData[2] = normals.
@@ -224,19 +223,19 @@ std::unordered_map<std::string, Model> WavefrontParser::ParseObj(const std::stri
             break;
 
         case 'g':
-            ParseObjGroupLine(filename, line, model, newModels);
+            ParseObjGroupLine(filename, line, model);
             break;
 
         case 'm':
-            newMaterials = ParseMtl(filepath + line.substr(7, line.size() - 8));
+            engine->LoadFile(filepath + line.substr(7, line.size() - 8));
             break;
 
         case 'u':
-            ParseObjUsemtlLine(filename, line, model, newModels, newMaterials);
+            ParseObjUsemtlLine(filename, line, model);
             break;
 
         case 'f':
-            ParseObjIndicesLine(filename, line, fileContents, model, newModels, vertexData);
+            ParseObjIndicesLine(filename, line, fileContents, model, vertexData);
             break;
 
         default:
@@ -358,7 +357,7 @@ void WavefrontParser::ParseObjObjectLine(const std::string& line, Model& model, 
     model = Model(line.substr(2, line.size()-3));
 }
 
-void WavefrontParser::ParseObjGroupLine(const std::string& filename, const std::string& line, Model& model, std::unordered_map<std::string, Model>& newModels)
+void WavefrontParser::ParseObjGroupLine(const std::string& filename, const std::string& line, Model& model)
 {
     if (line[2] == '\0')
         return;
@@ -375,28 +374,27 @@ void WavefrontParser::ParseObjGroupLine(const std::string& filename, const std::
     model.meshes.emplace_back(line.substr(2, line.size() - 3), model);
 }
 
-void WavefrontParser::ParseObjUsemtlLine(const std::string& filename, const std::string& line, Model& model, std::unordered_map<std::string, Model>& newModels, std::unordered_map<std::string, Material>& newMaterials)
+void WavefrontParser::ParseObjUsemtlLine(const std::string& filename, const std::string& line, Model& model)
 {
     // Make sure a model was already created.
     if (model.name.empty())
         model = Model("model_" + fs::path(filename).stem().string());
 
     // Make sure a mesh was already created.
-    if (model.meshes.empty()) {
+    if (model.meshes.empty())
         model.meshes.emplace_back("mesh_" + line.substr(7, line.size() - 8), model);
-    }
 
     // Make sure the current mesh doesn't already have a material.
-    else if (!model.meshes.back().name.empty()) {
+    else if (model.meshes.back().GetMaterial()) {
         model.meshes.back().FinalizeLoading();
         model.meshes.emplace_back("mesh_" + line.substr(7, line.size() - 8), model);
     }
 
     // Set the current mesh's material.
-    model.meshes.back().SetMaterial(newMaterials[line.substr(7, line.size() - 8)]);
+    model.meshes.back().SetMaterial(engine->GetMaterial(line.substr(7, line.size() - 8)));
 }
 
-void WavefrontParser::ParseObjIndicesLine(const std::string& filename, const std::string& line, std::stringstream& fileContents, Model& model, std::unordered_map<std::string, Model>& newModels, const std::array<std::vector<float>, 3>& vertexData)
+void WavefrontParser::ParseObjIndicesLine(const std::string& filename, const std::string& line, std::stringstream& fileContents, Model& model, const std::array<std::vector<float>, 3>& vertexData)
 {
     // Make sure a model was already created.
     if (model.name.empty())
