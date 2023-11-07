@@ -160,8 +160,8 @@ void Window::UpdateInputs()
     inputs.dirMovement = {};
     if (inputKeys.moveRight   > 0 && glfwGetKey(glfwWindow, inputKeys.moveRight  )) inputs.dirMovement.x += 1;
     if (inputKeys.moveLeft    > 0 && glfwGetKey(glfwWindow, inputKeys.moveLeft   )) inputs.dirMovement.x -= 1;
-    if (inputKeys.moveUp      > 0 && glfwGetKey(glfwWindow, inputKeys.moveUp     )) inputs.dirMovement.y -= 1;
-    if (inputKeys.moveDown    > 0 && glfwGetKey(glfwWindow, inputKeys.moveDown   )) inputs.dirMovement.y += 1;
+    if (inputKeys.moveUp      > 0 && glfwGetKey(glfwWindow, inputKeys.moveUp     )) inputs.dirMovement.y += 1;
+    if (inputKeys.moveDown    > 0 && glfwGetKey(glfwWindow, inputKeys.moveDown   )) inputs.dirMovement.y -= 1;
     if (inputKeys.moveForward > 0 && glfwGetKey(glfwWindow, inputKeys.moveForward)) inputs.dirMovement.z -= 1;
     if (inputKeys.moveBack    > 0 && glfwGetKey(glfwWindow, inputKeys.moveBack   )) inputs.dirMovement.z += 1;
 

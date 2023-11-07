@@ -108,9 +108,9 @@ void UserInterface::UploadImGuiFonts() const
     const Renderer*       renderer        = app->GetRenderer();
     const VkDevice        vkDevice        = renderer->GetVkDevice();
     const VkCommandPool   vkCommandPool   = renderer->GetVkCommandPool();
-    const VkCommandBuffer vkCommandBuffer = VulkanUtils::BeginSingleTimeCommands(vkDevice, vkCommandPool);
+    const VkCommandBuffer vkCommandBuffer = VkUtils::BeginSingleTimeCommands(vkDevice, vkCommandPool);
     ImGui_ImplVulkan_CreateFontsTexture(vkCommandBuffer);
-    VulkanUtils::EndSingleTimeCommands(vkDevice, vkCommandPool, renderer->GetVkGraphicsQueue(), vkCommandBuffer);
+    VkUtils::EndSingleTimeCommands(vkDevice, vkCommandPool, renderer->GetVkGraphicsQueue(), vkCommandBuffer);
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
@@ -131,6 +131,8 @@ void UserInterface::ShowStatsWindow() const
     {
         const float deltaTime = app->GetWindow()->GetDeltaTime();
         ImGui::Text("FPS: %d | Delta Time: %.4fs", roundInt(1 / deltaTime), deltaTime);
+        const Vector3 camPos = engine->GetCamera()->transform.GetPosition();
+        ImGui::Text("Camera position: %.2f, %.2f, %.2f", camPos.x, camPos.y, camPos.z);
     }
     ImGui::End();
 }

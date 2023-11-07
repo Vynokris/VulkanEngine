@@ -7,7 +7,7 @@
 using namespace Core;
 using namespace Maths;
 using namespace Resources;
-using namespace VulkanUtils;
+using namespace VkUtils;
 
 Material::Material(const RGB& _albedo, const RGB& _emissive, const float& _shininess, const float& _alpha,
                    Texture* albedoTexture, Texture* emissiveTexture, Texture* shininessMap, Texture* alphaMap, Texture* normalMap)
@@ -27,7 +27,7 @@ Material& Material::operator=(Material&& other) noexcept
     emissive  = other.emissive;  other.emissive   = 0;
     shininess = other.shininess; other.shininess  = 0;
     alpha     = other.alpha;     other.alpha      = 0;
-    for (size_t i = 0; i < textureTypesCount; i++) {
+    for (size_t i = 0; i < MaterialTextureType::COUNT; i++) {
         textures[i] = other.textures[i];
         other.textures[i] = nullptr;
     }
@@ -57,20 +57,36 @@ void Material::FinalizeLoading()
     if (IsLoadingFinalized()) return;
     
     // Get necessary vulkan variables.
-    const Renderer* renderer = Application::Get()->GetRenderer();
-    const VkDevice  vkDevice = renderer->GetVkDevice();
+    const Renderer*        renderer         = Application::Get()->GetRenderer();
+    const VkDevice         vkDevice         = renderer->GetVkDevice();
+    const VkPhysicalDevice vkPhysicalDevice = renderer->GetVkPhysicalDevice();
 
-    // Create the material data buffer.
-    CreateBuffer(vkDevice, renderer->GetVkPhysicalDevice(), sizeof(MaterialData),
-                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 vkDataBuffer, vkDataBufferMemory);
+    // Create a temporary staging buffer.
+    const VkDeviceSize bufferSize = sizeof(MaterialData);
+    VkBuffer       stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory);
 
-    // Fill the material data buffer.
+    // Map the buffer's GPU memory to CPU memory, and write vertex info to it.
     const MaterialData materialData{ albedo, emissive, shininess, alpha };
     void* memMapped;
-    vkMapMemory(vkDevice, vkDataBufferMemory, 0, sizeof(MaterialData), 0, &memMapped);
-    memcpy(memMapped, &materialData, sizeof(MaterialData));
-    vkUnmapMemory(vkDevice, vkDataBufferMemory);
+    vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &memMapped);
+    memcpy(memMapped, &materialData, (size_t)bufferSize);
+    vkUnmapMemory(vkDevice, stagingBufferMemory);
+
+    // Create the vertex buffer.
+    CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 vkDataBuffer, vkDataBufferMemory);
+
+    // Copy the staging buffer to the vertex buffer.
+    CopyBuffer(vkDevice, renderer->GetVkCommandPool(), renderer->GetVkGraphicsQueue(), stagingBuffer, vkDataBuffer, bufferSize);
+
+    // De-allocate the staging buffer.
+    vkDestroyBuffer(vkDevice, stagingBuffer,       nullptr);
+    vkFreeMemory   (vkDevice, stagingBufferMemory, nullptr);
     
     // Allocate the descriptor set.
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -89,8 +105,8 @@ void Material::FinalizeLoading()
     dataBufferInfo.offset = 0;
     dataBufferInfo.range  = sizeof(MaterialData);
     
-    VkDescriptorImageInfo imagesInfo[textureTypesCount];
-    for (size_t j = 0; j < textureTypesCount; j++)
+    VkDescriptorImageInfo imagesInfo[MaterialTextureType::COUNT];
+    for (size_t j = 0; j < MaterialTextureType::COUNT; j++)
     {
         const Texture* texture    = textures[MaterialTextureType::Albedo+j];
         imagesInfo[j].imageView   = texture ? texture->GetVkImageView() : VK_NULL_HANDLE;
@@ -111,7 +127,7 @@ void Material::FinalizeLoading()
     descriptorWrites[1].dstBinding      = 1;
     descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrites[1].descriptorCount = textureTypesCount;
+    descriptorWrites[1].descriptorCount = MaterialTextureType::COUNT;
     descriptorWrites[1].pImageInfo      = imagesInfo;
     
     vkUpdateDescriptorSets(vkDevice, 2, descriptorWrites, 0, nullptr);
@@ -128,7 +144,7 @@ void Material::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
     layoutBindings[0].descriptorCount = 1;
     layoutBindings[0].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     layoutBindings[1].binding         = 1;
-    layoutBindings[1].descriptorCount = textureTypesCount;
+    layoutBindings[1].descriptorCount = MaterialTextureType::COUNT;
     layoutBindings[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     layoutBindings[1].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -145,16 +161,16 @@ void Material::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
     // Set the type and number of descriptors.
     VkDescriptorPoolSize poolSizes[2];
     poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = 1000; // TODO: Make this the max number of materials in the scene.
+    poolSizes[0].descriptorCount = Engine::MAX_MATERIALS;
     poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 1000; // TODO: Make this the max number of materials in the scene.
+    poolSizes[1].descriptorCount = Engine::MAX_MATERIALS;
 
     // Create the descriptor pool.
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = 2;
     poolInfo.pPoolSizes    = poolSizes;
-    poolInfo.maxSets       = 1000; // TODO: Make this the max number of materials in the scene.
+    poolInfo.maxSets       = Engine::MAX_MATERIALS;
     if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &vkDescriptorPool) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create descriptor pool.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");

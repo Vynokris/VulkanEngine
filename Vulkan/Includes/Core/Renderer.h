@@ -20,7 +20,7 @@ namespace Core
         VkSurfaceKHR                    vkSurface             = nullptr;
         VkPhysicalDevice                vkPhysicalDevice      = nullptr;
         VkDevice                        vkDevice              = nullptr;
-        VulkanUtils::QueueFamilyIndices vkQueueFamilyIndices;
+        VkUtils::QueueFamilyIndices     vkQueueFamilyIndices;
         VkQueue                         vkGraphicsQueue       = nullptr;
         VkQueue                         vkPresentQueue        = nullptr;
         VkSwapchainKHR                  vkSwapChain           = nullptr;
@@ -72,6 +72,7 @@ namespace Core
         VkQueue               GetVkGraphicsQueue()       const { return vkGraphicsQueue;                             }
         uint32_t              GetVkSwapchainImageCount() const { return (uint32_t)vkSwapChainImages.size();          }
         VkRenderPass          GetVkRenderPass()          const { return vkRenderPass;                                }
+        VkPipelineLayout      GetVkPipelineLayout()      const { return vkPipelineLayout;                            }
         VkCommandPool         GetVkCommandPool()         const { return vkCommandPool;                               }
         VkCommandBuffer       GetCurVkCommandBuffer()    const { return vkCommandBuffers[currentFrame];              }
         VkSampler             GetVkTextureSampler()      const { return vkTextureSampler;                            }

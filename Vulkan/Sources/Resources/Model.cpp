@@ -5,7 +5,7 @@
 #include "Maths/Vertex.h"
 #include <vulkan/vulkan.h>
 using namespace Core;
-using namespace VulkanUtils;
+using namespace VkUtils;
 using namespace Resources;
 using namespace Maths;
 
@@ -46,7 +46,7 @@ Model::~Model()
 void Model::UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const
 {
      // Copy the matrices to buffer memory.
-     const MvpBuffer mvp = { transform.GetLocalMat(), camera->GetViewMat(), camera->GetProjMat() };
+     const MvpBuffer mvp = { transform.GetLocalMat(), transform.GetLocalMat() * camera->GetViewMat() * camera->GetProjMat() };
      memcpy(vkMvpBuffersMapped[currentFrame], &mvp, sizeof(mvp));
 }
 
@@ -74,14 +74,14 @@ void Model::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
      // Set the type and number of descriptors.
      VkDescriptorPoolSize poolSize{};
      poolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-     poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT * 1000; // TODO: Multiply by the max number of models in the scene.
+     poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS;
 
      // Create the descriptor pool.
      VkDescriptorPoolCreateInfo poolInfo{};
      poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
      poolInfo.poolSizeCount = 1;
      poolInfo.pPoolSizes    = &poolSize;
-     poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * 1000; // TODO: Multiply by the max number of materials in the scene.
+     poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS;
      if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &vkDescriptorPool) != VK_SUCCESS) {
           LogError(LogType::Vulkan, "Failed to create descriptor pool.");
           throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");

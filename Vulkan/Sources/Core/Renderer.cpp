@@ -13,41 +13,10 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+
+#include "Resources/Light.h"
 using namespace Core;
-using namespace VulkanUtils;
-
-
-static VkVertexInputBindingDescription GetBindingDescription()
-{
-    VkVertexInputBindingDescription bindingDescription{};
-    bindingDescription.binding   = 0;
-    bindingDescription.stride    = sizeof(Maths::Vertex);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    return bindingDescription;
-}
-static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
-{
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-    
-    attributeDescriptions[0].binding  = 0;
-    attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset   = offsetof(Maths::Vertex, pos);
-    
-    attributeDescriptions[1].binding  = 0;
-    attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format   = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[1].offset   = offsetof(Maths::Vertex, uv);
-
-    attributeDescriptions[2].binding  = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[2].offset   = offsetof(Maths::Vertex, normal);
-
-    return attributeDescriptions;
-}
-
+using namespace VkUtils;
 
 Renderer::Renderer(const char* appName, const char* engineName)
 {
@@ -93,6 +62,7 @@ Renderer::~Renderer()
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
     }
     DestroySwapChain();
+    Resources::Light   ::DestroyVkData                 (vkDevice);
     Resources::Model   ::DestroyDescriptorLayoutAndPool(vkDevice);
     Resources::Material::DestroyDescriptorLayoutAndPool(vkDevice);
     vkDestroySampler               (vkDevice,   vkTextureSampler,      nullptr);
@@ -128,8 +98,8 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera*
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[2] = { model.GetVkDescriptorSet(currentFrame), mesh.GetMaterial()->GetVkDescriptorSet() };
-        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 2, descriptorSets, 0, nullptr);
+        const VkDescriptorSet descriptorSets[3] = { model.GetVkDescriptorSet(currentFrame), mesh.GetMaterial()->GetVkDescriptorSet(), Resources::Light::GetVkDescriptorSet() };
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 3, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 }
@@ -537,6 +507,7 @@ void Renderer::CreateRenderPass()
 
 void Renderer::CreateDescriptorLayoutsAndPools() const
 {
+    Resources::Light   ::CreateVkData(vkDevice, vkPhysicalDevice);
     Resources::Model   ::CreateDescriptorLayoutAndPool(vkDevice);
     Resources::Material::CreateDescriptorLayoutAndPool(vkDevice);
 }
@@ -567,8 +538,8 @@ void Renderer::CreateGraphicsPipeline()
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
     // Setup vertex bindings and attributes.
-    auto bindingDescription    = GetBindingDescription();
-    auto attributeDescriptions = GetAttributeDescriptions();
+    auto bindingDescription    = Resources::Mesh::GetVertexBindingDescription();
+    auto attributeDescriptions = Resources::Mesh::GetVertexAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount   = 1;
@@ -581,15 +552,6 @@ void Renderer::CreateGraphicsPipeline()
     inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-    // Specify the region of the framebuffer to render to.
-    VkViewport viewport{};
-    viewport.x        = 0.f;
-    viewport.y        = 0.f;
-    viewport.width    = (float)vkSwapChainWidth;
-    viewport.height   = (float)vkSwapChainHeight;
-    viewport.minDepth = 0.f;
-    viewport.maxDepth = 1.f;
 
     // Specify the scissor rectangle (pixels outside it will be discarded).
     VkRect2D scissor{};
@@ -620,7 +582,7 @@ void Renderer::CreateGraphicsPipeline()
     rasterizer.polygonMode             = VK_POLYGON_MODE_FILL; // Use VK_POLYGON_MODE_LINE to draw wireframe.
     rasterizer.lineWidth               = 1.f;
     rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace               = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable         = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.f; // Optional.
     rasterizer.depthBiasClamp          = 0.f; // Optional.
@@ -672,12 +634,21 @@ void Renderer::CreateGraphicsPipeline()
     colorBlending.blendConstants[2] = 0.f; // Optional.
     colorBlending.blendConstants[3] = 0.f; // Optional.
 
+    // Define 1 push constant (viewPos) and 3 descriptor set layouts (model, material, lights).
+    const VkPushConstantRange   pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Maths::Vector3) };
+    const VkDescriptorSetLayout setLayouts[3] = {
+        Resources::Model   ::GetVkDescriptorSetLayout(),
+        Resources::Material::GetVkDescriptorSetLayout(),
+        Resources::Light   ::GetVkDescriptorSetLayout()
+    };
+    
     // Set the pipeline layout creation information.
-    const VkDescriptorSetLayout setLayouts[2] = { Resources::Model::GetVkDescriptorSetLayout(), Resources::Material::GetVkDescriptorSetLayout() };
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 2;
-    pipelineLayoutInfo.pSetLayouts    = setLayouts;
+    pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount         = 3;
+    pipelineLayoutInfo.pSetLayouts            = setLayouts;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
 
     // Create the pipeline layout.
     if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {

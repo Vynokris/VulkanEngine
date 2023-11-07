@@ -126,6 +126,9 @@
     <ClCompile Include="Sources\Resources\Light.cpp">
       <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Resources\Material.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\Maths\Matrix.h">

@@ -446,6 +446,8 @@ std::array<std::vector<uint32_t>, 3> WavefrontParser::ParseObjMeshIndices(std::s
 
 void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vector<float>, 3>& vertexData, const std::array<std::vector<uint32_t>, 3>& vertexIndices)
 {
+    // NOTE: The y and z coordinates of vertex positions and normals are flipped to counter Vulkan's strange coordinate system.
+    
     // Get the first index.
     uint32_t startIndex = 0;
     if (!mesh->indices.empty())
@@ -455,7 +457,7 @@ void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vec
     for (uint32_t i = 0; i < vertexIndices[0].size(); i++)
     {
         // Get the current vertex's position.
-        Vector3 curPos = Vector3(vertexData[0][vertexIndices[0][i] * (size_t)3], vertexData[0][vertexIndices[0][i] * 3+1], vertexData[0][vertexIndices[0][i] * 3+2]);
+        Vector3 curPos = Vector3(vertexData[0][vertexIndices[0][i] * (size_t)3], -vertexData[0][vertexIndices[0][i] * 3+1], -vertexData[0][vertexIndices[0][i] * 3+2]);
 
         // Get the current vertex's texture coordinates.
         Vector2 curUv;
@@ -463,7 +465,7 @@ void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vec
 
         // Get the current vertex's normal.
         Vector3 curNormal;
-        if (!vertexData[2].empty()) curNormal = Vector3(vertexData[2][vertexIndices[2][i] * (size_t)3], vertexData[2][vertexIndices[2][i] * 3+1], vertexData[2][vertexIndices[2][i] * 3+2]);
+        if (!vertexData[2].empty()) curNormal = Vector3(vertexData[2][vertexIndices[2][i] * (size_t)3], -vertexData[2][vertexIndices[2][i] * 3+1], -vertexData[2][vertexIndices[2][i] * 3+2]);
 
         // Get the current face's tangent and bitangent.
         static Vector3 curTangent, curBitangent;
@@ -486,8 +488,8 @@ void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vec
         }
 
         // Create a new vertex with the computed data.
-        // mesh->vertices.push_back(TangentVertex{ curPos, curUv, curNormal, curTangent, curBitangent });
-        mesh->vertices.push_back(Vertex{ curPos, curUv, curNormal });
+        mesh->vertices.push_back(TangentVertex{ curPos, curUv, curNormal, curTangent, curBitangent });
+        // mesh->vertices.push_back(Vertex{ curPos, curUv, curNormal });
         mesh->indices .push_back(startIndex + i);
     }
 
