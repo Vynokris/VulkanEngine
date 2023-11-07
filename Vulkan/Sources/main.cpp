@@ -3,8 +3,6 @@ using namespace Core;
 
 int main()
 {
-	std::cout << sizeof(VulkanUtils::MaterialData) << std::endl;
-	
 	Application* app = Application::Create();
 	app->Init({ "Vulkan" });
 	app->Run();

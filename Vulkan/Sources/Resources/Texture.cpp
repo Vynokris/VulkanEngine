@@ -32,7 +32,7 @@ Texture::Texture(std::string filename)
     // Create a transfer buffer to send the pixels to the GPU.
     VkBuffer       stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    VulkanUtils::CreateBuffer(device, physicalDevice, imageSize,
+    VkUtils::CreateBuffer(device, physicalDevice, imageSize,
                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                               stagingBuffer, stagingBufferMemory);
 
@@ -44,13 +44,13 @@ Texture::Texture(std::string filename)
     stbi_image_free(pixels);
 
     // Create the Vulkan image.
-    VulkanUtils::CreateImage(device, physicalDevice, width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, vkImageFormat, VK_IMAGE_TILING_OPTIMAL,
+    VkUtils::CreateImage(device, physicalDevice, width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, vkImageFormat, VK_IMAGE_TILING_OPTIMAL,
                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                              vkImage, vkImageMemory);
 
     // Copy the transfer buffer to the vulkan image.
-    VulkanUtils::TransitionImageLayout(device, commandPool, graphicsQueue, vkImage, vkImageFormat, mipLevels, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    VulkanUtils::CopyBufferToImage    (device, commandPool, graphicsQueue, stagingBuffer, vkImage, (uint32_t)width, (uint32_t)height);
+    VkUtils::TransitionImageLayout(device, commandPool, graphicsQueue, vkImage, vkImageFormat, mipLevels, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkUtils::CopyBufferToImage    (device, commandPool, graphicsQueue, stagingBuffer, vkImage, (uint32_t)width, (uint32_t)height);
     GenerateMipmaps();
 
     // Cleanup allocated structures.
@@ -58,7 +58,7 @@ Texture::Texture(std::string filename)
     vkFreeMemory   (device, stagingBufferMemory, nullptr);
 
     // Create the texture image view.
-    VulkanUtils::CreateImageView(device, vkImage, vkImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, vkImageView);
+    VkUtils::CreateImageView(device, vkImage, vkImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, vkImageView);
 }
 
 Texture::Texture(Texture&& other) noexcept
@@ -121,7 +121,7 @@ void Texture::GenerateMipmaps() const
         throw std::runtime_error("TEXTURE_BLITTING_ERROR");
     }
 
-    const VkCommandBuffer commandBuffer = VulkanUtils::BeginSingleTimeCommands(device, commandPool);
+    const VkCommandBuffer commandBuffer = VkUtils::BeginSingleTimeCommands(device, commandPool);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -196,5 +196,5 @@ void Texture::GenerateMipmaps() const
         0, nullptr,
         1, &barrier);
 
-    VulkanUtils::EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
+    VkUtils::EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }

@@ -9,19 +9,19 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 using namespace Core;
-using namespace VulkanUtils;
+using namespace VkUtils;
 
 #ifdef NDEBUG
     const bool VulkanUtils::VALIDATION_LAYERS_ENABLED = false;
 #else
-    const bool VulkanUtils::VALIDATION_LAYERS_ENABLED = true;
+    const bool VkUtils::VALIDATION_LAYERS_ENABLED = true;
 #endif
 
-const std::vector<const char*> VulkanUtils::VALIDATION_LAYERS = {
+const std::vector<const char*> VkUtils::VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"
 };
 
-const std::vector<const char*> VulkanUtils::EXTENSIONS = {
+const std::vector<const char*> VkUtils::EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
@@ -43,7 +43,7 @@ SwapChainSupportDetails::~SwapChainSupportDetails()
     delete capabilities;
 }
 
-QueueFamilyIndices VulkanUtils::FindQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
+QueueFamilyIndices VkUtils::FindQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
 {
     QueueFamilyIndices queueFamilyIndices;
 
@@ -76,7 +76,7 @@ QueueFamilyIndices VulkanUtils::FindQueueFamilies(const VkPhysicalDevice& device
     return queueFamilyIndices;
 }
 
-uint32_t VulkanUtils::FindMemoryType(const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties)
+uint32_t VkUtils::FindMemoryType(const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
@@ -91,7 +91,7 @@ uint32_t VulkanUtils::FindMemoryType(const VkPhysicalDevice& device, const uint3
     throw std::runtime_error("VULKAN_FIND_MEMORY_TYPE_ERROR");
 }
 
-VkFormat VulkanUtils::FindSupportedFormat(const VkPhysicalDevice& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat VkUtils::FindSupportedFormat(const VkPhysicalDevice& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (const VkFormat& format : candidates)
     {
@@ -107,7 +107,7 @@ VkFormat VulkanUtils::FindSupportedFormat(const VkPhysicalDevice& device, const 
     throw std::runtime_error("VULKAN_NO_SUPPORTED_FORMAT_ERROR");
 }
 
-VkSampleCountFlagBits VulkanUtils::GetMaxUsableSampleCount(const VkPhysicalDevice& device)
+VkSampleCountFlagBits VkUtils::GetMaxUsableSampleCount(const VkPhysicalDevice& device)
 {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(device, &physicalDeviceProperties);
@@ -123,7 +123,7 @@ VkSampleCountFlagBits VulkanUtils::GetMaxUsableSampleCount(const VkPhysicalDevic
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-SwapChainSupportDetails VulkanUtils::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
+SwapChainSupportDetails VkUtils::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
 {
     SwapChainSupportDetails details;
 
@@ -151,7 +151,7 @@ SwapChainSupportDetails VulkanUtils::QuerySwapChainSupport(const VkPhysicalDevic
     return details;
 }
 
-VkSurfaceFormatKHR VulkanUtils::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR VkUtils::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
     // Try to find the best surface format.
     for (const VkSurfaceFormatKHR& availableFormat : availableFormats)
@@ -167,7 +167,7 @@ VkSurfaceFormatKHR VulkanUtils::ChooseSwapSurfaceFormat(const std::vector<VkSurf
     return availableFormats[0];
 }
 
-VkPresentModeKHR VulkanUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR VkUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
     // Try to find the best present mode (for triple buffering).
     for (const auto& availablePresentMode : availablePresentModes) {
@@ -180,7 +180,7 @@ VkPresentModeKHR VulkanUtils::ChooseSwapPresentMode(const std::vector<VkPresentM
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VulkanUtils::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D VkUtils::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
     // If the current extent is already set, return it.
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -203,7 +203,7 @@ VkExtent2D VulkanUtils::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabil
     }
 }
 
-bool VulkanUtils::CheckDeviceExtensionSupport(const VkPhysicalDevice& device)
+bool VkUtils::CheckDeviceExtensionSupport(const VkPhysicalDevice& device)
 {
     // Get the number of extensions on the given GPU.
     uint32_t extensionCount;
@@ -223,7 +223,7 @@ bool VulkanUtils::CheckDeviceExtensionSupport(const VkPhysicalDevice& device)
     return requiredExtensions.empty();
 }
 
-bool VulkanUtils::IsDeviceSuitable(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
+bool VkUtils::IsDeviceSuitable(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
 {
     VkPhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
@@ -255,7 +255,7 @@ static std::vector<char> ReadBinFile(const std::string& filename)
     return buffer;
 }
 
-VkCommandBuffer VulkanUtils::BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool)
+VkCommandBuffer VkUtils::BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool)
 {
     // Create a new command buffer.
     VkCommandBuffer commandBuffer;
@@ -274,7 +274,7 @@ VkCommandBuffer VulkanUtils::BeginSingleTimeCommands(const VkDevice& device, con
     return commandBuffer;
 }
 
-void VulkanUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer)
+void VkUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer)
 {
     // Execute the command buffer and wait until it is done.
     vkEndCommandBuffer(commandBuffer);
@@ -287,7 +287,7 @@ void VulkanUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandP
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void VulkanUtils::CreateShaderModule(const VkDevice& device, const char* filename, VkShaderModule& shaderModule)
+void VkUtils::CreateShaderModule(const VkDevice& device, const char* filename, VkShaderModule& shaderModule)
 {
     // Read the shader code.
     const std::vector<char> shaderCode = ReadBinFile(filename);
@@ -305,7 +305,7 @@ void VulkanUtils::CreateShaderModule(const VkDevice& device, const char* filenam
     }
 }
 
-void VulkanUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void VkUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -338,7 +338,7 @@ void VulkanUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& p
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void VulkanUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size)
+void VkUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
     
@@ -352,7 +352,7 @@ void VulkanUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& comman
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
+void VkUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
 {    
     // Create a vulkan image.
     VkImageCreateInfo imageInfo{};
@@ -389,7 +389,7 @@ void VulkanUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& ph
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView)
+void VkUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView)
 {
     // Set creation information for the image view.
     VkImageViewCreateInfo viewInfo{};
@@ -418,7 +418,7 @@ void VulkanUtils::CreateImageView(const VkDevice& device, const VkImage& image, 
     }
 }
 
-void VulkanUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
+void VkUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 
@@ -472,7 +472,7 @@ void VulkanUtils::TransitionImageLayout(const VkDevice& device, const VkCommandP
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void VulkanUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height)
+void VkUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 

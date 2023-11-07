@@ -16,6 +16,8 @@ namespace Resources
     // Enumerates all unique material texture/map types.
     namespace MaterialTextureType
     {
+        static constexpr size_t COUNT = 5; // The number of different texture types that are stored in a material's textures array.
+        
         enum
         {
             Albedo,    // Texture used for the overall color of the object.
@@ -36,8 +38,7 @@ namespace Resources
         float shininess     = 32; // The intensity of highlights on the object.
         float alpha         = 1;  // Defines how see-through the object is.
 
-        static constexpr size_t textureTypesCount = 5; // The number of different texture types that are stored in a material's textures array.
-        Texture* textures[textureTypesCount] = { nullptr, nullptr, nullptr, nullptr, nullptr }; // Array of all different textures used by this material.
+        Texture* textures[MaterialTextureType::COUNT] = { nullptr, nullptr, nullptr, nullptr, nullptr }; // Array of all different textures used by this material.
         
     private:
         inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;

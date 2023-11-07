@@ -18,6 +18,11 @@ namespace Core
 	
 	class Engine
 	{
+	public:
+		static constexpr unsigned int MAX_LIGHTS = 5;
+		static constexpr unsigned int MAX_MODELS = 10;
+		static constexpr unsigned int MAX_MATERIALS = 50;
+		
 	private:
         Application*       app    = nullptr;
         Resources::Camera* camera = nullptr;
@@ -32,9 +37,12 @@ namespace Core
 		float cameraSensitivity = 5e-3f;
 		bool  rotateModels      = false;
 		const std::vector<std::string> defaultResources = {
-			// "Resources\\Models\\VikingRoom\\VikingRoom.obj",
 			"Resources\\Models\\Stadium\\stadium.obj",
-			"Resources\\Models\\DoomSlayer\\doommarine.obj",
+			// "Resources\\Models\\VikingRoom\\VikingRoom.obj",
+			"Resources\\Models\\Sphere\\Sphere.obj",
+			"Resources\\Models\\Rico\\rico.obj",
+			"Resources\\Models\\Gizmo\\gizmoTranslation.obj",
+			// "Resources\\Models\\DoomSlayer\\doommarine.obj",
 		};
 		
 		Engine();
@@ -45,12 +53,13 @@ namespace Core
 		~Engine();
 
 		void Awake();
-		void Start() const;
+		void Start();
 		void Update(const float& deltaTime);
 		void Render(const Renderer* renderer) const;
 
 		void LoadFile(const std::string& filename);
 
+		Resources::Camera*   GetCamera() const { return camera; }
 		Resources::Model*    GetModel   (const std::string& name);
 		Resources::Material* GetMaterial(const std::string& name);
 		Resources::Texture*  GetTexture (const std::string& name);

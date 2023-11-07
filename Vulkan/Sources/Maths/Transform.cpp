@@ -39,7 +39,7 @@ void       Transform::RotateEuler(const Vector3& euler)       { eulerRot += eule
 Vector3 Transform::GetScale()        const         { return scale;   }
 Vector3 Transform::GetUniformScale() const         { return std::max(scale.x, std::max(scale.y, scale.z)); }
 void    Transform::SetScale(const Vector3& _scale) { scale = _scale;  UpdateMatrices(); }
-void    Transform::Scale   (const Vector3& _scale) { scale += _scale; UpdateMatrices(); }
+void    Transform::Scale   (const Vector3& _scale) { scale *= _scale; UpdateMatrices(); }
 
 // ----- Is Camera ----- //
 bool Transform::IsCamera() const                   { return isCamera; }

@@ -3,6 +3,7 @@
 #include "Resources/Material.h"
 #include <utility>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 typedef struct VkBuffer_T*       VkBuffer;
 typedef struct VkDeviceMemory_T* VkDeviceMemory;
@@ -22,8 +23,8 @@ namespace Resources
 		Material*   material = nullptr;
 		Model&      parentModel;
 		
-		std::vector<Maths::Vertex> vertices;
-		std::vector<uint32_t>      indices;
+		std::vector<Maths::TangentVertex> vertices;
+		std::vector<uint32_t>             indices;
 		
 		VkBuffer       vkVertexBuffer       = nullptr;
 		VkDeviceMemory vkVertexBufferMemory = nullptr;
@@ -48,6 +49,9 @@ namespace Resources
 		uint32_t GetIndexCount    () const { return (uint32_t)indices.size(); }
 		VkBuffer GetVkVertexBuffer() const { return vkVertexBuffer; }
 		VkBuffer GetVkIndexBuffer () const { return vkIndexBuffer;  }
+		
+		static VkVertexInputBindingDescription GetVertexBindingDescription();
+		static std::array<VkVertexInputAttributeDescription, 5> GetVertexAttributeDescriptions();
 
 	private:
 		void CreateVertexBuffers();

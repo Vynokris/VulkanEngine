@@ -18,7 +18,7 @@ void Camera::ChangeParams(const CameraParams& parameters)
     const float xScale = yScale / params.aspect;
     projMat = Mat4(
         xScale, 0, 0, 0,
-        0, yScale, 0, 0,
+        0, -yScale, 0, 0,
         0, 0, params.far / (params.near - params.far), -1,
         0, 0, params.far * params.near / (params.near - params.far), 0
     );

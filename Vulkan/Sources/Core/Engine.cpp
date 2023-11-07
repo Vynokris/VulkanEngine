@@ -6,11 +6,10 @@
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
-#include <filesystem>
-#include <fstream>
-
 #include "Core/WavefrontParser.h"
 #include "Resources/Light.h"
+#include <filesystem>
+#include <fstream>
 namespace fs = std::filesystem;
 using namespace Core;
 using namespace Resources;
@@ -39,14 +38,20 @@ void Engine::Awake()
         LoadFile(filename);
 
     // Add default directional light.
-    lights.emplace_back(Light::Directional({ 1,1,1 }, Vector3(1,-1,1).GetNormalized()));
+    lights.emplace_back(Light::Directional({ 1,1,1 }, Vector3(-1, -0.2f, 0).GetNormalized(), 0.2f));
+    lights.emplace_back(Light::Point({ 1,1,1 }, Vector3(0,3,0), 0.3f));
+    lights.emplace_back(Light::Spot({1,1,1}, {1.5f,1.5f,1.5f}, Vector3(-1,-1,-1).GetNormalized(), 0.5f, 1, 0, 0, 0.1f, 0.05f));
+    Light::UpdateBufferData(lights);
 }
 
-void Engine::Start() const
+void Engine::Start()
 {
     // Set camera transform.
-    camera->transform.Move({ 0, -1.f, 1.f });
-    camera->transform.Rotate(Quaternion::FromPitch(PI * 0.2f));
+    camera->transform.Move({ 0, 2.f, 2.f });
+    camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.2f));
+
+    models.at("model_Sphere").transform.Move({ 1, 1, 1 });
+    models.at("model_Sphere").transform.Scale({ 0.1f, 0.1f, 0.1f });
 }
 
 void Engine::Update(const float& deltaTime)
@@ -64,13 +69,18 @@ void Engine::Update(const float& deltaTime)
     if (inputs.mouseRightClick)
     {
         camera->transform.Move(camera->transform.GetRotation().RotateVec(inputs.dirMovement * cameraSpeed * deltaTime));
-        camera->transform.Rotate(Quaternion::FromAngleAxis({  inputs.mouseDelta.y * cameraSensitivity, camera->transform.Right() }));
+        camera->transform.Rotate(Quaternion::FromAngleAxis({ -inputs.mouseDelta.y * cameraSensitivity, camera->transform.Right() }));
         camera->transform.Rotate(Quaternion::FromRoll     (  -inputs.mouseDelta.x * cameraSensitivity ));
     }
 }
 
 void Engine::Render(const Renderer* renderer) const
 {
+    // Set the viewPos in the fragment shader.
+    // TODO: Move this to the Renderer.
+    const Vector3 viewPos = camera->transform.GetPosition();
+    vkCmdPushConstants(renderer->GetCurVkCommandBuffer(), renderer->GetVkPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Vector3), &viewPos);
+
     for (const auto& [name, model] : models)
         renderer->DrawModel(model, camera);
 }

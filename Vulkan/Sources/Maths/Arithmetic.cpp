@@ -45,7 +45,7 @@ float Maths::lerp(const float& start, const float& dest, const float& val)
     return start + val * (dest - start);
 }
 
-// Compute the linear interpolation factor that returns val when lerping between start and end.
+// Compute the linear interpolation factor that returns val when lerping between start and dest.
 float Maths::getLerp(const float& start, const float& dest, const float& val)
 {
     if (dest - start != 0)

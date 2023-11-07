@@ -24,10 +24,10 @@ namespace Resources
 		
 		inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
 		inline static VkDescriptorPool      vkDescriptorPool      = nullptr;
-        VkDescriptorSet vkDescriptorSets  [VulkanUtils::MAX_FRAMES_IN_FLIGHT];
-		VkBuffer        vkMvpBuffers      [VulkanUtils::MAX_FRAMES_IN_FLIGHT];
-		VkDeviceMemory  vkMvpBuffersMemory[VulkanUtils::MAX_FRAMES_IN_FLIGHT];
-		void*           vkMvpBuffersMapped[VulkanUtils::MAX_FRAMES_IN_FLIGHT];
+        VkDescriptorSet vkDescriptorSets  [VkUtils::MAX_FRAMES_IN_FLIGHT];
+		VkBuffer        vkMvpBuffers      [VkUtils::MAX_FRAMES_IN_FLIGHT];
+		VkDeviceMemory  vkMvpBuffersMemory[VkUtils::MAX_FRAMES_IN_FLIGHT];
+		void*           vkMvpBuffersMapped[VkUtils::MAX_FRAMES_IN_FLIGHT];
 
 	public:
 		Maths::Transform transform;

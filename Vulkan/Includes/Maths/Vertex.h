@@ -72,8 +72,7 @@ namespace Maths
     // Holds model, view and projection matrices.
     struct MvpBuffer {
         Mat4 model;
-        Mat4 view;
-        Mat4 proj;
+        Mat4 mvp;
     };
 }
 

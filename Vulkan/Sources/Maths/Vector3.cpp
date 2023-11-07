@@ -56,8 +56,8 @@ void Vector3::Normalize()
 Vector3 Vector3::GetNormalized() const
 {
     const float length = GetLength();
-    if (length < 1e-4f) return Vector3();
-    return Vector3(x / length, y / length, z / length);
+    if (length < 1e-4f) return {};
+    return { x / length, y / length, z / length };
 }
 
 // Negation.
