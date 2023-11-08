@@ -119,8 +119,9 @@ void main()
 
     // Get normal from normal map.
     vec3 normal = fragNormal;
-    if (textureSize(materialTextures[NormalMapIdx], 0).x > 0)
-        normal = normalize(tbnMatrix * texture(materialTextures[NormalMapIdx], fragTexCoord).xyz * 2.0 - 1.0);
+    if (textureSize(materialTextures[NormalMapIdx], 0).x > 0) {
+        normal = normalize(tbnMatrix * (texture(materialTextures[NormalMapIdx], fragTexCoord).rgb * 2.0 - 1.0));
+    }
     
     // Determine fragment color from material albedo value and texture.
     vec3 albedo = materialData.albedo.rgb;

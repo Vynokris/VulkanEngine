@@ -40,7 +40,7 @@ namespace Core
 			"Resources\\Models\\Stadium\\stadium.obj",
 			// "Resources\\Models\\VikingRoom\\VikingRoom.obj",
 			"Resources\\Models\\Sphere\\Sphere.obj",
-			"Resources\\Models\\Rico\\rico.obj",
+			"Resources\\Models\\Headcrab\\headcrab.obj",
 			"Resources\\Models\\Gizmo\\gizmoTranslation.obj",
 			// "Resources\\Models\\DoomSlayer\\doommarine.obj",
 		};

@@ -1,0 +1,16 @@
+# Blender MTL File: 'None'
+# Material Count: 1
+
+newmtl headcrab
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+Ns 32
+d 1.000000
+illum 2
+map_Ka headcrab_base.png
+map_Kd headcrab_base.png
+map_Ks headcrab_base.png
+map_Ns headcrab_shininess.png
+map_Bump headcrab_normal.png
