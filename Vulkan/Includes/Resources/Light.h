@@ -37,13 +37,12 @@ namespace Resources
         alignas(16) Maths::RGB     albedo;             // The color of light emitted.
         alignas(16) Maths::Vector3 position;           // The light's position in 3D space.
         alignas(16) Maths::Vector3 direction;          // The light's direction in 3D space.
-        float brightness = 1;                          // Defines how bright the light is.
-        float constant = 1, linear = 0, quadratic = 0; // The light's constant, linear and quadratic attenuations.
+        float brightness = 1, radius = 1, falloff = 0; // The light's brightness, effective radius and distance falloff.
         float outerCutoff = 0, innerCutoff = 0;        // The light's inner and outer cutoffs.
 
         static Light Directional(const Maths::RGB& _albedo = {1,1,1}, const Maths::Vector3& _direction = {0,0,1}, const float& _brightness = 1);
-        static Light Point      (const Maths::RGB& _albedo = {1,1,1}, const Maths::Vector3& _position  = {0,0,0}, const float& _brightness = 1, const float& _constant = 1, const float& _linear = 0.15f, const float& _quadratic = 0.05f);
-        static Light Spot       (const Maths::RGB& _albedo = {1,1,1}, const Maths::Vector3& _position  = {0,0,0}, const Maths::Vector3& _direction = {0,0,1}, const float& _brightness = 1, const float& _constant = 1, const float& _linear = 0, const float& _quadratic = 0, const float& _outerCutoff = PIDIV4, const float& _innerCutoff = PIDIV4 * 0.5f);
+        static Light Point      (const Maths::RGB& _albedo = {1,1,1}, const Maths::Vector3& _position  = {0,0,0}, const float& _brightness = 1, const float& _radius = 5, const float& _falloff = 4);
+        static Light Spot       (const Maths::RGB& _albedo = {1,1,1}, const Maths::Vector3& _position  = {0,0,0}, const Maths::Vector3& _direction = {0,0,1}, const float& _brightness = 1, const float& _radius = 5, const float& _falloff = 4, const float& _outerCutoff = PIDIV4, const float& _innerCutoff = PIDIV4 * 0.5f);
 
         static void CreateVkData (const VkDevice& vkDevice, const VkPhysicalDevice& vkPhysicalDevice);
         static void DestroyVkData(const VkDevice& vkDevice);

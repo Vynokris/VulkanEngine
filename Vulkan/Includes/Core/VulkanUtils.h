@@ -59,7 +59,8 @@ namespace VkUtils
     {
         alignas(16) Maths::RGB albedo;
         alignas(16) Maths::RGB emissive;
-        float shininess;
+        float metallic;
+        float roughness;
         float alpha;
     };
     

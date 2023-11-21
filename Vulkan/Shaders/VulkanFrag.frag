@@ -1,12 +1,16 @@
 #version 450
 
+const float PI = 3.14159265359;
+
 // Texture indices definition.
 const uint AlbedoTextureIdx   = 0;
 const uint EmissiveTextureIdx = 1;
-const uint ShininessMapIdx    = 2;
-const uint AlphaMapIdx        = 3;
-const uint NormalMapIdx       = 4;
-const uint TextureTypesCount  = 5;
+const uint MetallicMapIdx     = 2;
+const uint RoughnessMapIdx    = 3;
+const uint AOcclusionMapIdx   = 4;
+const uint AlphaMapIdx        = 5;
+const uint NormalMapIdx       = 6;
+const uint TextureTypesCount  = 7;
 
 // Inputs from vertex shader.
 layout(location = 0) in vec3 fragPos;
@@ -23,7 +27,8 @@ layout(push_constant) uniform PushConstants {
 layout(set = 1, binding = 0) uniform MaterialBuffer {
     vec3  albedo;
     vec3  emissive;
-    float shininess;
+    float metallic;
+    float roughness;
     float alpha;
 } materialData;
 layout(set = 1, binding = 1) uniform sampler2D materialTextures[TextureTypesCount];
@@ -34,8 +39,7 @@ struct Light {
     vec3  albedo;
     vec3  position;
     vec3  direction;
-    float brightness;
-    float constant, linear, quadratic;
+    float brightness, radius, falloff;
     float outerCutoff, innerCutoff;
 };
 layout(set = 2, binding = 0) uniform LightBuffer { Light data[2]; } lights;
@@ -43,64 +47,63 @@ layout(set = 2, binding = 0) uniform LightBuffer { Light data[2]; } lights;
 // Fragment color output.
 layout(location = 0) out vec4 fragColor;
 
-void ComputeLightingParams(vec3 normal, vec3 viewDir, vec3 fragToLight, float shininess, inout float diff, inout float spec)
+float PointAttenuation(Light light)
 {
-    vec3 reflectDir = reflect(fragToLight, normal);
-    diff = max(dot(normal, fragToLight), 0.0);
-    spec = pow(max(dot(-viewDir, reflectDir), 0.0), shininess);
+    float distance = length(light.position - fragPos);
+    float s = distance / light.radius;
+    if (s >= 1.0)
+        return 0.0;
+    return pow(1-s*s, 2) / (1 + light.falloff * s);
 }
 
-vec3 ComputeDirLight(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float shininess)
+float SpotAttenuation(Light light, vec3 fragToLight)
 {
-    // Compute lighting parameters.
-    vec3  combinedAlbedo = light.albedo * albedo;
-    vec3  fragToLight    = normalize(-light.direction);
-    float diff           = 0.0;
-    float spec           = 0.0;
-    ComputeLightingParams(normal, viewDir, fragToLight, shininess, diff, spec);
-
-    // Combine albedo with brightness, diffuse and specular.
-    return combinedAlbedo * light.brightness * (diff + spec);
-}
-
-vec3 ComputePointLight(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float shininess)
-{
-    // Compute lighting parameters.
-    vec3  combinedAlbedo = light.albedo * albedo;
-    vec3  fragToLight    = normalize(light.position - fragPos);
-    float diff           = 0.0;
-    float spec           = 0.0;
-    ComputeLightingParams(normal, viewDir, fragToLight, shininess, diff, spec);
-
-    // Compute attenuation.
-    float distance    = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-
-    // Combine albedo with brightness, attenuation, diffuse and specular.
-    return combinedAlbedo * light.brightness * attenuation * (diff + spec);
-}
-
-vec3 ComputeSpotLight(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float shininess)
-{
-    // Stop if the fragment isn't in the light cone.
-    vec3  fragToLight = normalize(light.position - fragPos);
-    float cutoff      = dot(fragToLight, -light.direction) * 0.5 + 0.5;
+    float cutoff = dot(fragToLight, -light.direction) * 0.5 + 0.5;
     if (cutoff <= 1-light.outerCutoff)
-        return vec3(0.0);
+        return 0.0;
+    
+    float intensity = ((1-cutoff) - light.outerCutoff) / (light.innerCutoff - light.outerCutoff);
+    return PointAttenuation(light) * intensity;
+}
 
-    // Compute lighting parameters.
-    vec3  combinedAlbedo = light.albedo * albedo;
-    float diff           = 0.0;
-    float spec           = 0.0;
-    ComputeLightingParams(normal, viewDir, fragToLight, shininess, diff, spec);
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a  = roughness*roughness;
+    float a2 = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
 
-    // Compute attenuation.
-    float distance    = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-    float intensity   = ((1-cutoff) - light.outerCutoff) / (light.innerCutoff - light.outerCutoff);
+    float numerator   = a2;
+    float denominator = (NdotH2 * (a2 - 1.0) + 1.0);
+    denominator = PI * denominator * denominator;
 
-    // Combine albedo with brightness, attenuation, intensity, diffuse and specular.
-    return combinedAlbedo * light.brightness * attenuation * intensity * (diff + spec);
+    return numerator / denominator;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float numerator   = NdotV;
+    float denominator = NdotV * (1.0 - k) + k;
+
+    return numerator / denominator;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 void main()
@@ -117,38 +120,71 @@ void main()
     // Compute the view direction.
     vec3 viewDir = normalize(pushConstants.viewPos - fragPos);
 
-    // Get normal from normal map.
+    // Determine fragment normal from mesh normal and normal map.
+    // TODO: Fix normal mapping.
     vec3 normal = fragNormal;
-    if (textureSize(materialTextures[NormalMapIdx], 0).x > 0) {
-        normal = normalize(tbnMatrix * (texture(materialTextures[NormalMapIdx], fragTexCoord).rgb * 2.0 - 1.0));
-    }
+    // if (textureSize(materialTextures[NormalMapIdx], 0).x > 0) {
+    //     normal = normalize(tbnMatrix * (texture(materialTextures[NormalMapIdx], fragTexCoord).rgb * 2.0 - 1.0));
+    // }
     
-    // Determine fragment color from material albedo value and texture.
+    // Determine albedo from material albedo value and texture.
     vec3 albedo = materialData.albedo.rgb;
     if (textureSize(materialTextures[AlbedoTextureIdx], 0).x > 0)
         albedo *= texture(materialTextures[AlbedoTextureIdx], fragTexCoord).rgb;
     
-    // Get shininess from shininess map.
-    float shininess = materialData.shininess;
-    if (textureSize(materialTextures[ShininessMapIdx], 0).x > 0)
-        shininess = dot(texture(materialTextures[ShininessMapIdx], fragTexCoord), vec4(1)) * 0.25;
+    // Determine metallic from material metallic value and map.
+    float metallic = materialData.metallic;
+    if (textureSize(materialTextures[MetallicMapIdx], 0).x > 0)
+        metallic = texture(materialTextures[MetallicMapIdx], fragTexCoord).r;
+
+    // Determine roughness from material roughness value and map.
+    float roughness = materialData.roughness;
+    if (textureSize(materialTextures[RoughnessMapIdx], 0).x > 0)
+        roughness = texture(materialTextures[RoughnessMapIdx], fragTexCoord).r;
+    
+    // Determine ambient occlusion from ao map.
+    float ambientOcclusion = 1;
+    if (textureSize(materialTextures[AOcclusionMapIdx], 0).x > 0)
+        ambientOcclusion = texture(materialTextures[AOcclusionMapIdx], fragTexCoord).r;
+
+    // Calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
+    vec3 reflectance = mix(vec3(0.04), albedo, metallic);
     
     // Compute lighting.
-    fragColor.rgb = vec3(0.0);
+    vec3 lightSum = vec3(0.0);
     for (int i = 0; i < 5; i++)
     {
-        switch (lights.data[i].type)
+        Light light = lights.data[i];
+        if (light.type != 1 && light.type != 2 && light.type != 3)
+            continue;
+        
+        vec3  fragToLight = light.type == 1 ? normalize(-light.direction) : normalize(light.position - fragPos);
+        vec3  height      = normalize(viewDir + fragToLight);
+        float attenuation = 1.0;
+        switch (light.type)
         {
-            case 1: fragColor.rgb += ComputeDirLight  (lights.data[i], viewDir, normal, albedo, shininess); break;
-            case 2: fragColor.rgb += ComputePointLight(lights.data[i], viewDir, normal, albedo, shininess); break;
-            case 3: fragColor.rgb += ComputeSpotLight (lights.data[i], viewDir, normal, albedo, shininess); break;
+            case 2: attenuation = PointAttenuation(lights.data[i]); break;
+            case 3: attenuation = SpotAttenuation(light, fragToLight); break;
             default: break;
         }
+        vec3 radiance = light.albedo * light.brightness * attenuation;
+
+        float NDF      = DistributionGGX(normal, height, roughness);
+        float geoSmith = GeometrySmith(normal, viewDir, fragToLight, roughness);
+        vec3  fresnel  = fresnelSchlick(max(dot(height, viewDir), 0.0), reflectance);
+
+        float normalPolarity = max(dot(normal, fragToLight), 0.0);
+        vec3  numerator   = NDF * geoSmith * fresnel;
+        float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * normalPolarity + 0.0001; // + 0.0001 to prevent divide by zero
+        vec3  specular    = numerator / denominator;
+        vec3  diffuse     = (vec3(1.0) - fresnel) * (1.0 - metallic);
+
+        lightSum += (diffuse * albedo / PI + specular) * radiance * normalPolarity;
     }
     
     // Add emissive color from material emissive value and texture.
     vec3 emissive = materialData.emissive;
     if (textureSize(materialTextures[EmissiveTextureIdx], 0).x > 0)
         emissive *= texture(materialTextures[EmissiveTextureIdx], fragTexCoord).rgb;
-    fragColor.rgb += emissive;
+    fragColor.rgb = lightSum + emissive;
 }

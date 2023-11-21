@@ -9,15 +9,17 @@ using namespace Maths;
 using namespace Resources;
 using namespace VkUtils;
 
-Material::Material(const RGB& _albedo, const RGB& _emissive, const float& _shininess, const float& _alpha,
-                   Texture* albedoTexture, Texture* emissiveTexture, Texture* shininessMap, Texture* alphaMap, Texture* normalMap)
-    : albedo(_albedo), emissive(_emissive), shininess(_shininess), alpha(_alpha)
+Material::Material(const RGB& _albedo, const RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha,
+                 Texture* albedoTexture, Texture* emissiveTexture, Texture* metallicMap, Texture* roughnessMap, Texture* aoMap, Texture* alphaMap, Texture* normalMap)
+    : albedo(_albedo), emissive(_emissive), metallic(_metallic), roughness(_roughness), alpha(_alpha)
 {
-    textures[MaterialTextureType::Albedo   ] = albedoTexture;
-    textures[MaterialTextureType::Emissive ] = emissiveTexture;
-    textures[MaterialTextureType::Shininess] = shininessMap;
-    textures[MaterialTextureType::Alpha    ] = alphaMap;
-    textures[MaterialTextureType::Normal   ] = normalMap;
+    textures[MaterialTextureType::Albedo    ] = albedoTexture;
+    textures[MaterialTextureType::Emissive  ] = emissiveTexture;
+    textures[MaterialTextureType::Metallic  ] = metallicMap;
+    textures[MaterialTextureType::Roughness ] = roughnessMap;
+    textures[MaterialTextureType::AOcclusion] = aoMap;
+    textures[MaterialTextureType::Alpha     ] = alphaMap;
+    textures[MaterialTextureType::Normal    ] = normalMap;
 }
 
 Material& Material::operator=(Material&& other) noexcept
@@ -25,7 +27,8 @@ Material& Material::operator=(Material&& other) noexcept
     name      = other.name;      other.name       = "";
     albedo    = other.albedo;    other.albedo     = 0;
     emissive  = other.emissive;  other.emissive   = 0;
-    shininess = other.shininess; other.shininess  = 0;
+    metallic  = other.metallic ; other.metallic   = 0;
+    roughness = other.roughness; other.roughness  = 0;
     alpha     = other.alpha;     other.alpha      = 0;
     for (size_t i = 0; i < MaterialTextureType::COUNT; i++) {
         textures[i] = other.textures[i];
@@ -44,11 +47,12 @@ Material::~Material()
     if (vkDataBufferMemory) vkFreeMemory   (vkDevice, vkDataBufferMemory, nullptr);
 }
 
-void Material::SetParams(const RGB& _albedo, const RGB& _emissive, const float& _shininess, const float& _alpha)
+void Material::SetParams(const RGB& _albedo, const RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha)
 {
     albedo    = _albedo;
     emissive  = _emissive;
-    shininess = _shininess;
+    metallic  = _metallic;
+    roughness = _roughness;
     alpha     = _alpha;
 }
 
@@ -70,7 +74,7 @@ void Material::FinalizeLoading()
                  stagingBuffer, stagingBufferMemory);
 
     // Map the buffer's GPU memory to CPU memory, and write vertex info to it.
-    const MaterialData materialData{ albedo, emissive, shininess, alpha };
+    const MaterialData materialData{ albedo, emissive, metallic, roughness, alpha };
     void* memMapped;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &memMapped);
     memcpy(memMapped, &materialData, (size_t)bufferSize);
