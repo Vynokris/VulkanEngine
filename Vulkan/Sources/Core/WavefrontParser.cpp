@@ -50,102 +50,104 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             continue;
         line += ' ';
 
-        // Read color values.
-        if (line[0] == 'K')
+        switch (line[0])
         {
+        // Read color values.
+        case 'K':
             switch (line[1])
             {
-            // case 'a':
-            //     ParseMtlColor(line, newMaterials[curMatName]->ambient.ptr());
-            //     continue;
             case 'd':
                 ParseMtlColor(line, newMaterials[curMatName].albedo.AsPtr());
-                continue;
-            // case 's':
-            //     ParseMtlColor(line, newMaterials[curMatName].specular.ptr());
-            //     continue;
+                break;
             case 'e':
                 ParseMtlColor(line, newMaterials[curMatName].emissive.AsPtr());
-                continue;
+                break;
             default:
                 break;
             }
-        }
-
-        // Read shininess.
-        if (line[0] == 'N' && line[1] == 's')
-        {
-            newMaterials[curMatName].shininess = std::strtof(line.substr(3, line.size()-4).c_str(), nullptr);
             continue;
-        }
-
+        // Read PBR values.
+        case 'P':
+            switch (line[1])
+            {
+            case 'r':
+                newMaterials[curMatName].roughness = std::strtof(line.substr(2, line.size()-3).c_str(), nullptr);
+                break;
+            case 'm':
+                newMaterials[curMatName].metallic = std::strtof(line.substr(2, line.size()-3).c_str(), nullptr);
+                break;
+            default:
+                break;
+            }
+            continue;
         // Read transparency.
-        if (line[0] == 'd')
-        {
+        case 'd':
             newMaterials[curMatName].alpha = std::strtof(line.substr(2, line.size()-3).c_str(), nullptr);
             continue;
-        }
-        if (line[0] == 'T' && line[1] == 'r')
-        {
-            newMaterials[curMatName].alpha = 1 - std::strtof(line.substr(2, line.size()-3).c_str(), nullptr);
+        case 'T':
+            if (line[1] == 'r')
+                newMaterials[curMatName].alpha = 1 - std::strtof(line.substr(2, line.size()-3).c_str(), nullptr);
             continue;
+        default:
+            break;
         }
 
         // Read texture maps.
         if (line[0] == 'm' && line[1] == 'a' && line[2] == 'p')
         {
-            if (line[4] == 'K')
+            std::string texName;
+            std::string texPath;
+            switch (line[4])
             {
-                std::string texName = line.substr(7, line.size()-8);
-                std::string texPath = filepath + texName;
+            case 'K':
+                texName = line.substr(7, line.size()-8);
+                texPath = filepath + texName;
                 engine->LoadFile(texPath);
                 switch (line[5])
                 {
-                    // Ambient texture.
-                    /*
-                    case 'a':
-                        newMaterials[curMatName].ambientTexture = engine->GetTexture(texPath);
-                    continue;
-                    */
-
-                    // Diffuse texture.
+                // Diffuse texture.
                 case 'd':
-                        newMaterials[curMatName].textures[MaterialTextureType::Albedo] = engine->GetTexture(texPath);
-                    continue;
-
-                    // Specular texture.
-                    /*
-                    case 's':
-                        newMaterials[curMatName].specularTexture = engine->GetTexture(texPath);
-                    continue;
-                    */
-
-                    // Emission texture.
-                    case 'e':
-                        newMaterials[curMatName].textures[MaterialTextureType::Emissive] = engine->GetTexture(texPath);
-                    continue;
-
+                    newMaterials[curMatName].textures[MaterialTextureType::Albedo] = engine->GetTexture(texPath);
+                    break;
+                // Emission texture.
+                case 'e':
+                    newMaterials[curMatName].textures[MaterialTextureType::Emissive] = engine->GetTexture(texPath);
+                    break;
                 default:
                     break;
                 }
-            }
-            // Shininess map.
-            if (line[4] == 'N' && line[5] == 's')
-            {
-                const std::string texName = line.substr(7, line.size()-8);
-                std::string texPath = filepath + texName;
-                engine->LoadFile(texPath);
-                newMaterials[curMatName].textures[MaterialTextureType::Shininess] = engine->GetTexture(texPath);
                 continue;
-            }
+            case 'P':
+                texName = line.substr(7, line.size()-8);
+                texPath = filepath + texName;
+                engine->LoadFile(texPath);
+                switch (line[5])
+                {
+                // Roughness map.
+                case 'r':
+                    newMaterials[curMatName].textures[MaterialTextureType::Roughness] = engine->GetTexture(texPath);
+                    break;
+                // Metallic map.
+                case 'm':
+                    newMaterials[curMatName].textures[MaterialTextureType::Metallic] = engine->GetTexture(texPath);
+                    break;
+                // Ambient occlusion map.
+                case 'a':
+                    newMaterials[curMatName].textures[MaterialTextureType::AOcclusion] = engine->GetTexture(texPath);
+                    break;
+                default:
+                    break;
+                }
+                continue;
             // Alpha map.
-            if (line[4] == 'd')
-            {
-                const std::string texName = line.substr(6, line.size()-7);
-                std::string texPath = filepath + texName;
+            case 'd':
+                texName = line.substr(6, line.size()-7);
+                texPath = filepath + texName;
                 engine->LoadFile(texPath);
                 newMaterials[curMatName].textures[MaterialTextureType::Alpha] = engine->GetTexture(texPath);
                 continue;
+            default:
+                break;
             }
         }
         {
