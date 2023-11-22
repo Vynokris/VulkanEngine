@@ -50,20 +50,13 @@ void Engine::Start()
     camera->transform.Move({ 0, 2.f, 2.f });
     camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.2f));
 
+    models.at("model_Sphere").GetMeshes()[0].SetMaterial(&materials.at("rustediron"));
     models.at("model_Sphere").transform.Move({ 1, 1, 1 });
     models.at("model_Sphere").transform.Scale({ 0.1f, 0.1f, 0.1f });
 }
 
 void Engine::Update(const float& deltaTime)
 {
-    // Update model transforms.
-    if (rotateModels)
-    {
-        const Quaternion rotQuat = Quaternion::FromRoll(PI * 0.2f * deltaTime);
-        for (auto& [name, model] : models)
-            model.transform.Rotate(rotQuat);
-    }
-
     // Update camera transform.
     const WindowInputs inputs = app->GetWindow()->GetInputs();
     if (inputs.mouseRightClick)

@@ -10,7 +10,7 @@ using namespace Resources;
 Texture::Texture(std::string filename)
     : name(std::move(filename))
 {
-    vkImageFormat = VK_FORMAT_R8G8B8A8_SRGB;
+    vkImageFormat = VK_FORMAT_R8G8B8A8_UNORM;
     
     // Load the texture data.
     stbi_set_flip_vertically_on_load_thread(true);
