@@ -21,7 +21,7 @@ layout(location = 3) out mat3 tbnMatrix;
 
 void main() 
 {
-    gl_Position    = matrices.mvp * vec4(inPosition, 1.0);
+    gl_Position    =  matrices.mvp   * vec4(inPosition, 1.0);
     fragPos        = (matrices.model * vec4(inPosition, 1.0)).xyz;
     fragTexCoord   = inTexCoord;
     fragNormal     = normalize((matrices.model * vec4(inNormal,    0.0)).xyz);

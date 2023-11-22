@@ -1,0 +1,8 @@
+newmtl rustediron
+Kd 1 1 1
+Ke 0 0 0
+d 1
+map_Kd rustediron_albedo.png
+map_Pr rustediron_roughness.png
+map_Pm rustediron_metallic.png
+map_Bump rustediron_normal.png

@@ -121,11 +121,11 @@ void main()
     vec3 viewDir = normalize(pushConstants.viewPos - fragPos);
 
     // Determine fragment normal from mesh normal and normal map.
-    // TODO: Fix normal mapping.
     vec3 normal = fragNormal;
-    // if (textureSize(materialTextures[NormalMapIdx], 0).x > 0) {
-    //     normal = normalize(tbnMatrix * (texture(materialTextures[NormalMapIdx], fragTexCoord).rgb * 2.0 - 1.0));
-    // }
+    if (textureSize(materialTextures[NormalMapIdx], 0).x > 0) {
+        normal = texture(materialTextures[NormalMapIdx], fragTexCoord).rgb * 2.0 - 1.0;
+        normal = normalize(tbnMatrix * normal);
+    }
     
     // Determine albedo from material albedo value and texture.
     vec3 albedo = materialData.albedo.rgb;
