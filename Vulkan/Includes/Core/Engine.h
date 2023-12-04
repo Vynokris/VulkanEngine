@@ -36,13 +36,12 @@ namespace Core
 		float cameraSpeed       = 2;
 		float cameraSensitivity = 5e-3f;
 		const std::vector<std::string> defaultResources = {
-			"Resources\\Models\\Stadium\\stadium.obj",
-			// "Resources\\Models\\VikingRoom\\VikingRoom.obj",
-			"Resources\\Meshes\\Sphere.obj",
-			"Resources\\Models\\Headcrab\\headcrab.obj",
-			"Resources\\Models\\Gizmo\\gizmoTranslation.obj",
-			// "Resources\\Models\\DoomSlayer\\doommarine.obj",
-			"Resources\\Materials\\RustedIron\\rustediron.mtl",
+			R"(Resources\Models\Stadium\stadium.obj)",
+			R"(Resources\Meshes\Sphere.obj)",
+			R"(Resources\Materials\RustedIron\rustediron.mtl)",
+			R"(Resources\Models\Headcrab\headcrab.obj)",
+			R"(Resources\Models\Gizmo\gizmoTranslation.obj)",
+			// R"(Resources\Models\DoomSlayer\doommarine.obj)",
 		};
 		
 		Engine();

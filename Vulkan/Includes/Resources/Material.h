@@ -37,7 +37,7 @@ namespace Resources
         
         Maths::RGB albedo   = 1; // The overall color of the object.
         Maths::RGB emissive = 0; // The color of light emitted by the object.
-        float metallic      = 1; // The intensity of highlights on the object.
+        float metallic      = 0; // The intensity of highlights on the object.
         float roughness     = 1; // The intensity of highlights on the object.
         float alpha         = 1; // Defines how see-through the object is.
 
