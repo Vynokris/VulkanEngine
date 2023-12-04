@@ -28,15 +28,23 @@ layout(push_constant) uniform PushConstants {
     vec3 viewPos;
 } pushConstants;
 
+// Fog params input.
+layout(set = 1, binding = 0) uniform FogParamsBuffer {
+    vec3  color;
+    float start;
+    float end;
+    float invLength;
+} fogParams;
+
 // Material data and textures inputs.
-layout(set = 1, binding = 0) uniform MaterialBuffer {
+layout(set = 2, binding = 0) uniform MaterialBuffer {
     vec3  albedo;
     vec3  emissive;
     float metallic;
     float roughness;
     float alpha;
 } materialData;
-layout(set = 1, binding = 1) uniform sampler2D materialTextures[TextureTypesCount];
+layout(set = 2, binding = 1) uniform sampler2D materialTextures[TextureTypesCount];
 
 // Light data struct and inputs.
 struct Light {
@@ -47,7 +55,7 @@ struct Light {
     float brightness, radius, falloff;
     float outerCutoff, innerCutoff;
 };
-layout(set = 2, binding = 0) uniform LightBuffer { Light data[2]; } lights;
+layout(set = 3, binding = 0) uniform LightBuffer { Light data[2]; } lights;
 
 // Fragment color output.
 layout(location = 0) out vec4 fragColor;
@@ -194,4 +202,9 @@ void main()
     if (textureSize(materialTextures[EmissiveTextureIdx], 0).x > 0)
         emissive *= texture(materialTextures[EmissiveTextureIdx], fragTexCoord).rgb;
     fragColor.rgb += emissive;
+    
+    // Compute distance fog.
+    fragColor.rgb = mix(fragColor.rgb, fogParams.color, 
+                        (clamp(length(fragPos - pushConstants.viewPos), fogParams.start, fogParams.end) 
+                        - fogParams.start) * fogParams.invLength);
 }
