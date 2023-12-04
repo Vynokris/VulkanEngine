@@ -5,6 +5,14 @@ namespace Resources
 {
     class Camera;
     class Model;
+
+    struct DistanceFogParams
+    {
+        alignas(16) Maths::RGB color;
+        float start;
+        float end;
+        float invLength;
+    };
 }
 
 namespace Core
@@ -47,8 +55,13 @@ namespace Core
         uint32_t                        vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         uint32_t                        vkSwapchainImageIndex = 0;
         VkSampleCountFlagBits           msaaSamples;
-        uint32_t                        currentFrame = 0;
-        bool                            framebufferResized = false;
+        VkDescriptorSetLayout           constDataDescriptorLayout = nullptr; // Could be used to send constants to shaders.
+        VkDescriptorPool                constDataDescriptorPool   = nullptr;
+        VkDescriptorSet                 constDataDescriptorSet    = nullptr;
+        VkBuffer                        fogParamsBuffer           = nullptr;
+        VkDeviceMemory                  fogParamsBufferMemory     = nullptr;
+        bool                            framebufferResized        = false;
+        uint32_t                        currentFrame              = 0;
         
     public:
         Renderer(const char* appName, const char* engineName = "No Engine");
@@ -57,6 +70,8 @@ namespace Core
         Renderer& operator=(const Renderer&) = delete;
         Renderer& operator=(Renderer&&)      = delete;
         ~Renderer();
+
+        void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
         void BeginRender();
         void DrawModel(const Resources::Model& model, const Resources::Camera* camera) const;
@@ -88,7 +103,7 @@ namespace Core
         void CreateSwapChain();
         void CreateImageViews();
         void CreateRenderPass();
-        void CreateDescriptorLayoutsAndPools() const;
+        void CreateDescriptorLayoutsAndPools();
         void CreateGraphicsPipeline();
         void CreateColorResources();
         void CreateDepthResources();

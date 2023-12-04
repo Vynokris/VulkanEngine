@@ -49,13 +49,16 @@ Renderer::Renderer(const char* appName, const char* engineName)
     CreateTextureSampler();
     CreateCommandBuffers();
     CreateSyncObjects();
+    SetDistanceFogParams(0, 60, 100);
 }
 
 Renderer::~Renderer()
 {
     WaitUntilIdle();
     const auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugUtilsMessengerEXT");
-
+    
+    vkDestroyBuffer(vkDevice, fogParamsBuffer,       nullptr);
+    vkFreeMemory   (vkDevice, fogParamsBufferMemory, nullptr);
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(vkDevice, vkImageAvailableSemaphores[i], nullptr);
@@ -65,15 +68,68 @@ Renderer::~Renderer()
     Resources::Light   ::DestroyVkData                 (vkDevice);
     Resources::Model   ::DestroyDescriptorLayoutAndPool(vkDevice);
     Resources::Material::DestroyDescriptorLayoutAndPool(vkDevice);
-    vkDestroySampler               (vkDevice,   vkTextureSampler,      nullptr);
-    vkDestroyCommandPool           (vkDevice,   vkCommandPool,         nullptr);
-    vkDestroyPipeline              (vkDevice,   vkGraphicsPipeline,    nullptr);
-    vkDestroyPipelineLayout        (vkDevice,   vkPipelineLayout,      nullptr);
-    vkDestroyRenderPass            (vkDevice,   vkRenderPass,          nullptr);
-    vkDestroyDevice                (vkDevice,                          nullptr);
-    vkDestroySurfaceKHR            (vkInstance, vkSurface,             nullptr);
-    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger,     nullptr);
-    vkDestroyInstance              (vkInstance,                        nullptr);
+    vkDestroySampler               (vkDevice,   vkTextureSampler,   nullptr);
+    vkDestroyCommandPool           (vkDevice,   vkCommandPool,      nullptr);
+    vkDestroyPipeline              (vkDevice,   vkGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout        (vkDevice,   vkPipelineLayout,   nullptr);
+    vkDestroyRenderPass            (vkDevice,   vkRenderPass,       nullptr);
+    vkDestroyDevice                (vkDevice,                       nullptr);
+    vkDestroySurfaceKHR            (vkInstance, vkSurface,          nullptr);
+    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger,   nullptr);
+    vkDestroyInstance              (vkInstance,                     nullptr);
+}
+
+void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end)
+{
+    const Resources::DistanceFogParams fogParams{ color, start, end, 1 / (end - start) };
+    
+    // Create a temporary staging buffer.
+    constexpr VkDeviceSize bufferSize = sizeof(Resources::DistanceFogParams);
+    VkBuffer       stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory);
+
+    // Map the buffer's GPU memory to CPU memory, and write buffer params to it.
+    void* data;
+    vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, &fogParams, (size_t)bufferSize);
+    vkUnmapMemory(vkDevice, stagingBufferMemory);
+
+    // De-allocate any previously created fog params buffer.
+    if (fogParamsBuffer && fogParamsBufferMemory)
+    {
+        vkDestroyBuffer(vkDevice, fogParamsBuffer,       nullptr);
+        vkFreeMemory   (vkDevice, fogParamsBufferMemory, nullptr);
+    }
+
+    // Create the real fog params buffer.
+    CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 fogParamsBuffer, fogParamsBufferMemory);
+
+    // Copy the staging buffer to the fog params buffer.
+    CopyBuffer(vkDevice, vkCommandPool, vkGraphicsQueue, stagingBuffer, fogParamsBuffer, bufferSize);
+
+    // De-allocate the staging buffer.
+    vkDestroyBuffer(vkDevice, stagingBuffer,       nullptr);
+    vkFreeMemory   (vkDevice, stagingBufferMemory, nullptr);
+    
+    // Populate the descriptor set.
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = fogParamsBuffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range  = sizeof(Resources::DistanceFogParams);
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet          = constDataDescriptorSet;
+    descriptorWrite.dstBinding      = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo     = &bufferInfo;
+    vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
 }
 
 void Renderer::BeginRender()
@@ -98,8 +154,8 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera*
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[3] = { model.GetVkDescriptorSet(currentFrame), mesh.GetMaterial()->GetVkDescriptorSet(), Resources::Light::GetVkDescriptorSet() };
-        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 3, descriptorSets, 0, nullptr);
+        const VkDescriptorSet descriptorSets[4] = { model.GetVkDescriptorSet(currentFrame), constDataDescriptorSet, mesh.GetMaterial()->GetVkDescriptorSet(), Resources::Light::GetVkDescriptorSet() };
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 }
@@ -499,11 +555,59 @@ void Renderer::CreateRenderPass()
     }
 }
 
-void Renderer::CreateDescriptorLayoutsAndPools() const
+void Renderer::CreateDescriptorLayoutsAndPools()
 {
+    // Create layouts and pools for lights, models and materials.
     Resources::Light   ::CreateVkData(vkDevice, vkPhysicalDevice);
     Resources::Model   ::CreateDescriptorLayoutAndPool(vkDevice);
     Resources::Material::CreateDescriptorLayoutAndPool(vkDevice);
+
+    // Create layout, poll and descriptor for constant data.
+    {
+        // Set the binding of the const data buffer.
+        VkDescriptorSetLayoutBinding layoutBinding{};
+        layoutBinding.binding         = 0;
+        layoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        // Create the descriptor set layout.
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings    = &layoutBinding;
+        if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &constDataDescriptorLayout) != VK_SUCCESS) {
+            LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
+            throw std::runtime_error("VULKAN_DESCRIPTOR_SET_LAYOUT_ERROR");
+        }
+
+        // Set the type and number of descriptors.
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = 1;
+
+        // Create the descriptor pool.
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes    = &poolSize;
+        poolInfo.maxSets       = 1;
+        if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &constDataDescriptorPool) != VK_SUCCESS) {
+            LogError(LogType::Vulkan, "Failed to create descriptor pool.");
+            throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
+        }
+
+        // Allocate the descriptor set.
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool     = constDataDescriptorPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts        = &constDataDescriptorLayout;
+        if (vkAllocateDescriptorSets(vkDevice, &allocInfo, &constDataDescriptorSet) != VK_SUCCESS) {
+            LogError(LogType::Vulkan, "Failed to allocate descriptor sets.");
+            throw std::runtime_error("VULKAN_DESCRIPTOR_SET_ALLOCATION_ERROR");
+        }
+    }
 }
 
 void Renderer::CreateGraphicsPipeline()
@@ -629,9 +733,10 @@ void Renderer::CreateGraphicsPipeline()
     colorBlending.blendConstants[3] = 0.f; // Optional.
 
     // Define 1 push constant (viewPos) and 3 descriptor set layouts (model, material, lights).
-    const VkPushConstantRange   pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Maths::Vector3) };
-    const VkDescriptorSetLayout setLayouts[3] = {
+    const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Maths::Vector3) };
+    const VkDescriptorSetLayout setLayouts[4] = {
         Resources::Model   ::GetVkDescriptorSetLayout(),
+        constDataDescriptorLayout,
         Resources::Material::GetVkDescriptorSetLayout(),
         Resources::Light   ::GetVkDescriptorSetLayout()
     };
@@ -639,7 +744,7 @@ void Renderer::CreateGraphicsPipeline()
     // Set the pipeline layout creation information.
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount         = 3;
+    pipelineLayoutInfo.setLayoutCount         = 4;
     pipelineLayoutInfo.pSetLayouts            = setLayouts;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
