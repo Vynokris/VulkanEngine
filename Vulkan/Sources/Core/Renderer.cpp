@@ -304,15 +304,9 @@ void Renderer::CreateLogicalDevice()
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.sampleRateShading = VK_TRUE;
+    deviceFeatures.shaderStorageImageExtendedFormats = VK_TRUE;
 
-    // Specify the descriptor indexing features to be used (enable non-uniform indexing).
-    VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
-    descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-    descriptorIndexingFeatures.runtimeDescriptorArray                    = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount  = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingPartiallyBound           = VK_TRUE;
-
+    // Enable null descriptors.
     VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustnessFeatures{};
     deviceRobustnessFeatures.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
     deviceRobustnessFeatures.nullDescriptor = VK_TRUE;

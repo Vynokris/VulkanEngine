@@ -12,6 +12,11 @@ const uint AlphaMapIdx        = 5;
 const uint NormalMapIdx       = 6;
 const uint TextureTypesCount  = 7;
 
+// Light types definition.
+const uint DirLightType   = 1;
+const uint PointLightType = 2;
+const uint SpotLightType  = 3;
+
 // Inputs from vertex shader.
 layout(location = 0) in vec3 fragPos;
 layout(location = 1) in vec2 fragTexCoord;
@@ -101,7 +106,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
+vec3 FresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
@@ -155,23 +160,23 @@ void main()
     for (int i = 0; i < 5; i++)
     {
         Light light = lights.data[i];
-        if (light.type != 1 && light.type != 2 && light.type != 3)
+        if (light.type != DirLightType && light.type != PointLightType && light.type != SpotLightType)
             continue;
         
-        vec3  fragToLight = light.type == 1 ? normalize(-light.direction) : normalize(light.position - fragPos);
+        vec3  fragToLight = light.type == DirLightType ? normalize(-light.direction) : normalize(light.position - fragPos);
         vec3  height      = normalize(viewDir + fragToLight);
         float attenuation = 1.0;
         switch (light.type)
         {
-            case 2: attenuation = PointAttenuation(lights.data[i]); break;
-            case 3: attenuation = SpotAttenuation(light, fragToLight); break;
+            case PointLightType: attenuation = PointAttenuation(light); break;
+            case SpotLightType:  attenuation = SpotAttenuation (light, fragToLight); break;
             default: break;
         }
         vec3 radiance = light.albedo * light.brightness * attenuation;
 
         float NDF      = DistributionGGX(normal, height, roughness);
-        float geoSmith = GeometrySmith(normal, viewDir, fragToLight, roughness);
-        vec3  fresnel  = fresnelSchlick(max(dot(height, viewDir), 0.0), reflectance);
+        float geoSmith = GeometrySmith  (normal, viewDir, fragToLight, roughness);
+        vec3  fresnel  = FresnelSchlick(max(dot(height, viewDir), 0.0), reflectance);
 
         float normalPolarity = max(dot(normal, fragToLight), 0.0);
         vec3  numerator   = NDF * geoSmith * fresnel;
@@ -179,12 +184,14 @@ void main()
         vec3  specular    = numerator / denominator;
         vec3  diffuse     = (vec3(1.0) - fresnel) * (1.0 - metallic);
 
-        lightSum += (diffuse * albedo / PI + specular) * radiance * normalPolarity;
+        // TODO: The diffuse term is broken.
+        lightSum += (/*diffuse * */albedo / PI + specular) * radiance * normalPolarity;
     }
+    fragColor.rgb = lightSum;
     
     // Add emissive color from material emissive value and texture.
     vec3 emissive = materialData.emissive;
     if (textureSize(materialTextures[EmissiveTextureIdx], 0).x > 0)
         emissive *= texture(materialTextures[EmissiveTextureIdx], fragTexCoord).rgb;
-    fragColor.rgb = lightSum + emissive;
+    fragColor.rgb += emissive;
 }

@@ -102,15 +102,16 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             case 'K':
                 texName = line.substr(7, line.size()-8);
                 texPath = filepath + texName;
-                engine->LoadFile(texPath);
                 switch (line[5])
                 {
                 // Diffuse texture.
                 case 'd':
+                    engine->LoadFile(texPath);
                     newMaterials[curMatName].textures[MaterialTextureType::Albedo] = engine->GetTexture(texPath);
                     break;
                 // Emission texture.
                 case 'e':
+                    engine->LoadFile(texPath);
                     newMaterials[curMatName].textures[MaterialTextureType::Emissive] = engine->GetTexture(texPath);
                     break;
                 default:
@@ -120,19 +121,21 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             case 'P':
                 texName = line.substr(7, line.size()-8);
                 texPath = filepath + texName;
-                engine->LoadFile(texPath);
                 switch (line[5])
                 {
                 // Roughness map.
                 case 'r':
+                    engine->LoadFile(texPath);
                     newMaterials[curMatName].textures[MaterialTextureType::Roughness] = engine->GetTexture(texPath);
                     break;
                 // Metallic map.
                 case 'm':
+                    engine->LoadFile(texPath);
                     newMaterials[curMatName].textures[MaterialTextureType::Metallic] = engine->GetTexture(texPath);
                     break;
                 // Ambient occlusion map.
                 case 'a':
+                    engine->LoadFile(texPath);
                     newMaterials[curMatName].textures[MaterialTextureType::AOcclusion] = engine->GetTexture(texPath);
                     break;
                 default:
