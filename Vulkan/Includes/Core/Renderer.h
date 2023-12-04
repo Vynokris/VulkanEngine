@@ -113,8 +113,9 @@ namespace Core
         void CreateCommandBuffers();
         void CreateSyncObjects();
 
-        void DestroySwapChain() const;
         void RecreateSwapChain();
+        void DestroySwapChain() const;
+        void DestroyDescriptorLayoutsAndPools() const;
 
         void NewFrame();
         void BeginRenderPass() const;

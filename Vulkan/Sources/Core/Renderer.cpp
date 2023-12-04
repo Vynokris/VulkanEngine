@@ -65,9 +65,7 @@ Renderer::~Renderer()
         vkDestroyFence    (vkDevice, vkInFlightFences[i],           nullptr);
     }
     DestroySwapChain();
-    Resources::Light   ::DestroyVkData                 (vkDevice);
-    Resources::Model   ::DestroyDescriptorLayoutAndPool(vkDevice);
-    Resources::Material::DestroyDescriptorLayoutAndPool(vkDevice);
+    DestroyDescriptorLayoutsAndPools();
     vkDestroySampler               (vkDevice,   vkTextureSampler,   nullptr);
     vkDestroyCommandPool           (vkDevice,   vkCommandPool,      nullptr);
     vkDestroyPipeline              (vkDevice,   vkGraphicsPipeline, nullptr);
@@ -170,7 +168,6 @@ void Renderer::WaitUntilIdle() const
 {
     vkDeviceWaitIdle(vkDevice);
 }
-
 
 #pragma region Setup
 void Renderer::CheckValidationLayers() const
@@ -915,7 +912,19 @@ void Renderer::CreateSyncObjects()
 }
 #pragma endregion
 
-#pragma region Swapchain Recreation
+#pragma region Recreation & Destruction
+void Renderer::RecreateSwapChain()
+{    
+    WaitUntilIdle();
+    DestroySwapChain();
+    
+    CreateSwapChain();
+    CreateImageViews();
+    CreateColorResources();
+    CreateDepthResources();
+    CreateFramebuffers();
+}
+
 void Renderer::DestroySwapChain() const
 {
     for (const VkFramebuffer& vkSwapChainFramebuffer : vkSwapChainFramebuffers)
@@ -931,16 +940,14 @@ void Renderer::DestroySwapChain() const
     vkDestroySwapchainKHR (vkDevice, vkSwapChain,              nullptr);
 }
 
-void Renderer::RecreateSwapChain()
-{    
-    WaitUntilIdle();
-    DestroySwapChain();
-    
-    CreateSwapChain();
-    CreateImageViews();
-    CreateColorResources();
-    CreateDepthResources();
-    CreateFramebuffers();
+void Renderer::DestroyDescriptorLayoutsAndPools() const
+{
+    Resources::Light   ::DestroyVkData                 (vkDevice);
+    Resources::Model   ::DestroyDescriptorLayoutAndPool(vkDevice);
+    Resources::Material::DestroyDescriptorLayoutAndPool(vkDevice);
+
+    if (constDataDescriptorLayout) vkDestroyDescriptorSetLayout(vkDevice, constDataDescriptorLayout, nullptr);
+    if (constDataDescriptorPool)   vkDestroyDescriptorPool     (vkDevice, constDataDescriptorPool,   nullptr);
 }
 #pragma endregion 
 
