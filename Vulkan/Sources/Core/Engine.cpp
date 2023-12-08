@@ -38,9 +38,9 @@ void Engine::Awake()
         LoadFile(filename);
 
     // Add default directional light.
-    // lights.emplace_back(Light::Directional({ 1,1,1 }, Vector3(-1, -0.2f, 0).GetNormalized(), 0.4f));
-    lights.emplace_back(Light::Point({ 1,1,1 }, Vector3(0,3,0), 0.3f, 15, 4));
-    lights.emplace_back(Light::Spot({ 1,1,1 }, {1.5f,1.5f,1.5f}, Vector3(-1,-1,-1).GetNormalized(), 1, 10, 4, 0.1f, 0.05f));
+    // lights.emplace_back(Light::Directional({1,1,1}, Vector3(-1, -1, -1).GetNormalized(), 1));
+    lights.emplace_back(Light::Point({1,1,1}, {0,2,2}, 1, 8, 4));
+    // lights.emplace_back(Light::Spot({1,1,1}, {3,3,2}, Vector3(-3,-3,-2).GetNormalized(), 1, 10, 4, 0.1f, 0.05f));
     Light::UpdateBufferData(lights);
 }
 
@@ -50,9 +50,10 @@ void Engine::Start()
     camera->transform.Move({ 0, 2.f, 2.f });
     camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.2f));
 
-    models.at("model_Sphere").GetMeshes()[0].SetMaterial(&materials.at("rustediron"));
-    models.at("model_Sphere").transform.Move({ 1, 1, 1 });
-    models.at("model_Sphere").transform.Scale({ 0.1f, 0.1f, 0.1f });
+    models.at("model_Sphere").GetMeshes()[0].SetMaterial(&materials.at("mt_GothicSculptedWall"));
+    models.at("model_Sphere").transform.Move({ 1.5f, 1, 0 });
+    models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_GothicSculptedWall"));
+    models.at("model_Cube").transform.Move({ -1.5f, 1, 0 });
 }
 
 void Engine::Update(const float& deltaTime)

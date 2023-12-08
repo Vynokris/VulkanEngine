@@ -152,17 +152,26 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             default:
                 break;
             }
-        }
-        {
             // Normal map.
-            size_t bumpIndex = line.find("bump ");
-            if (bumpIndex == std::string::npos) bumpIndex = line.find("Bump ");
+            size_t bumpIndex = line.find("Bump ");
+            if (bumpIndex == std::string::npos) bumpIndex = line.find("bump ");
             if (bumpIndex != std::string::npos)
             {
-                std::string texName = line.substr(bumpIndex+5, line.size()-(bumpIndex+5)-1);
-                std::string texPath = filepath + texName;
+                texName = line.substr(bumpIndex+5, line.size()-(bumpIndex+5)-1);
+                texPath = filepath + texName;
                 engine->LoadFile(texPath);
                 newMaterials[curMatName].textures[MaterialTextureType::Normal] = engine->GetTexture(texPath);
+                continue;
+            }
+            // Depth map.
+            size_t depthIndex = line.find("Depth ");
+            if (depthIndex == std::string::npos) depthIndex = line.find("depth ");
+            if (depthIndex != std::string::npos)
+            {
+                texName = line.substr(depthIndex+6, line.size()-(depthIndex+6)-1);
+                texPath = filepath + texName;
+                engine->LoadFile(texPath);
+                newMaterials[curMatName].textures[MaterialTextureType::Depth] = engine->GetTexture(texPath);
                 continue;
             }
         }

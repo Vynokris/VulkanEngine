@@ -1,0 +1,11 @@
+newmtl mt_GothicSculptedWall
+Kd 1 1 1
+Ke 0 0 0
+Pm 0
+Pr 1
+d 1
+map_Kd GothicSculptedWall_Albedo.jpg
+map_Pr GothicSculptedWall_Roughness.jpg
+map_Pa GothicSculptedWall_AO.jpg
+map_Bump GothicSculptedWall_Normal.jpg
+map_Depth GothicSculptedWall_Depth.jpg
