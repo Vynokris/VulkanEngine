@@ -62,6 +62,8 @@ namespace VkUtils
         float metallic;
         float roughness;
         float alpha;
+        float depthMultiplier;
+        unsigned int parallaxLayerDepth;
     };
     
     struct QueueFamilyIndices

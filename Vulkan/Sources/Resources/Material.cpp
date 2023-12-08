@@ -74,7 +74,7 @@ void Material::FinalizeLoading()
                  stagingBuffer, stagingBufferMemory);
 
     // Map the buffer's GPU memory to CPU memory, and write vertex info to it.
-    const MaterialData materialData{ albedo, emissive, metallic, roughness, alpha };
+    const MaterialData materialData{ albedo, emissive, metallic, roughness, alpha, depthMultiplier, depthLayerCount };
     void* memMapped;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &memMapped);
     memcpy(memMapped, &materialData, (size_t)bufferSize);

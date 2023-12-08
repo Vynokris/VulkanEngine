@@ -16,7 +16,7 @@ namespace Resources
     // Enumerates all unique material texture/map types.
     namespace MaterialTextureType
     {
-        static constexpr size_t COUNT = 7; // The number of different texture types that are stored in a material's textures array.
+        static constexpr size_t COUNT = 8; // The number of different texture types that are stored in a material's textures array.
         
         enum
         {
@@ -27,19 +27,21 @@ namespace Resources
             AOcclusion, // Texture map used to add shadows to the object.
             Alpha,      // Texture map used to modify the object's transparency.
             Normal,     // Texture map used to modify the object's normals.
+            Depth,      // Texture map used to modify the object's depth through parallax mapping.
         };
     };
     
     class Material
     {
     public:
-        std::string name; // The material's name.
-        
-        Maths::RGB albedo   = 1; // The overall color of the object.
-        Maths::RGB emissive = 0; // The color of light emitted by the object.
-        float metallic      = 0; // The intensity of highlights on the object.
-        float roughness     = 1; // The intensity of highlights on the object.
-        float alpha         = 1; // Defines how see-through the object is.
+        std::string  name;                   // The material's name.
+        Maths::RGB   albedo          = 1;    // The overall color of the object.
+        Maths::RGB   emissive        = 0;    // The color of light emitted by the object.
+        float        metallic        = 0;    // The intensity of highlights on the object.
+        float        roughness       = 1;    // The intensity of highlights on the object.
+        float        alpha           = 1;    // Defines how see-through the object is.
+        float        depthMultiplier = 0.1f; // Defines how intense the parallax depth effect should be.
+        unsigned int depthLayerCount = 32;   // Defines how many layers are used in the parallax depth effect.
 
         Texture* textures[MaterialTextureType::COUNT] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }; // Array of all different textures used by this material.
         

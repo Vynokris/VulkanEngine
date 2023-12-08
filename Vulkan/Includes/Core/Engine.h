@@ -38,7 +38,8 @@ namespace Core
 		const std::vector<std::string> defaultResources = {
 			R"(Resources\Models\Stadium\stadium.obj)",
 			R"(Resources\Meshes\Sphere.obj)",
-			R"(Resources\Materials\RustedIron\rustediron.mtl)",
+			R"(Resources\Meshes\Cube.obj)",
+			R"(Resources\Materials\GothicSculptedWall\GothicSculptedWall.mtl)",
 			R"(Resources\Models\Headcrab\headcrab.obj)",
 			R"(Resources\Models\Gizmo\gizmoTranslation.obj)",
 			// R"(Resources\Models\DoomSlayer\doommarine.obj)",

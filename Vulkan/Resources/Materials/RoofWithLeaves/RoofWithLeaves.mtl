@@ -1,0 +1,11 @@
+newmtl mt_RoofWithLeaves
+Kd 1 1 1
+Ke 0 0 0
+Pm 0
+Pr 1
+d 1
+map_Kd RoofWithLeaves_Albedo.jpg
+map_Pr RoofWithLeaves_Roughness.jpg
+map_Pa RoofWithLeaves_AO.jpg
+map_Bump RoofWithLeaves_Normal.jpg
+map_Depth RoofWithLeaves_Depth.jpg

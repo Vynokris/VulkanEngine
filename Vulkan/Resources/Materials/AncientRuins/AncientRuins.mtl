@@ -1,0 +1,11 @@
+newmtl mt_AncientRuins
+Kd 1 1 1
+Ke 0 0 0
+Pm 0
+Pr 1
+d 1
+map_Kd AncientRuins_Albedo.jpg
+map_Pr AncientRuins_Roughness.jpg
+map_Pa AncientRuins_AO.jpg
+map_Bump AncientRuins_Normal.jpg
+map_Depth AncientRuins_Depth.jpg
