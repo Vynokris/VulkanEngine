@@ -24,7 +24,7 @@ namespace Core
     private:
         Application*                    app;
         VkInstance                      vkInstance            = nullptr;
-        VkDebugUtilsMessengerEXT        vkDebugMessenger     = nullptr;
+        VkDebugUtilsMessengerEXT        vkDebugMessenger      = nullptr;
         VkSurfaceKHR                    vkSurface             = nullptr;
         VkPhysicalDevice                vkPhysicalDevice      = nullptr;
         VkDevice                        vkDevice              = nullptr;
@@ -55,7 +55,7 @@ namespace Core
         uint32_t                        vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         uint32_t                        vkSwapchainImageIndex = 0;
         VkSampleCountFlagBits           msaaSamples;
-        VkDescriptorSetLayout           constDataDescriptorLayout = nullptr; // Could be used to send constants to shaders.
+        VkDescriptorSetLayout           constDataDescriptorLayout = nullptr; // Used to send constant data to shaders.
         VkDescriptorPool                constDataDescriptorPool   = nullptr;
         VkDescriptorSet                 constDataDescriptorSet    = nullptr;
         VkBuffer                        fogParamsBuffer           = nullptr;
@@ -74,7 +74,7 @@ namespace Core
         void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
         void BeginRender();
-        void DrawModel(const Resources::Model& model, const Resources::Camera* camera) const;
+        void DrawModel(const Resources::Model& model, const Resources::Camera& camera) const;
         void EndRender();
 
         void WaitUntilIdle() const;

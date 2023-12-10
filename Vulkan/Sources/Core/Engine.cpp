@@ -76,7 +76,7 @@ void Engine::Render(const Renderer* renderer) const
     vkCmdPushConstants(renderer->GetCurVkCommandBuffer(), renderer->GetVkPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Vector3), &viewPos);
 
     for (const auto& [name, model] : models)
-        renderer->DrawModel(model, camera);
+        renderer->DrawModel(model, *camera);
 }
 
 void Engine::LoadFile(const std::string& filename)
@@ -142,5 +142,5 @@ Texture* Engine::GetTexture(const std::string& name)
 void Engine::ResizeCamera(const int& width, const int& height) const
 {
     const CameraParams params = camera->GetParams();
-    camera->ChangeParams({ width, height, params.near, params.far, params.fov });
+    camera->SetParams({ width, height, params.near, params.far, params.fov });
 }

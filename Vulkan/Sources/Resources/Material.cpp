@@ -137,7 +137,7 @@ void Material::FinalizeLoading()
     vkUpdateDescriptorSets(vkDevice, 2, descriptorWrites, 0, nullptr);
 }
 
-void Material::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
+void Material::CreateVkData(const VkDevice& vkDevice)
 {
     if (vkDescriptorSetLayout && vkDescriptorPool) return;
      
@@ -181,7 +181,7 @@ void Material::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
     }
 }
 
-void Material::DestroyDescriptorLayoutAndPool(const VkDevice& vkDevice)
+void Material::DestroyVkData(const VkDevice& vkDevice)
 {
     if (vkDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, nullptr);
     if (vkDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, vkDescriptorPool,      nullptr);

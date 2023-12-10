@@ -5,10 +5,10 @@ using namespace Maths;
 Camera::Camera(const CameraParams& parameters)
 {
     transform.SetIsCamera(true);
-    ChangeParams(parameters);
+    SetParams(parameters);
 }
 
-void Camera::ChangeParams(const CameraParams& parameters)
+void Camera::SetParams(const CameraParams& parameters)
 {
     params = CameraParams(parameters);
     params.aspect = (float)params.width / (float)params.height;

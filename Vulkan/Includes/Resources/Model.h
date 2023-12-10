@@ -40,10 +40,10 @@ namespace Resources
 		Model& operator=(Model&&) noexcept;
 		~Model();
 
-		void UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const;
+		void UpdateMvpBuffer(const Camera& camera, const uint32_t& currentFrame) const;
 		
-		static void CreateDescriptorLayoutAndPool (const VkDevice& vkDevice);
-		static void DestroyDescriptorLayoutAndPool(const VkDevice& vkDevice);
+		static void CreateVkData (const VkDevice& vkDevice);
+		static void DestroyVkData(const VkDevice& vkDevice);
 		static VkDescriptorSetLayout GetVkDescriptorSetLayout() { return vkDescriptorSetLayout; }
 		static VkDescriptorPool      GetVkDescriptorPool     () { return vkDescriptorPool;      }
                VkDescriptorSet       GetVkDescriptorSet(const uint32_t& currentFrame) const;

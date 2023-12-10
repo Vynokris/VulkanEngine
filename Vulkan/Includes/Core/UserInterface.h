@@ -35,7 +35,7 @@ namespace Core
         VkDescriptorPool vkDescriptorPool = nullptr;
 
         // Pointers to engine resources.
-        Resources::Camera*                camera   = nullptr;
+        Resources::Camera* camera = nullptr;
         std::unordered_map<std::string, Resources::Model>*   models   = nullptr;
         std::unordered_map<std::string, Resources::Texture>* textures = nullptr;
         

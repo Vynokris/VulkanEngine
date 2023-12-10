@@ -47,13 +47,12 @@ namespace Core
 
     struct Log
     {
-    public:
         LogType     type;
         LogSeverity severity;
         std::string message;
         std::string sourceFile;
         std::string sourceFunction;
-        const long  sourceLine;
+        long        sourceLine;
         
         Log(const LogType& _type, const LogSeverity& _severity, std::string _message, const char* _sourceFile, const char* _sourceFunction, const long& _sourceLine)
             : type(_type), severity(_severity), message(std::move(_message)), sourceFile(_sourceFile), sourceFunction(_sourceFunction), sourceLine(_sourceLine) {}
