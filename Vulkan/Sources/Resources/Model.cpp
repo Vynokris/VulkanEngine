@@ -43,14 +43,14 @@ Model::~Model()
      }
 }
 
-void Model::UpdateMvpBuffer(const Camera* camera, const uint32_t& currentFrame) const
+void Model::UpdateMvpBuffer(const Camera& camera, const uint32_t& currentFrame) const
 {
      // Copy the matrices to buffer memory.
-     const MvpBuffer mvp = { transform.GetLocalMat(), transform.GetLocalMat() * camera->GetViewMat() * camera->GetProjMat() };
+     const MvpBuffer mvp = { transform.GetLocalMat(), transform.GetLocalMat() * camera.GetViewMat() * camera.GetProjMat() };
      memcpy(vkMvpBuffersMapped[currentFrame], &mvp, sizeof(mvp));
 }
 
-void Model::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
+void Model::CreateVkData(const VkDevice& vkDevice)
 {
      if (vkDescriptorSetLayout && vkDescriptorPool) return;
      
@@ -88,7 +88,7 @@ void Model::CreateDescriptorLayoutAndPool(const VkDevice& vkDevice)
      }
 }
 
-void Model::DestroyDescriptorLayoutAndPool(const VkDevice& vkDevice)
+void Model::DestroyVkData(const VkDevice& vkDevice)
 {
      if (vkDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, nullptr);
      if (vkDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, vkDescriptorPool,      nullptr);

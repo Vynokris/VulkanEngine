@@ -23,7 +23,7 @@ namespace Resources
 		Camera(Camera&&)                 = delete;
 		Camera& operator=(const Camera&) = delete;
 		Camera& operator=(Camera&&)      = delete;
-        void ChangeParams(const CameraParams& parameters);
+        void SetParams(const CameraParams& parameters);
 		
 		CameraParams GetParams () const { return params;  }
 		Maths::Mat4  GetProjMat() const { return projMat; }

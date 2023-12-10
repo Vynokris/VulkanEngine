@@ -65,8 +65,8 @@ namespace Resources
         bool IsLoadingFinalized() const { return vkDescriptorSet && vkDataBuffer && vkDataBufferMemory; }
         void FinalizeLoading();
         
-		static void CreateDescriptorLayoutAndPool (const VkDevice& vkDevice);
-		static void DestroyDescriptorLayoutAndPool(const VkDevice& vkDevice);
+		static void CreateVkData (const VkDevice& vkDevice);
+		static void DestroyVkData(const VkDevice& vkDevice);
         static VkDescriptorSetLayout GetVkDescriptorSetLayout()       { return vkDescriptorSetLayout; }
         static VkDescriptorPool      GetVkDescriptorPool     ()       { return vkDescriptorPool;      }
                VkDescriptorSet       GetVkDescriptorSet      () const { return vkDescriptorSet;       }

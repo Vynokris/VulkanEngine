@@ -136,7 +136,7 @@ void Renderer::BeginRender()
     BeginRenderPass();
 }
 
-void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera* camera) const
+void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera& camera) const
 {
     static const auto vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(vkDevice, "vkCmdPushDescriptorSetKHR");
     model.UpdateMvpBuffer(camera, currentFrame);
@@ -556,8 +556,8 @@ void Renderer::CreateDescriptorLayoutsAndPools()
 {
     // Create layouts and pools for lights, models and materials.
     Resources::Light   ::CreateVkData(vkDevice, vkPhysicalDevice);
-    Resources::Model   ::CreateDescriptorLayoutAndPool(vkDevice);
-    Resources::Material::CreateDescriptorLayoutAndPool(vkDevice);
+    Resources::Model   ::CreateVkData(vkDevice);
+    Resources::Material::CreateVkData(vkDevice);
 
     // Create layout, poll and descriptor for constant data.
     {
@@ -943,8 +943,8 @@ void Renderer::DestroySwapChain() const
 void Renderer::DestroyDescriptorLayoutsAndPools() const
 {
     Resources::Light   ::DestroyVkData                 (vkDevice);
-    Resources::Model   ::DestroyDescriptorLayoutAndPool(vkDevice);
-    Resources::Material::DestroyDescriptorLayoutAndPool(vkDevice);
+    Resources::Model   ::DestroyVkData(vkDevice);
+    Resources::Material::DestroyVkData(vkDevice);
 
     if (constDataDescriptorLayout) vkDestroyDescriptorSetLayout(vkDevice, constDataDescriptorLayout, nullptr);
     if (constDataDescriptorPool)   vkDestroyDescriptorPool     (vkDevice, constDataDescriptorPool,   nullptr);
