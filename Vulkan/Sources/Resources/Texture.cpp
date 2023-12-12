@@ -33,8 +33,8 @@ Texture::Texture(std::string filename)
     VkBuffer       stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     VkUtils::CreateBuffer(device, physicalDevice, imageSize,
-                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                              stagingBuffer, stagingBufferMemory);
+                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                          stagingBuffer, stagingBufferMemory);
 
     // Copy the pixels to the transfer buffer.
     void* data;
@@ -45,8 +45,8 @@ Texture::Texture(std::string filename)
 
     // Create the Vulkan image.
     VkUtils::CreateImage(device, physicalDevice, width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, vkImageFormat, VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             vkImage, vkImageMemory);
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                         vkImage, vkImageMemory);
 
     // Copy the transfer buffer to the vulkan image.
     VkUtils::TransitionImageLayout(device, commandPool, graphicsQueue, vkImage, vkImageFormat, mipLevels, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -97,9 +97,9 @@ Texture& Texture::operator=(Texture&& other) noexcept
 Texture::~Texture()
 {
     const VkDevice vkDevice = Application::Get()->GetRenderer()->GetVkDevice();
-    if (vkImage       != nullptr) vkDestroyImage    (vkDevice, vkImage,       nullptr);
-    if (vkImageMemory != nullptr) vkFreeMemory      (vkDevice, vkImageMemory, nullptr);
-    if (vkImageView   != nullptr) vkDestroyImageView(vkDevice, vkImageView,   nullptr);
+    if (vkImage      ) vkDestroyImage    (vkDevice, vkImage,       nullptr);
+    if (vkImageMemory) vkFreeMemory      (vkDevice, vkImageMemory, nullptr);
+    if (vkImageView  ) vkDestroyImageView(vkDevice, vkImageView,   nullptr);
     vkImage       = nullptr;
     vkImageMemory = nullptr;
     vkImageView   = nullptr;

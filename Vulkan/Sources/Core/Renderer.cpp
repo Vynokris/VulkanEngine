@@ -4,7 +4,7 @@
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
-#include "Maths/Vertex.h"
+#include "Resources/Light.h"
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <set>
@@ -12,9 +12,6 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
-#include <iostream>
-
-#include "Resources/Light.h"
 using namespace Core;
 using namespace VkUtils;
 
@@ -66,15 +63,15 @@ Renderer::~Renderer()
     }
     DestroySwapChain();
     DestroyDescriptorLayoutsAndPools();
-    vkDestroySampler               (vkDevice,   vkTextureSampler,   nullptr);
-    vkDestroyCommandPool           (vkDevice,   vkCommandPool,      nullptr);
-    vkDestroyPipeline              (vkDevice,   vkGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout        (vkDevice,   vkPipelineLayout,   nullptr);
-    vkDestroyRenderPass            (vkDevice,   vkRenderPass,       nullptr);
-    vkDestroyDevice                (vkDevice,                       nullptr);
-    vkDestroySurfaceKHR            (vkInstance, vkSurface,          nullptr);
-    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger,   nullptr);
-    vkDestroyInstance              (vkInstance,                     nullptr);
+    vkDestroySampler               (vkDevice, vkTextureSampler,   nullptr);
+    vkDestroyCommandPool           (vkDevice, vkCommandPool,      nullptr);
+    vkDestroyPipeline              (vkDevice, vkGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout        (vkDevice, vkPipelineLayout,   nullptr);
+    vkDestroyRenderPass            (vkDevice, vkRenderPass,       nullptr);
+    vkDestroyDevice                (vkDevice,                     nullptr);
+    vkDestroySurfaceKHR            (vkInstance, vkSurface,        nullptr);
+    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger, nullptr);
+    vkDestroyInstance              (vkInstance,                   nullptr);
 }
 
 void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end)
@@ -115,7 +112,7 @@ void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start,
     vkFreeMemory   (vkDevice, stagingBufferMemory, nullptr);
     
     // Populate the descriptor set.
-    VkDescriptorBufferInfo bufferInfo{};
+    VkDescriptorBufferInfo bufferInfo;
     bufferInfo.buffer = fogParamsBuffer;
     bufferInfo.offset = 0;
     bufferInfo.range  = sizeof(Resources::DistanceFogParams);
@@ -138,7 +135,6 @@ void Renderer::BeginRender()
 
 void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera& camera) const
 {
-    static const auto vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(vkDevice, "vkCmdPushDescriptorSetKHR");
     model.UpdateMvpBuffer(camera, currentFrame);
     
     const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
@@ -475,7 +471,7 @@ void Renderer::CreateImageViews()
 
 void Renderer::CreateRenderPass()
 {
-    // Create a color buffer attachment.
+    // Set the color buffer attachment.
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format         = vkSwapChainImageFormat;
     colorAttachment.samples        = msaaSamples;
@@ -489,7 +485,7 @@ void Renderer::CreateRenderPass()
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    // Create the depth buffer attachment.
+    // Set the depth buffer attachment.
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format         = vkDepthImageFormat;
     depthAttachment.samples        = msaaSamples;
@@ -503,7 +499,7 @@ void Renderer::CreateRenderPass()
     depthAttachmentRef.attachment = 1;
     depthAttachmentRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    // Create the color resolve attachment (to display the multisampled color buffer).
+    // Set the color resolve attachment (to display the multisampled color buffer).
     VkAttachmentDescription colorAttachmentResolve{};
     colorAttachmentResolve.format         = vkSwapChainImageFormat;
     colorAttachmentResolve.samples        = VK_SAMPLE_COUNT_1_BIT;
@@ -547,7 +543,7 @@ void Renderer::CreateRenderPass()
 
     // Create the render pass.
     if (vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass) != VK_SUCCESS) {
-        LogError(LogType::Vulkan, "Failed to create render pass.");
+        LogError(LogType::Vulkan, "Failed to create Main render pass.");
         throw std::runtime_error("VULKAN_RENDER_PASS_ERROR");
     }
 }
@@ -555,9 +551,9 @@ void Renderer::CreateRenderPass()
 void Renderer::CreateDescriptorLayoutsAndPools()
 {
     // Create layouts and pools for lights, models and materials.
-    Resources::Light   ::CreateVkData(vkDevice, vkPhysicalDevice);
     Resources::Model   ::CreateVkData(vkDevice);
     Resources::Material::CreateVkData(vkDevice);
+    Resources::Light   ::CreateVkData(vkDevice, vkPhysicalDevice);
 
     // Create layout, poll and descriptor for constant data.
     {
@@ -579,7 +575,7 @@ void Renderer::CreateDescriptorLayoutsAndPools()
         }
 
         // Set the type and number of descriptors.
-        VkDescriptorPoolSize poolSize{};
+        VkDescriptorPoolSize poolSize;
         poolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSize.descriptorCount = 1;
 
@@ -609,29 +605,6 @@ void Renderer::CreateDescriptorLayoutsAndPools()
 
 void Renderer::CreateGraphicsPipeline()
 {
-    // Load vulkan fragment and vertex shaders.
-    VkShaderModule vertShaderModule{};
-    VkShaderModule fragShaderModule{};
-    CreateShaderModule(vkDevice, "Shaders/VulkanVert.spv", vertShaderModule);
-    CreateShaderModule(vkDevice, "Shaders/VulkanFrag.spv", fragShaderModule);
-
-    // Set the vertex shader's pipeline stage and entry point.
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShaderModule;
-    vertShaderStageInfo.pName  = "main";
-
-    // Set the fragment shader's pipeline stage and entry point.
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
-    fragShaderStageInfo.pName = "main";
-
-    // Create an array of both pipeline stage info structures.
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-
     // Setup vertex bindings and attributes.
     auto bindingDescription    = Resources::Mesh::GetVertexBindingDescription();
     auto attributeDescriptions = Resources::Mesh::GetVertexAttributeDescriptions();
@@ -658,12 +631,10 @@ void Renderer::CreateGraphicsPipeline()
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
-
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
     dynamicState.pDynamicStates    = dynamicStates.data();
-    
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
@@ -683,16 +654,6 @@ void Renderer::CreateGraphicsPipeline()
     rasterizer.depthBiasClamp          = 0.f; // Optional.
     rasterizer.depthBiasSlopeFactor    = 0.f; // Optional.
 
-    // Set multisampling parameters (disabled).
-    VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.rasterizationSamples  = msaaSamples;
-    multisampling.sampleShadingEnable   = VK_TRUE;
-    multisampling.minSampleShading      = .2f;
-    multisampling.pSampleMask           = nullptr;  // Optional.
-    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional.
-    multisampling.alphaToOneEnable      = VK_FALSE; // Optional.
-
     // Depth and stencil buffer parameters.
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -705,6 +666,37 @@ void Renderer::CreateGraphicsPipeline()
     depthStencil.stencilTestEnable     = VK_FALSE;
     depthStencil.front                 = {}; // Optional.
     depthStencil.back                  = {}; // Optional.
+
+    // Load vulkan fragment and vertex shaders.
+    VkShaderModule vertShaderModule = CreateShaderModule(vkDevice, ShaderStage::Vertex,   "Shaders/Main.vert");
+    VkShaderModule fragShaderModule = CreateShaderModule(vkDevice, ShaderStage::Fragment, "Shaders/Main.frag");
+
+    // Set the vertex shader's pipeline stage and entry point.
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.pName  = "main";
+
+    // Set the fragment shader's pipeline stage and entry point.
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.pName = "main";
+
+    // Create an array of both pipeline stage info structures.
+    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+    // Set multisampling parameters.
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.rasterizationSamples  = msaaSamples;
+    multisampling.sampleShadingEnable   = VK_TRUE;
+    multisampling.minSampleShading      = .2f;
+    multisampling.pSampleMask           = nullptr;  // Optional.
+    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional.
+    multisampling.alphaToOneEnable      = VK_FALSE; // Optional.
 
     // Set color blending parameters for current framebuffer (alpha blending enabled).
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
@@ -737,7 +729,7 @@ void Renderer::CreateGraphicsPipeline()
         Resources::Material::GetVkDescriptorSetLayout(),
         Resources::Light   ::GetVkDescriptorSetLayout()
     };
-    
+
     // Set the pipeline layout creation information.
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -774,7 +766,7 @@ void Renderer::CreateGraphicsPipeline()
         LogError(LogType::Vulkan, "Failed to create graphics pipeline.");
         throw std::runtime_error("VULKAN_GRAPHICS_PIPELINE_ERROR");
     }
-    
+
     // Destroy both shader modules.
     vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
     vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
@@ -981,9 +973,7 @@ void Renderer::BeginRenderPass() const
     
     // Begin recording the command buffer.
     VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags            = 0;       // Optional.
-    beginInfo.pInheritanceInfo = nullptr; // Optional.
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     if (vkBeginCommandBuffer(vkCommandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to begin recording command buffer.");
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");

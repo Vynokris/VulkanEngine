@@ -1,18 +1,20 @@
 #include "Core/VulkanUtils.h"
 #include "Core/Application.h"
 #include <vulkan/vulkan.h>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/Public/ResourceLimits.h>
 #include <chrono>
 #include <set>
 #include <limits>
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <GLFW/glfw3.h>
 using namespace Core;
 using namespace VkUtils;
 
 #ifdef NDEBUG
-    const bool VulkanUtils::VALIDATION_LAYERS_ENABLED = false;
+    const bool VkUtils::VALIDATION_LAYERS_ENABLED = false;
 #else
     const bool VkUtils::VALIDATION_LAYERS_ENABLED = true;
 #endif
@@ -287,22 +289,66 @@ void VkUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandPool&
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void VkUtils::CreateShaderModule(const VkDevice& device, const char* filename, VkShaderModule& shaderModule)
+VkShaderModule VkUtils::CreateShaderModule(const VkDevice& device, const ShaderStage& type, const char* filename)
 {
-    // Read the shader code.
-    const std::vector<char> shaderCode = ReadBinFile(filename);
+    // Read the shader source code.
+    std::ifstream f(filename, std::ios::in);
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    f.close();
+    const std::string shaderSourceStr = buffer.str();
+    const char*       shaderSource    = shaderSourceStr.c_str();
+
+    glslang::InitializeProcess();
+    
+    // Get the shader kind from the shader type enum value.
+    EShLanguage shaderStage;
+    switch (type)
+    {
+        case ShaderStage::Vertex:                 shaderStage = EShLangVertex;         break;
+        case ShaderStage::TessellationControl:    shaderStage = EShLangTessControl;    break;
+        case ShaderStage::TessellationEvaluation: shaderStage = EShLangTessEvaluation; break;
+        case ShaderStage::Geometry:               shaderStage = EShLangGeometry;       break;
+        case ShaderStage::Fragment:               shaderStage = EShLangFragment;       break;
+        case ShaderStage::Compute:                shaderStage = EShLangCompute;        break;
+        default: break;
+    }
+
+    // Compile the shader.
+    glslang::TShader shader(shaderStage);
+    shader.setEnvClient(glslang::EShClient::EShClientVulkan, glslang::EShTargetVulkan_1_3);
+    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
+    shader.setEnvInput(glslang::EShSource::EShSourceGlsl, shaderStage, glslang::EShClient::EShClientVulkan, glslang::EShTargetClientVersion::EShTargetVulkan_1_3);
+    shader.setStrings(&shaderSource, 1);
+    shader.parse(GetDefaultResources(), 100, false, EShMsgDefault);
+    if (const char* infoLog = shader.getInfoLog(); infoLog[0] != '\0') {
+        LogError(LogType::Vulkan, infoLog);
+        throw std::runtime_error("VULKAN_SHADER_COMPILATION_ERROR");
+    }
+    glslang::TProgram program;
+    program.addShader(&shader);
+    if (!program.link(EShMsgDefault)) {
+        LogError(LogType::Vulkan, program.getInfoLog());
+        throw std::runtime_error("VULKAN_SHADER_COMPILATION_ERROR");
+    }
+
+    // Retrieve the compiled SPIR-V shader code.
+    std::vector<uint32_t> compiledCode{};
+    glslang::GlslangToSpv(*program.getIntermediate(shaderStage), compiledCode);
     
     // Set shader module creation information.
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = shaderCode.size();
-    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
+    createInfo.codeSize = compiledCode.size() * sizeof(uint32_t);
+    createInfo.pCode    = compiledCode.data();
 
     // Create and return the shader module.
+    VkShaderModule shaderModule{};
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create shader module.");
         throw std::runtime_error("VULKAN_SHADER_MODULE_ERROR");
     }
+    return shaderModule;
 }
 
 void VkUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)

@@ -1,9 +1,9 @@
 #pragma once
+#include "Maths/Color.h"
+#include "Maths/Vector3.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
-
-#include "Maths/Color.h"
 
 #pragma region Forward Declarations
 // Forward declaration of Vulkan types to avoid include inside header.
@@ -55,6 +55,16 @@ namespace VkUtils
     extern const std::vector<const char*> VALIDATION_LAYERS;
     extern const std::vector<const char*> EXTENSIONS;
 
+    enum class ShaderStage
+    {
+        Vertex,
+        TessellationControl,
+        TessellationEvaluation,
+        Geometry,
+        Fragment,
+        Compute,
+    };
+
     struct MaterialData
     {
         alignas(16) Maths::RGB albedo;
@@ -64,6 +74,16 @@ namespace VkUtils
         float alpha;
         float depthMultiplier;
         unsigned int parallaxLayerDepth;
+    };
+
+    struct LightData
+    {
+        int type;
+        alignas(16) Maths::RGB     albedo;
+        alignas(16) Maths::Vector3 position;
+        alignas(16) Maths::Vector3 direction;
+        float brightness = 1, radius = 1, falloff = 0;
+        float outerCutoff = 0, innerCutoff = 0;
     };
     
     struct QueueFamilyIndices
@@ -108,7 +128,7 @@ namespace VkUtils
     VkCommandBuffer BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool);
     void            EndSingleTimeCommands  (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer);
 
-    void CreateShaderModule   (const VkDevice& device, const char* filename, VkShaderModule& shaderModule);
+    VkShaderModule CreateShaderModule(const VkDevice& device, const ShaderStage& type, const char* filename);
     void CreateBuffer         (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void CopyBuffer           (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size);
     void CreateImage          (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory);
