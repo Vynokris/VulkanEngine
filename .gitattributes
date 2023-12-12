@@ -1,0 +1,1 @@
+Vulkan/Externals/Libs/Debug/SPIRV-Tools-opt.lib filter=lfs diff=lfs merge=lfs -text

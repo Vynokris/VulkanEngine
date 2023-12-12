@@ -55,7 +55,7 @@ namespace Core
         uint32_t                        vkSwapChainWidth = 0, vkSwapChainHeight = 0;
         uint32_t                        vkSwapchainImageIndex = 0;
         VkSampleCountFlagBits           msaaSamples;
-        VkDescriptorSetLayout           constDataDescriptorLayout = nullptr; // Used to send constant data to shaders.
+        VkDescriptorSetLayout           constDataDescriptorLayout = nullptr;
         VkDescriptorPool                constDataDescriptorPool   = nullptr;
         VkDescriptorSet                 constDataDescriptorSet    = nullptr;
         VkBuffer                        fogParamsBuffer           = nullptr;
@@ -80,18 +80,20 @@ namespace Core
         void WaitUntilIdle() const;
         void ResizeSwapChain() { framebufferResized = true; }
 
-        VkInstance            GetVkInstance()            const { return vkInstance;                                  }
-        VkPhysicalDevice      GetVkPhysicalDevice()      const { return vkPhysicalDevice;                            }
-        VkDevice              GetVkDevice()              const { return vkDevice;                                    }
+        VkInstance            GetVkInstance()            const { return vkInstance; }
+        VkSurfaceKHR          GetVkSurface()             const { return vkSurface; }
+        VkPhysicalDevice      GetVkPhysicalDevice()      const { return vkPhysicalDevice; }
+        VkDevice              GetVkDevice()              const { return vkDevice; }
         uint32_t              GetVkGraphicsQueueIndex()  const { return vkQueueFamilyIndices.graphicsFamily.value(); }
-        VkQueue               GetVkGraphicsQueue()       const { return vkGraphicsQueue;                             }
-        uint32_t              GetVkSwapchainImageCount() const { return (uint32_t)vkSwapChainImages.size();          }
-        VkRenderPass          GetVkRenderPass()          const { return vkRenderPass;                                }
-        VkPipelineLayout      GetVkPipelineLayout()      const { return vkPipelineLayout;                            }
-        VkCommandPool         GetVkCommandPool()         const { return vkCommandPool;                               }
-        VkCommandBuffer       GetCurVkCommandBuffer()    const { return vkCommandBuffers[currentFrame];              }
-        VkSampler             GetVkTextureSampler()      const { return vkTextureSampler;                            }
-        VkSampleCountFlagBits GetMsaaSamples()           const { return msaaSamples;                                 }
+        VkQueue               GetVkGraphicsQueue()       const { return vkGraphicsQueue; }
+        uint32_t              GetVkSwapchainImageCount() const { return (uint32_t)vkSwapChainImages.size(); }
+        VkFormat              GetVkDepthImageFormat()    const { return vkDepthImageFormat; }
+        VkRenderPass          GetVkRenderPass()          const { return vkRenderPass; }
+        VkPipelineLayout      GetVkPipelineLayout()      const { return vkPipelineLayout; }
+        VkCommandPool         GetVkCommandPool()         const { return vkCommandPool; }
+        VkCommandBuffer       GetCurVkCommandBuffer()    const { return vkCommandBuffers[currentFrame]; }
+        VkSampler             GetVkTextureSampler()      const { return vkTextureSampler; }
+        VkSampleCountFlagBits GetMsaaSamples()           const { return msaaSamples; }
 
     private:
         void CheckValidationLayers() const;

@@ -7,6 +7,8 @@ hooks/
 
 **/Debug/*
 **/Release/*
+!**/Libs/Debug/*
+!**/Libs/Release/*
 **/x64/*
 
 Vulkan/Resources/app.log
