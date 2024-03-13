@@ -1,5 +1,6 @@
 #include "Core/WavefrontParser.h"
 #include "Core/Application.h"
+#include "Core/Logger.h"
 #include "Core/Engine.h"
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"

@@ -1,13 +1,16 @@
 ﻿#include "Resources/Material.h"
 #include "Core/Application.h"
-#include <vulkan/vulkan_core.h>
-
+#include "Core/Logger.h"
+#include "Core/Renderer.h"
+#include "Core/Engine.h"
+#include "Core/GraphicsUtils.h"
 #include "Maths/Vertex.h"
 #include "Resources/Texture.h"
+#include <vulkan/vulkan_core.h>
 using namespace Core;
 using namespace Maths;
 using namespace Resources;
-using namespace VkUtils;
+using namespace GraphicsUtils;
 
 Material::Material(const RGB& _albedo, const RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha,
                  Texture* albedoTexture, Texture* emissiveTexture, Texture* metallicMap, Texture* roughnessMap, Texture* aoMap, Texture* alphaMap, Texture* normalMap)

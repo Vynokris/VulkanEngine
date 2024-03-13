@@ -1,23 +1,27 @@
 ﻿#pragma once
-#include "Window.h"
-#include "Logger.h"
-#include "Renderer.h"
-#include "Engine.h"
-#include "UserInterface.h"
 
 namespace Core
 {
-    class Application;
+    class  Application;
+    class  Window;
+    struct WindowParams;
+    class  Logger;
+    class  Renderer;
+    class  GpuDataManager;
+    class  Engine;
+    class  UserInterface;
+    
     class Application
     {
     private:
         inline static Application* instance = nullptr;
         
-        Window*        window   = nullptr;
-        Logger*        logger   = nullptr;
-        Renderer*      renderer = nullptr;
-        Engine*        engine   = nullptr;
-        UserInterface* ui       = nullptr;
+        Logger*         logger   = nullptr;
+        Window*         window   = nullptr;
+        Renderer*       renderer = nullptr;
+        GpuDataManager* gpuData  = nullptr;
+        Engine*         engine   = nullptr;
+        UserInterface*  ui       = nullptr;
 
     private:
         Application() = default;
@@ -38,8 +42,8 @@ namespace Core
         void Quit() const;
         void Release() const;
 
-        Window*        GetWindow()   const { return window;   }
         Logger*        GetLogger()   const { return logger;   }
+        Window*        GetWindow()   const { return window;   }
         Renderer*      GetRenderer() const { return renderer; }
         Engine*        GetEngine()   const { return engine;   }
         UserInterface* GetUi()       const { return ui;       }

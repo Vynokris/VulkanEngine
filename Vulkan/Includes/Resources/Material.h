@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Core/UniqueID.h"
 #include "Maths/Color.h"
 #include <string>
 
@@ -31,7 +32,7 @@ namespace Resources
         };
     };
     
-    class Material
+    class Material : public UniqueID
     {
     public:
         std::string  name;                   // The material's name.

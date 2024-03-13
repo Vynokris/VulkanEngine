@@ -1,25 +1,27 @@
 ﻿#include "Core/UserInterface.h"
-
-#include <filesystem>
-
 #include "Core/Application.h"
+#include "Core/Logger.h"
+#include "Core/Window.h"
+#include "Core/Renderer.h"
+#include "Core/Engine.h"
 #include "Resources/Camera.h"
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
+#include <vulkan/vulkan_core.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_stdlib.h>
 #include <imgui/imgui_impl_vulkan.h>
 #include <imgui_impl_glfw.h>
-#include <vulkan/vulkan_core.h>
+#include <filesystem>
 using namespace Core;
 using namespace Resources;
 using namespace Maths;
 
-UserInterface::UserInterface()
+UserInterface::UserInterface(Application* application, Engine* _engine)
 {
-    app    = Application::Get();
-    engine = app->GetEngine();
+    app    = application;
+    engine = _engine;
     
     CreateDescriptorPool();
     InitImGui();
@@ -94,8 +96,8 @@ void UserInterface::InitImGui() const
     initInfo.PipelineCache   = VK_NULL_HANDLE;
     initInfo.DescriptorPool  = vkDescriptorPool;
     initInfo.Subpass         = 0;
-    initInfo.MinImageCount   = renderer->GetVkSwapchainImageCount();
-    initInfo.ImageCount      = renderer->GetVkSwapchainImageCount();
+    initInfo.MinImageCount   = renderer->GetVkSwapChainImageCount();
+    initInfo.ImageCount      = renderer->GetVkSwapChainImageCount();
     initInfo.MSAASamples     = renderer->GetMsaaSamples();
     initInfo.Allocator       = nullptr;
     initInfo.CheckVkResultFn = [](VkResult res){ if (res==0) return; LogError(LogType::Vulkan, "result = " + std::to_string(res)); throw std::runtime_error("VULKAN_ERROR"); };
@@ -108,9 +110,9 @@ void UserInterface::UploadImGuiFonts() const
     const Renderer*       renderer        = app->GetRenderer();
     const VkDevice        vkDevice        = renderer->GetVkDevice();
     const VkCommandPool   vkCommandPool   = renderer->GetVkCommandPool();
-    const VkCommandBuffer vkCommandBuffer = VkUtils::BeginSingleTimeCommands(vkDevice, vkCommandPool);
+    const VkCommandBuffer vkCommandBuffer = GraphicsUtils::BeginSingleTimeCommands(vkDevice, vkCommandPool);
     ImGui_ImplVulkan_CreateFontsTexture(vkCommandBuffer);
-    VkUtils::EndSingleTimeCommands(vkDevice, vkCommandPool, renderer->GetVkGraphicsQueue(), vkCommandBuffer);
+    GraphicsUtils::EndSingleTimeCommands(vkDevice, vkCommandPool, renderer->GetVkGraphicsQueue(), vkCommandBuffer);
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
@@ -234,7 +236,7 @@ void UserInterface::ShowResourcesWindow() const
                 ImGui::Selectable(name.c_str());
                 if (ImGui::BeginPopupContextItem())
                 {
-                    if (ImGui::Button(("Unload##Mesh"+name).c_str())) {
+                    if (ImGui::Button(("Unload##Model"+name).c_str())) {
                         // TODO.
                         ImGui::CloseCurrentPopup();
                     }

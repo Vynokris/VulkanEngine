@@ -28,10 +28,11 @@
     <ClCompile Include="Externals\Sources\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Sources\Core\Application.cpp" />
     <ClCompile Include="Sources\Core\Engine.cpp" />
+    <ClCompile Include="Sources\Core\GpuDataManager.cpp" />
     <ClCompile Include="Sources\Core\Logger.cpp" />
     <ClCompile Include="Sources\Core\Renderer.cpp" />
     <ClCompile Include="Sources\Core\UserInterface.cpp" />
-    <ClCompile Include="Sources\Core\VulkanUtils.cpp" />
+    <ClCompile Include="Sources\Core\GraphicsUtils.cpp" />
     <ClCompile Include="Sources\Core\WavefrontParser.cpp" />
     <ClCompile Include="Sources\Core\Window.cpp" />
     <ClCompile Include="Sources\main.cpp" />
@@ -54,10 +55,12 @@
   <ItemGroup>
     <ClInclude Include="Includes\Core\Application.h" />
     <ClInclude Include="Includes\Core\Engine.h" />
+    <ClInclude Include="Includes\Core\GpuDataManager.h" />
     <ClInclude Include="Includes\Core\Logger.h" />
     <ClInclude Include="Includes\Core\Renderer.h" />
+    <ClInclude Include="Includes\Core\UniqueID.h" />
     <ClInclude Include="Includes\Core\UserInterface.h" />
-    <ClInclude Include="Includes\Core\VulkanUtils.h" />
+    <ClInclude Include="Includes\Core\GraphicsUtils.h" />
     <ClInclude Include="Includes\Core\WavefrontParser.h" />
     <ClInclude Include="Includes\Core\Window.h" />
     <ClInclude Include="Includes\Maths\AngleAxis.h" />
@@ -88,8 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Shaders\CompileShaders.bat" />
-    <Content Include="Shaders\VulkanFrag.frag" />
-    <Content Include="Shaders\VulkanVert.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

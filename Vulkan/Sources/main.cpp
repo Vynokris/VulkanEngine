@@ -1,4 +1,5 @@
 #include "Core/Application.h"
+#include "Core/Window.h"
 using namespace Core;
 
 int main()

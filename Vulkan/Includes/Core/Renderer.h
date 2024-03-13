@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "VulkanUtils.h"
+#include "GraphicsUtils.h"
 
 namespace Resources
 {
@@ -22,49 +22,49 @@ namespace Core
     class Renderer
     {
     private:
-        Application*                    app;
-        VkInstance                      vkInstance            = nullptr;
-        VkDebugUtilsMessengerEXT        vkDebugMessenger      = nullptr;
-        VkSurfaceKHR                    vkSurface             = nullptr;
-        VkPhysicalDevice                vkPhysicalDevice      = nullptr;
-        VkDevice                        vkDevice              = nullptr;
-        VkUtils::QueueFamilyIndices     vkQueueFamilyIndices;
-        VkQueue                         vkGraphicsQueue       = nullptr;
-        VkQueue                         vkPresentQueue        = nullptr;
-        VkSwapchainKHR                  vkSwapChain           = nullptr;
-        VkRenderPass                    vkRenderPass          = nullptr;
-        VkPipelineLayout                vkPipelineLayout      = nullptr;
-        VkPipeline                      vkGraphicsPipeline    = nullptr;
-        VkCommandPool                   vkCommandPool         = nullptr;
-        VkSampler                       vkTextureSampler      = nullptr;
-        VkImage                         vkColorImage          = nullptr;
-        VkDeviceMemory                  vkColorImageMemory    = nullptr;
-        VkImageView                     vkColorImageView      = nullptr;
-        VkImage                         vkDepthImage          = nullptr;
-        VkDeviceMemory                  vkDepthImageMemory    = nullptr;
-        VkImageView                     vkDepthImageView      = nullptr;
-        VkFormat                        vkDepthImageFormat;
-        std::vector<VkCommandBuffer>    vkCommandBuffers;
-        std::vector<VkSemaphore>        vkImageAvailableSemaphores;
-        std::vector<VkSemaphore>        vkRenderFinishedSemaphores;
-        std::vector<VkFence>            vkInFlightFences;
-        std::vector<VkFramebuffer>      vkSwapChainFramebuffers;
-        std::vector<VkImage>            vkSwapChainImages;
-        std::vector<VkImageView>        vkSwapChainImageViews;
-        VkFormat                        vkSwapChainImageFormat;
-        uint32_t                        vkSwapChainWidth = 0, vkSwapChainHeight = 0;
-        uint32_t                        vkSwapchainImageIndex = 0;
-        VkSampleCountFlagBits           msaaSamples;
-        VkDescriptorSetLayout           constDataDescriptorLayout = nullptr;
-        VkDescriptorPool                constDataDescriptorPool   = nullptr;
-        VkDescriptorSet                 constDataDescriptorSet    = nullptr;
-        VkBuffer                        fogParamsBuffer           = nullptr;
-        VkDeviceMemory                  fogParamsBufferMemory     = nullptr;
-        bool                            framebufferResized        = false;
-        uint32_t                        currentFrame              = 0;
+        Application*                      app;
+        VkInstance                        vkInstance            = nullptr;
+        VkDebugUtilsMessengerEXT          vkDebugMessenger      = nullptr;
+        VkSurfaceKHR                      vkSurface             = nullptr;
+        VkPhysicalDevice                  vkPhysicalDevice      = nullptr;
+        VkDevice                          vkDevice              = nullptr;
+        GraphicsUtils::QueueFamilyIndices vkQueueFamilyIndices;
+        VkQueue                           vkGraphicsQueue       = nullptr;
+        VkQueue                           vkPresentQueue        = nullptr;
+        VkSwapchainKHR                    vkSwapChain           = nullptr;
+        VkRenderPass                      vkRenderPass          = nullptr;
+        VkPipelineLayout                  vkPipelineLayout      = nullptr;
+        VkPipeline                        vkGraphicsPipeline    = nullptr;
+        VkCommandPool                     vkCommandPool         = nullptr;
+        VkSampler                         vkTextureSampler      = nullptr;
+        VkImage                           vkColorImage          = nullptr;
+        VkDeviceMemory                    vkColorImageMemory    = nullptr;
+        VkImageView                       vkColorImageView      = nullptr;
+        VkImage                           vkDepthImage          = nullptr;
+        VkDeviceMemory                    vkDepthImageMemory    = nullptr;
+        VkImageView                       vkDepthImageView      = nullptr;
+        VkFormat                          vkDepthImageFormat;
+        std::vector<VkCommandBuffer>      vkCommandBuffers;
+        std::vector<VkSemaphore>          vkImageAvailableSemaphores;
+        std::vector<VkSemaphore>          vkRenderFinishedSemaphores;
+        std::vector<VkFence>              vkInFlightFences;
+        std::vector<VkFramebuffer>        vkSwapChainFramebuffers;
+        std::vector<VkImage>              vkSwapChainImages;
+        std::vector<VkImageView>          vkSwapChainImageViews;
+        VkFormat                          vkSwapChainImageFormat;
+        uint32_t                          vkSwapChainWidth = 0, vkSwapChainHeight = 0;
+        uint32_t                          vkSwapChainImageIndex = 0;
+        VkSampleCountFlagBits             msaaSamples;
+        VkDescriptorSetLayout             constDataDescriptorLayout = nullptr;
+        VkDescriptorPool                  constDataDescriptorPool   = nullptr;
+        VkDescriptorSet                   constDataDescriptorSet    = nullptr;
+        VkBuffer                          fogParamsBuffer           = nullptr;
+        VkDeviceMemory                    fogParamsBufferMemory     = nullptr;
+        bool                              framebufferResized        = false;
+        uint32_t                          currentFrame              = 0;
         
     public:
-        Renderer(const char* appName, const char* engineName = "No Engine");
+        Renderer(Application* application, const char* appName, const char* engineName = "No Engine");
         Renderer(const Renderer&)            = delete;
         Renderer(Renderer&&)                 = delete;
         Renderer& operator=(const Renderer&) = delete;
@@ -86,7 +86,7 @@ namespace Core
         VkDevice              GetVkDevice()              const { return vkDevice; }
         uint32_t              GetVkGraphicsQueueIndex()  const { return vkQueueFamilyIndices.graphicsFamily.value(); }
         VkQueue               GetVkGraphicsQueue()       const { return vkGraphicsQueue; }
-        uint32_t              GetVkSwapchainImageCount() const { return (uint32_t)vkSwapChainImages.size(); }
+        uint32_t              GetVkSwapChainImageCount() const { return (uint32_t)vkSwapChainImages.size(); }
         VkFormat              GetVkDepthImageFormat()    const { return vkDepthImageFormat; }
         VkRenderPass          GetVkRenderPass()          const { return vkRenderPass; }
         VkPipelineLayout      GetVkPipelineLayout()      const { return vkPipelineLayout; }

@@ -48,7 +48,7 @@ typedef enum   VkImageLayout         : int VkImageLayout;
 typedef enum   VkSampleCountFlagBits : int VkSampleCountFlagBits;
 #pragma endregion 
 
-namespace VkUtils
+namespace GraphicsUtils
 {
     constexpr unsigned int MAX_FRAMES_IN_FLIGHT = 3;
     extern const bool VALIDATION_LAYERS_ENABLED;

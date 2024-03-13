@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/UniqueID.h"
 #include "Maths/Vertex.h"
 #include "Resources/Material.h"
 #include <utility>
@@ -14,7 +15,7 @@ namespace Resources
 	class Model;
 	class Texture;
 	
-	class Mesh
+	class Mesh : public UniqueID
 	{
 	private:
 		friend Core::WavefrontParser;
@@ -45,7 +46,9 @@ namespace Resources
 		std::string     GetName    () const { return name;     }
 		const Material* GetMaterial() const { return material; }
 		void            SetMaterial(Material* _material) { material = _material; }
-		
+
+		const std::vector<Maths::TangentVertex>& GetVertices() const { return vertices; }
+		const std::vector<uint32_t>&             GetIndices()  const { return indices; }
 		uint32_t GetIndexCount    () const { return (uint32_t)indices.size(); }
 		VkBuffer GetVkVertexBuffer() const { return vkVertexBuffer; }
 		VkBuffer GetVkIndexBuffer () const { return vkIndexBuffer;  }

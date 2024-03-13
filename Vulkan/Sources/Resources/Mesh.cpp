@@ -1,12 +1,12 @@
 #include "Resources/Mesh.h"
 #include "Core/Application.h"
 #include "Core/Renderer.h"
-#include "Core/VulkanUtils.h"
+#include "Core/GraphicsUtils.h"
 #include <vulkan/vulkan.h>
 #include <array>
 using namespace Core;
 using namespace Resources;
-using namespace VkUtils;
+using namespace GraphicsUtils;
 
 Mesh::Mesh(Mesh&& other) noexcept
     : name(std::move(other.name)), material(other.material), parentModel(other.parentModel),

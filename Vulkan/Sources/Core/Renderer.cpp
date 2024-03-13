@@ -1,5 +1,7 @@
 ﻿#include "Core/Renderer.h"
 #include "Core/Application.h"
+#include "Core/Logger.h"
+#include "Core/Window.h"
 #include "Resources/Camera.h"
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
@@ -13,11 +15,11 @@
 #include <fstream>
 #include <functional>
 using namespace Core;
-using namespace VkUtils;
+using namespace GraphicsUtils;
 
-Renderer::Renderer(const char* appName, const char* engineName)
+Renderer::Renderer(Application* application, const char* appName, const char* engineName)
 {
-    app                    = Application::Get();
+    app                    = application;
     vkPhysicalDevice       = VK_NULL_HANDLE;
     vkDepthImageFormat     = VK_FORMAT_UNDEFINED;
     vkSwapChainImageFormat = VK_FORMAT_UNDEFINED;
@@ -950,7 +952,7 @@ void Renderer::NewFrame()
     vkWaitForFences(vkDevice, 1, &vkInFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain.
-    const VkResult result = vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &vkSwapchainImageIndex);
+    const VkResult result = vkAcquireNextImageKHR(vkDevice, vkSwapChain, UINT64_MAX, vkImageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &vkSwapChainImageIndex);
 
     // Recreate the swap chain if it is out of date.
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -988,7 +990,7 @@ void Renderer::BeginRenderPass() const
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass        = vkRenderPass;
-    renderPassInfo.framebuffer       = vkSwapChainFramebuffers[vkSwapchainImageIndex];
+    renderPassInfo.framebuffer       = vkSwapChainFramebuffers[vkSwapChainImageIndex];
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = { vkSwapChainWidth, vkSwapChainHeight };
     renderPassInfo.clearValueCount   = (uint32_t)clearValues.size();
@@ -1057,7 +1059,7 @@ void Renderer::PresentFrame()
     presentInfo.pWaitSemaphores    = signalSemaphores;
     presentInfo.swapchainCount     = 1;
     presentInfo.pSwapchains        = swapChains;
-    presentInfo.pImageIndices      = &vkSwapchainImageIndex;
+    presentInfo.pImageIndices      = &vkSwapChainImageIndex;
     presentInfo.pResults           = nullptr; // Optional.
     const VkResult result = vkQueuePresentKHR(vkPresentQueue, &presentInfo);
 
