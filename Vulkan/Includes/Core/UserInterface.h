@@ -40,7 +40,7 @@ namespace Core
         std::unordered_map<std::string, Resources::Texture>* textures = nullptr;
         
     public:
-        UserInterface();
+        UserInterface(Application* application, Engine* _engine);
         UserInterface(const UserInterface&)            = delete;
         UserInterface(UserInterface&&)                 = delete;
         UserInterface& operator=(const UserInterface&) = delete;

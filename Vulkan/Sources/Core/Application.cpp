@@ -1,4 +1,10 @@
 ﻿#include "Core/Application.h"
+#include "Core/Window.h"
+#include "Core/Logger.h"
+#include "Core/Renderer.h"
+#include "Core/GpuDataManager.h"
+#include "Core/Engine.h"
+#include "Core/UserInterface.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 using namespace Core;
@@ -26,11 +32,12 @@ void Application::Init(const WindowParams& windowParams)
         LogError(LogType::GLFW, "Unable to initialize GLFW.");
         throw std::runtime_error("GLFW_INIT_ERROR");
     }
-    window   = new Window(windowParams);
     logger   = new Logger("Resources/app.log");
-    renderer = new Renderer(windowParams.name);
-    engine   = new Engine();
-    ui       = new UserInterface();
+    window   = new Window(windowParams);
+    renderer = new Renderer(this, windowParams.name);
+    gpuData  = new GpuDataManager(renderer);
+    engine   = new Engine(this);
+    ui       = new UserInterface(this, engine);
 
     engine->Awake();
 }

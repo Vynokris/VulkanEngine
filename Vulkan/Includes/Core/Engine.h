@@ -1,4 +1,8 @@
 #pragma once
+#include "Resources/Light.h"
+#include "Resources/Model.h"
+#include "Resources/Material.h"
+#include "Resources/Texture.h"
 #include <string>
 #include <unordered_map>
 
@@ -45,7 +49,7 @@ namespace Core
 			// R"(Resources\Models\DoomSlayer\doommarine.obj)",
 		};
 		
-		Engine();
+		Engine(Application* application) : app(application) {}
 		Engine(const Engine&)            = delete;
 		Engine(Engine&&)                 = delete;
 		Engine& operator=(const Engine&) = delete;

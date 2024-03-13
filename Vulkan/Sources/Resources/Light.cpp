@@ -1,10 +1,11 @@
 ﻿#include "Resources/Light.h"
-#include "Core/Engine.h"
-#include <vulkan/vulkan_core.h>
-
 #include "Core/Application.h"
 #include "Core/Logger.h"
-#include "Core/VulkanUtils.h"
+#include "Core/Renderer.h"
+#include "Core/Engine.h"
+#include "Core/GraphicsUtils.h"
+#include <vulkan/vulkan_core.h>
+
 using namespace Resources;
 using namespace Maths;
 using namespace Core;
@@ -65,7 +66,7 @@ void Light::CreateVkData(const VkDevice& vkDevice, const VkPhysicalDevice& vkPhy
     }
 
     // Create the light data buffer.
-    VkUtils::CreateBuffer(vkDevice, vkPhysicalDevice, sizeof(Light) * Engine::MAX_LIGHTS,
+    GraphicsUtils::CreateBuffer(vkDevice, vkPhysicalDevice, sizeof(Light) * Engine::MAX_LIGHTS,
                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                           vkBuffer, vkBufferMemory);
 

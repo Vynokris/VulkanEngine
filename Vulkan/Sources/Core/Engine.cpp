@@ -1,5 +1,9 @@
 #include "Core/Engine.h"
 #include "Core/Application.h"
+#include "Core/Window.h"
+#include "Core/Logger.h"
+#include "Core/Renderer.h"
+#include "Core/UserInterface.h"
 #include "Maths/MathConstants.h"
 #include "Maths/AngleAxis.h"
 #include "Resources/Camera.h"
@@ -14,11 +18,6 @@ namespace fs = std::filesystem;
 using namespace Core;
 using namespace Resources;
 using namespace Maths;
-
-Engine::Engine()
-{
-    app = Application::Get();
-}
 
 Engine::~Engine()
 {

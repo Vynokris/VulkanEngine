@@ -1,11 +1,8 @@
 #pragma once
+#include "Core/UniqueID.h"
 #include "Maths/Transform.h"
+#include "Core/GraphicsUtils.h"
 #include <vector>
-
-typedef struct VkDescriptorSetLayout_T* VkDescriptorSetLayout;
-typedef struct VkDescriptorPool_T*      VkDescriptorPool;
-typedef struct VkBuffer_T*              VkBuffer;
-typedef struct VkDeviceMemory_T*        VkDeviceMemory;
 
 namespace Core { class WavefrontParser; }
 namespace Resources
@@ -13,7 +10,7 @@ namespace Resources
 	class Camera;
 	class Mesh;
 	
-	class Model
+	class Model : public UniqueID
 	{
 	private:
 		friend Core::WavefrontParser;
@@ -24,10 +21,10 @@ namespace Resources
 		
 		inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
 		inline static VkDescriptorPool      vkDescriptorPool      = nullptr;
-        VkDescriptorSet vkDescriptorSets  [VkUtils::MAX_FRAMES_IN_FLIGHT];
-		VkBuffer        vkMvpBuffers      [VkUtils::MAX_FRAMES_IN_FLIGHT];
-		VkDeviceMemory  vkMvpBuffersMemory[VkUtils::MAX_FRAMES_IN_FLIGHT];
-		void*           vkMvpBuffersMapped[VkUtils::MAX_FRAMES_IN_FLIGHT];
+        VkDescriptorSet vkDescriptorSets  [GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
+		VkBuffer        vkMvpBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
+		VkDeviceMemory  vkMvpBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
+		void*           vkMvpBuffersMapped[GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
 
 	public:
 		Maths::Transform transform;

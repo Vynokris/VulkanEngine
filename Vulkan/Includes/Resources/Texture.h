@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Core/UniqueID.h"
 #include <cstdint>
 #include <string>
 
@@ -10,7 +11,7 @@ typedef enum   VkFormat : int    VkFormat;
 namespace Core { class Renderer; }
 namespace Resources
 {
-    class Texture
+    class Texture : public UniqueID
     {
     private:
         std::string name;
@@ -18,6 +19,7 @@ namespace Resources
         int         height    = 0;
         int         channels  = 0;
         uint32_t    mipLevels = 0;
+        unsigned char* pixels = nullptr;
 
         VkImage        vkImage       = nullptr;
         VkDeviceMemory vkImageMemory = nullptr;
@@ -33,13 +35,13 @@ namespace Resources
         Texture& operator=(Texture&&) noexcept;
         ~Texture();
 
-        std::string  GetName()        const { return name; }
-        int          GetWidth ()      const { return width; }
-        int          GetHeight()      const { return height; }
-        uint32_t     GetMipLevels()   const { return mipLevels; }
-        VkImageView  GetVkImageView() const { return vkImageView; }
+        std::string    GetName()        const { return name; }
+        int            GetWidth ()      const { return width; }
+        int            GetHeight()      const { return height; }
+        uint32_t       GetMipLevels()   const { return mipLevels; }
+        unsigned char* GetPixels()      const { return pixels; }
+        VkImageView    GetVkImageView() const { return vkImageView; }
         
-    private:
         void GenerateMipmaps() const;
     };
 }

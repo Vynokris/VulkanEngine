@@ -1,5 +1,7 @@
-#include "Core/VulkanUtils.h"
+#include "Core/GraphicsUtils.h"
 #include "Core/Application.h"
+#include "Core/Logger.h"
+#include "Core/Window.h"
 #include <vulkan/vulkan.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
@@ -11,19 +13,19 @@
 #include <fstream>
 #include <GLFW/glfw3.h>
 using namespace Core;
-using namespace VkUtils;
+using namespace GraphicsUtils;
 
 #ifdef NDEBUG
     const bool VkUtils::VALIDATION_LAYERS_ENABLED = false;
 #else
-    const bool VkUtils::VALIDATION_LAYERS_ENABLED = true;
+    const bool GraphicsUtils::VALIDATION_LAYERS_ENABLED = true;
 #endif
 
-const std::vector<const char*> VkUtils::VALIDATION_LAYERS = {
+const std::vector<const char*> GraphicsUtils::VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"
 };
 
-const std::vector<const char*> VkUtils::EXTENSIONS = {
+const std::vector<const char*> GraphicsUtils::EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
@@ -45,7 +47,7 @@ SwapChainSupportDetails::~SwapChainSupportDetails()
     delete capabilities;
 }
 
-QueueFamilyIndices VkUtils::FindQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
+QueueFamilyIndices GraphicsUtils::FindQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
 {
     QueueFamilyIndices queueFamilyIndices;
 
@@ -78,7 +80,7 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(const VkPhysicalDevice& device, co
     return queueFamilyIndices;
 }
 
-uint32_t VkUtils::FindMemoryType(const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties)
+uint32_t GraphicsUtils::FindMemoryType(const VkPhysicalDevice& device, const uint32_t& typeFilter, const VkMemoryPropertyFlags& properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
@@ -93,7 +95,7 @@ uint32_t VkUtils::FindMemoryType(const VkPhysicalDevice& device, const uint32_t&
     throw std::runtime_error("VULKAN_FIND_MEMORY_TYPE_ERROR");
 }
 
-VkFormat VkUtils::FindSupportedFormat(const VkPhysicalDevice& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat GraphicsUtils::FindSupportedFormat(const VkPhysicalDevice& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (const VkFormat& format : candidates)
     {
@@ -109,7 +111,7 @@ VkFormat VkUtils::FindSupportedFormat(const VkPhysicalDevice& device, const std:
     throw std::runtime_error("VULKAN_NO_SUPPORTED_FORMAT_ERROR");
 }
 
-VkSampleCountFlagBits VkUtils::GetMaxUsableSampleCount(const VkPhysicalDevice& device)
+VkSampleCountFlagBits GraphicsUtils::GetMaxUsableSampleCount(const VkPhysicalDevice& device)
 {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(device, &physicalDeviceProperties);
@@ -125,7 +127,7 @@ VkSampleCountFlagBits VkUtils::GetMaxUsableSampleCount(const VkPhysicalDevice& d
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-SwapChainSupportDetails VkUtils::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
+SwapChainSupportDetails GraphicsUtils::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
 {
     SwapChainSupportDetails details;
 
@@ -153,7 +155,7 @@ SwapChainSupportDetails VkUtils::QuerySwapChainSupport(const VkPhysicalDevice& d
     return details;
 }
 
-VkSurfaceFormatKHR VkUtils::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR GraphicsUtils::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
     // Try to find the best surface format.
     for (const VkSurfaceFormatKHR& availableFormat : availableFormats)
@@ -169,7 +171,7 @@ VkSurfaceFormatKHR VkUtils::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceF
     return availableFormats[0];
 }
 
-VkPresentModeKHR VkUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR GraphicsUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
     // Try to find the best present mode (for triple buffering).
     for (const auto& availablePresentMode : availablePresentModes) {
@@ -182,7 +184,7 @@ VkPresentModeKHR VkUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeK
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VkUtils::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D GraphicsUtils::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
     // If the current extent is already set, return it.
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -205,7 +207,7 @@ VkExtent2D VkUtils::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilitie
     }
 }
 
-bool VkUtils::CheckDeviceExtensionSupport(const VkPhysicalDevice& device)
+bool GraphicsUtils::CheckDeviceExtensionSupport(const VkPhysicalDevice& device)
 {
     // Get the number of extensions on the given GPU.
     uint32_t extensionCount;
@@ -225,7 +227,7 @@ bool VkUtils::CheckDeviceExtensionSupport(const VkPhysicalDevice& device)
     return requiredExtensions.empty();
 }
 
-bool VkUtils::IsDeviceSuitable(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
+bool GraphicsUtils::IsDeviceSuitable(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
 {
     VkPhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
@@ -257,7 +259,7 @@ static std::vector<char> ReadBinFile(const std::string& filename)
     return buffer;
 }
 
-VkCommandBuffer VkUtils::BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool)
+VkCommandBuffer GraphicsUtils::BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool)
 {
     // Create a new command buffer.
     VkCommandBuffer commandBuffer;
@@ -276,7 +278,7 @@ VkCommandBuffer VkUtils::BeginSingleTimeCommands(const VkDevice& device, const V
     return commandBuffer;
 }
 
-void VkUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer)
+void GraphicsUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer)
 {
     // Execute the command buffer and wait until it is done.
     vkEndCommandBuffer(commandBuffer);
@@ -289,7 +291,7 @@ void VkUtils::EndSingleTimeCommands(const VkDevice& device, const VkCommandPool&
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-VkShaderModule VkUtils::CreateShaderModule(const VkDevice& device, const ShaderStage& type, const char* filename)
+VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const ShaderStage& type, const char* filename)
 {
     // Read the shader source code.
     std::ifstream f(filename, std::ios::in);
@@ -351,7 +353,7 @@ VkShaderModule VkUtils::CreateShaderModule(const VkDevice& device, const ShaderS
     return shaderModule;
 }
 
-void VkUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void GraphicsUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -384,7 +386,7 @@ void VkUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& physi
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void VkUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size)
+void GraphicsUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
     
@@ -398,7 +400,7 @@ void VkUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& commandPoo
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void VkUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
+void GraphicsUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
 {    
     // Create a vulkan image.
     VkImageCreateInfo imageInfo{};
@@ -435,7 +437,7 @@ void VkUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physic
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void VkUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView)
+void GraphicsUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView)
 {
     // Set creation information for the image view.
     VkImageViewCreateInfo viewInfo{};
@@ -464,7 +466,7 @@ void VkUtils::CreateImageView(const VkDevice& device, const VkImage& image, cons
     }
 }
 
-void VkUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
+void GraphicsUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 
@@ -518,7 +520,7 @@ void VkUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool&
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void VkUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height)
+void GraphicsUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 

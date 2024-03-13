@@ -232,7 +232,7 @@ vec3 ComputeLighting(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float 
 vec2 ParallaxMapping(vec2 fragTexCoord, vec3 viewDir, float fragDistance)
 {
     float maxLayers  = float(materialData.depthLayerCount);
-    float numLayers  = max(mix(maxLayers, 0.001, fragDistance * 0.15), 0.001);
+    float numLayers  = max(mix(maxLayers, 1, log(fragDistance+1) * 0.5), 1);
     float layerDepth = 1 / numLayers;
     
     vec2 layerOffset   = viewDir.xy  * materialData.depthMultiplier;
