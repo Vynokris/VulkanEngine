@@ -45,14 +45,7 @@ namespace Resources
         unsigned int depthLayerCount = 32;   // Defines how many layers are used in the parallax depth effect.
 
         Texture* textures[MaterialTextureType::COUNT] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }; // Array of all different textures used by this material.
-        
-    private:
-        inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
-        inline static VkDescriptorPool      vkDescriptorPool      = nullptr;
-        VkDescriptorSet vkDescriptorSet    = nullptr;
-        VkBuffer        vkDataBuffer       = nullptr;
-        VkDeviceMemory  vkDataBufferMemory = nullptr;
-
+    
     public:
         Material(const Maths::RGB& _albedo = 1, const Maths::RGB& _emissive = 0, const float& _metallic = 1, const float& _roughness = 1, const float& _alpha = 1,
                  Texture* albedoTexture = nullptr, Texture* emissiveTexture = nullptr, Texture* metallicMap = nullptr, Texture* roughnessMap = nullptr, Texture* aoMap = nullptr, Texture* alphaMap = nullptr, Texture* normalMap = nullptr);
@@ -61,15 +54,9 @@ namespace Resources
         Material& operator=(const Material&) = delete;
         Material& operator=(Material&&)      noexcept;
         ~Material();
-        
-        void SetParams(const Maths::RGB& _albedo, const Maths::RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha);
-        bool IsLoadingFinalized() const { return vkDescriptorSet && vkDataBuffer && vkDataBufferMemory; }
+
         void FinalizeLoading();
         
-		static void CreateVkData (const VkDevice& vkDevice);
-		static void DestroyVkData(const VkDevice& vkDevice);
-        static VkDescriptorSetLayout GetVkDescriptorSetLayout()       { return vkDescriptorSetLayout; }
-        static VkDescriptorPool      GetVkDescriptorPool     ()       { return vkDescriptorPool;      }
-               VkDescriptorSet       GetVkDescriptorSet      () const { return vkDescriptorSet;       }
+        void SetParams(const Maths::RGB& _albedo, const Maths::RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha);
     };
 }

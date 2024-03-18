@@ -14,12 +14,17 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
+
+#include "Core/GpuDataManager.h"
 using namespace Core;
 using namespace GraphicsUtils;
 
 Renderer::Renderer(Application* application, const char* appName, const char* engineName)
 {
-    app                    = application;
+    app     = application;
+    gpuData = app->GetGpuData();
+    gpuData->SetRendererPtr(this);
+    
     vkPhysicalDevice       = VK_NULL_HANDLE;
     vkDepthImageFormat     = VK_FORMAT_UNDEFINED;
     vkSwapChainImageFormat = VK_FORMAT_UNDEFINED;
@@ -137,20 +142,28 @@ void Renderer::BeginRender()
 
 void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera& camera) const
 {
-    model.UpdateMvpBuffer(camera, currentFrame);
-    
+    // Get the light array as well as the model's GPU data and update it.
+    const GpuArray<Resources::Light>& lightArray = gpuData->GetArray<Resources::Light>();
+    const GpuData <Resources::Model>& modelData  = gpuData->GetData(model);
+    model.UpdateMvpBuffer(camera, currentFrame, &modelData);
+
+    // Draw each of the model's meshes one by one.
     const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
     for (const Resources::Mesh& mesh : meshes)
     {
+        // Get the mesh and material GPU data.
+        const GpuData<Resources::Mesh>&     meshData     = gpuData->GetData(mesh);
+        const GpuData<Resources::Material>& materialData = gpuData->GetData(*mesh.GetMaterial());
+        
         // Bind the vertex and index buffers.
-        const VkDeviceSize vertexOffset = 0;
-        const VkBuffer     vertexBuffer = mesh.GetVkVertexBuffer();
-        const VkBuffer     indexBuffer  = mesh.GetVkIndexBuffer ();
+        const VkBuffer vertexBuffer = meshData.vkVertexBuffer;
+        const VkBuffer indexBuffer  = meshData.vkIndexBuffer ;
+        constexpr VkDeviceSize vertexOffset = 0;
         vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, &vertexBuffer, &vertexOffset);
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[4] = { model.GetVkDescriptorSet(currentFrame), constDataDescriptorSet, mesh.GetMaterial()->GetVkDescriptorSet(), Resources::Light::GetVkDescriptorSet() };
+        const VkDescriptorSet descriptorSets[4] = { modelData.vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData.vkDescriptorSet, lightArray.vkDescriptorSet };
         vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
@@ -553,9 +566,9 @@ void Renderer::CreateRenderPass()
 void Renderer::CreateDescriptorLayoutsAndPools()
 {
     // Create layouts and pools for lights, models and materials.
-    Resources::Model   ::CreateVkData(vkDevice);
-    Resources::Material::CreateVkData(vkDevice);
-    Resources::Light   ::CreateVkData(vkDevice, vkPhysicalDevice);
+    gpuData->CreateArray<Resources::Model>();
+    gpuData->CreateArray<Resources::Material>();
+    gpuData->CreateArray<Resources::Light>();
 
     // Create layout, poll and descriptor for constant data.
     {
@@ -726,10 +739,10 @@ void Renderer::CreateGraphicsPipeline()
     // Define 1 push constant (viewPos) and 3 descriptor set layouts (model, material, lights).
     const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Maths::Vector3) };
     const VkDescriptorSetLayout setLayouts[4] = {
-        Resources::Model   ::GetVkDescriptorSetLayout(),
+        gpuData->GetArray<Resources::Model>().vkDescriptorSetLayout,
         constDataDescriptorLayout,
-        Resources::Material::GetVkDescriptorSetLayout(),
-        Resources::Light   ::GetVkDescriptorSetLayout()
+        gpuData->GetArray<Resources::Material>().vkDescriptorSetLayout,
+        gpuData->GetArray<Resources::Light>().vkDescriptorSetLayout,
     };
 
     // Set the pipeline layout creation information.
@@ -936,9 +949,9 @@ void Renderer::DestroySwapChain() const
 
 void Renderer::DestroyDescriptorLayoutsAndPools() const
 {
-    Resources::Light   ::DestroyVkData                 (vkDevice);
-    Resources::Model   ::DestroyVkData(vkDevice);
-    Resources::Material::DestroyVkData(vkDevice);
+    gpuData->DestroyArray<Resources::Model>();
+    gpuData->DestroyArray<Resources::Material>();
+    gpuData->DestroyArray<Resources::Light>();
 
     if (constDataDescriptorLayout) vkDestroyDescriptorSetLayout(vkDevice, constDataDescriptorLayout, nullptr);
     if (constDataDescriptorPool)   vkDestroyDescriptorPool     (vkDevice, constDataDescriptorPool,   nullptr);

@@ -34,8 +34,8 @@ void Application::Init(const WindowParams& windowParams)
     }
     logger   = new Logger("Resources/app.log");
     window   = new Window(windowParams);
+    gpuData  = new GpuDataManager();
     renderer = new Renderer(this, windowParams.name);
-    gpuData  = new GpuDataManager(renderer);
     engine   = new Engine(this);
     ui       = new UserInterface(this, engine);
 

@@ -30,7 +30,7 @@ template <int R, int C> Maths::Matrix<R, C>::Matrix(const bool& identity)
     }
 }
 
-// Copy operator.
+// Copy constructor.
 template <int R, int C> Maths::Matrix<R, C>::Matrix(const Matrix<R, C>& matrix)
 {
     assert(R >= 2 && C >= 2/*, "Maths::Matrix size is too small."*/);
@@ -51,7 +51,7 @@ template <int R, int C> Maths::Matrix<R, C>::Matrix(const float matrix[R][C])
 
 // ---------- Operators ---------- //
 
-// Matrix copy.
+// Matrix copy operator.
 template <int R, int C> Maths::Matrix<R, C>& Maths::Matrix<R, C>::operator=(const Matrix& matrix)
 {
     if (&matrix == this) return *this;
