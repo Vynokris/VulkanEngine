@@ -3,8 +3,9 @@
 #include "Maths/Transform.h"
 #include "Core/GraphicsUtils.h"
 #include <vector>
+#include <optional>
 
-namespace Core { class WavefrontParser; }
+namespace Core { class WavefrontParser; template<typename T> struct GpuData; }
 namespace Resources
 {
 	class Camera;
@@ -18,13 +19,6 @@ namespace Resources
 		
 		std::string       name;
 		std::vector<Mesh> meshes;
-		
-		inline static VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
-		inline static VkDescriptorPool      vkDescriptorPool      = nullptr;
-        VkDescriptorSet vkDescriptorSets  [GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
-		VkBuffer        vkMvpBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
-		VkDeviceMemory  vkMvpBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
-		void*           vkMvpBuffersMapped[GraphicsUtils::MAX_FRAMES_IN_FLIGHT];
 
 	public:
 		Maths::Transform transform;
@@ -37,20 +31,10 @@ namespace Resources
 		Model& operator=(Model&&) noexcept;
 		~Model();
 
-		void UpdateMvpBuffer(const Camera& camera, const uint32_t& currentFrame) const;
-		
-		static void CreateVkData (const VkDevice& vkDevice);
-		static void DestroyVkData(const VkDevice& vkDevice);
-		static VkDescriptorSetLayout GetVkDescriptorSetLayout() { return vkDescriptorSetLayout; }
-		static VkDescriptorPool      GetVkDescriptorPool     () { return vkDescriptorPool;      }
-               VkDescriptorSet       GetVkDescriptorSet(const uint32_t& currentFrame) const;
+		void UpdateMvpBuffer(const Camera& camera, const uint32_t& currentFrame, const Core::GpuData<Model>* modelData = nullptr) const;
 		
 		std::string              GetName  () const { return name;    }
 		const std::vector<Mesh>& GetMeshes() const { return meshes;  }
 		      std::vector<Mesh>& GetMeshes()       { return meshes;  }
-		
-	private:
-		void CreateMvpBuffers();
-		void CreateDescriptorSets();
 	};
 }

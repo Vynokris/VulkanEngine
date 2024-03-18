@@ -18,11 +18,13 @@ namespace Resources
 namespace Core
 {
     class Application;
+    class GpuDataManager;
 
     class Renderer
     {
     private:
         Application*                      app;
+        GpuDataManager*                   gpuData;
         VkInstance                        vkInstance            = nullptr;
         VkDebugUtilsMessengerEXT          vkDebugMessenger      = nullptr;
         VkSurfaceKHR                      vkSurface             = nullptr;

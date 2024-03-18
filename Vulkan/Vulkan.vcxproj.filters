@@ -108,9 +108,6 @@
     <ClCompile Include="Sources\Resources\Model.cpp">
       <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Core\VulkanUtils.cpp">
-      <Filter>Fichiers sources\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Externals\Sources\imgui\imgui_stdlib.cpp">
       <Filter>Fichiers sources\Externals</Filter>
     </ClCompile>
@@ -126,8 +123,14 @@
     <ClCompile Include="Sources\Resources\Light.cpp">
       <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Core\GpuDataManager.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Core\GraphicsUtils.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Sources\Resources\Material.cpp">
-      <Filter>Fichiers sources</Filter>
+      <Filter>Fichiers sources\Resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -194,20 +197,26 @@
     <ClInclude Include="Includes\Resources\Model.h">
       <Filter>Fichiers d%27en-tête\Resources</Filter>
     </ClInclude>
-    <ClInclude Include="Includes\Core\VulkanUtils.h">
-      <Filter>Fichiers d%27en-tête\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Includes\Core\WavefrontParser.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Includes\Resources\Material.h">
-      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="Includes\Core\Logger.h">
       <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
     <ClInclude Include="Includes\Resources\Light.h">
       <Filter>Fichiers d%27en-tête\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\GpuDataManager.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\GraphicsUtils.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Resources\Material.h">
+      <Filter>Fichiers d%27en-tête\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Core\UniqueID.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

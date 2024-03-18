@@ -26,11 +26,6 @@ namespace Resources
 		
 		std::vector<Maths::TangentVertex> vertices;
 		std::vector<uint32_t>             indices;
-		
-		VkBuffer       vkVertexBuffer       = nullptr;
-		VkDeviceMemory vkVertexBufferMemory = nullptr;
-		VkBuffer       vkIndexBuffer        = nullptr;
-		VkDeviceMemory vkIndexBufferMemory  = nullptr;
 
 	public:
 		Mesh(std::string _name, Model& _parentModel) : name(std::move(_name)), parentModel(_parentModel) {}
@@ -40,8 +35,7 @@ namespace Resources
 		Mesh& operator=(Mesh&&)      = delete;
 		~Mesh();
 
-		bool IsLoadingFinalized() const { return vkVertexBuffer && vkVertexBufferMemory && vkIndexBuffer && vkIndexBufferMemory; }
-		void FinalizeLoading   ()       { if (IsLoadingFinalized()) return; CreateVertexBuffers(); }
+		void FinalizeLoading();
 
 		std::string     GetName    () const { return name;     }
 		const Material* GetMaterial() const { return material; }
@@ -49,14 +43,9 @@ namespace Resources
 
 		const std::vector<Maths::TangentVertex>& GetVertices() const { return vertices; }
 		const std::vector<uint32_t>&             GetIndices()  const { return indices; }
-		uint32_t GetIndexCount    () const { return (uint32_t)indices.size(); }
-		VkBuffer GetVkVertexBuffer() const { return vkVertexBuffer; }
-		VkBuffer GetVkIndexBuffer () const { return vkIndexBuffer;  }
+		uint32_t GetIndexCount() const { return (uint32_t)indices.size(); }
 		
 		static VkVertexInputBindingDescription GetVertexBindingDescription();
 		static std::array<VkVertexInputAttributeDescription, 5> GetVertexAttributeDescriptions();
-
-	private:
-		void CreateVertexBuffers();
 	};
 }

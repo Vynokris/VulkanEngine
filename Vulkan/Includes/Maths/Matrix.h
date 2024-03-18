@@ -24,7 +24,7 @@ namespace Maths
         // -- Constructors -- //
         
         Matrix(const bool& identity = true); // Default constructor.
-        Matrix(const Matrix& matrix);        // Copy operator.
+        Matrix(const Matrix& matrix);        // Copy constructor.
         Matrix(const float matrix[R][C]);    // Matrix from float 2D array.
         
         Matrix(const Vector3&    eulerAngles); // Matrix from euler angles (pitch, roll, yaw).
@@ -68,7 +68,7 @@ namespace Maths
         const float* operator[](int index) const { return m[index]; }
               float* operator[](int index)       { return m[index]; }
 
-        // Matrix copy.
+        // Matrix copy operators.
         Matrix& operator=(const Matrix& matrix);
         Matrix& operator=(float** matrix);
 

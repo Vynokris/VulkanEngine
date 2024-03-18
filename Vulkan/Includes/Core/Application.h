@@ -18,8 +18,8 @@ namespace Core
         
         Logger*         logger   = nullptr;
         Window*         window   = nullptr;
-        Renderer*       renderer = nullptr;
         GpuDataManager* gpuData  = nullptr;
+        Renderer*       renderer = nullptr;
         Engine*         engine   = nullptr;
         UserInterface*  ui       = nullptr;
 
@@ -42,10 +42,11 @@ namespace Core
         void Quit() const;
         void Release() const;
 
-        Logger*        GetLogger()   const { return logger;   }
-        Window*        GetWindow()   const { return window;   }
-        Renderer*      GetRenderer() const { return renderer; }
-        Engine*        GetEngine()   const { return engine;   }
-        UserInterface* GetUi()       const { return ui;       }
+        Logger*         GetLogger()   const { return logger;   }
+        Window*         GetWindow()   const { return window;   }
+        Renderer*       GetRenderer() const { return renderer; }
+        GpuDataManager* GetGpuData()  const { return gpuData;  }
+        Engine*         GetEngine()   const { return engine;   }
+        UserInterface*  GetUi()       const { return ui;       }
     };
 }

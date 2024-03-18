@@ -3,11 +3,6 @@
 #include <cstdint>
 #include <string>
 
-typedef struct VkImage_T*        VkImage;
-typedef struct VkDeviceMemory_T* VkDeviceMemory;
-typedef struct VkImageView_T*    VkImageView;
-typedef enum   VkFormat : int    VkFormat;
-
 namespace Core { class Renderer; }
 namespace Resources
 {
@@ -20,11 +15,6 @@ namespace Resources
         int         channels  = 0;
         uint32_t    mipLevels = 0;
         unsigned char* pixels = nullptr;
-
-        VkImage        vkImage       = nullptr;
-        VkDeviceMemory vkImageMemory = nullptr;
-        VkImageView    vkImageView   = nullptr;
-        VkFormat       vkImageFormat;
         
     public:
         Texture() = default;
@@ -40,8 +30,5 @@ namespace Resources
         int            GetHeight()      const { return height; }
         uint32_t       GetMipLevels()   const { return mipLevels; }
         unsigned char* GetPixels()      const { return pixels; }
-        VkImageView    GetVkImageView() const { return vkImageView; }
-        
-        void GenerateMipmaps() const;
     };
 }

@@ -87,7 +87,7 @@ void Engine::LoadFile(const std::string& filename)
         std::unordered_map<std::string, Model> newModels = WavefrontParser::ParseObj(path.string());
         for (auto& [name, model] : newModels)
         {
-            if (models.count(name) <= 0)
+            if (models.find(name) == models.end())
                 models[name] = std::move(model);
             else
                 LogWarning(LogType::Resources, "Tried to create model " + name + " multiple times.");
@@ -99,7 +99,7 @@ void Engine::LoadFile(const std::string& filename)
         std::unordered_map<std::string, Material> newMaterials = WavefrontParser::ParseMtl(path.string());
         for (auto& [name, material] : newMaterials)
         {
-            if (materials.count(name) <= 0)
+            if (materials.find(name) == materials.end())
                 materials[name] = std::move(material);
             else
                 LogWarning(LogType::Resources, "Tried to create material " + name + " multiple times.");
@@ -109,7 +109,7 @@ void Engine::LoadFile(const std::string& filename)
     if (extension == ".jpg" ||
         extension == ".png")
     {
-        if (textures.count(path.string()) <= 0)
+        if (textures.find(path.string()) == textures.end())
             textures[path.string()] = Texture(path.string());
         else
             LogWarning(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
@@ -119,21 +119,21 @@ void Engine::LoadFile(const std::string& filename)
 
 Model* Engine::GetModel(const std::string& name)
 {
-    if (models.count(name) > 0)
+    if (models.find(name) != models.end())
         return &models[name];
     return nullptr;
 }
 
 Material* Engine::GetMaterial(const std::string& name)
 {
-    if (materials.count(name) > 0)
+    if (materials.find(name) != materials.end())
         return &materials[name];
     return nullptr;
 }
 
 Texture* Engine::GetTexture(const std::string& name)
 {
-    if (textures.count(name) > 0)
+    if (textures.find(name) != textures.end())
         return &textures[name];
     return nullptr;
 }
