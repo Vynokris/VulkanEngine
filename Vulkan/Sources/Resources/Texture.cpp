@@ -10,8 +10,8 @@
 using namespace Core;
 using namespace Resources;
 
-Texture::Texture(std::string filename)
-    : name(std::move(filename))
+Texture::Texture(std::string filename, const bool& containsColorData)
+    : name(std::move(filename)), containsColor(containsColorData)
 {
     // Load the texture data.
     stbi_set_flip_vertically_on_load_thread(true);
@@ -29,13 +29,14 @@ Texture::Texture(std::string filename)
 }
 
 Texture::Texture(Texture&& other) noexcept
-    : UniqueID(std::move(other)), name(std::move(other.name)), width(other.width), height(other.height), channels(other.channels), mipLevels(other.mipLevels), pixels(other.pixels)
+    : UniqueID(std::move(other)), name(std::move(other.name)), containsColor(other.containsColor), width(other.width), height(other.height), channels(other.channels), mipLevels(other.mipLevels), pixels(other.pixels)
 {}
 
 Texture& Texture::operator=(Texture&& other) noexcept
 {
     UniqueID::operator=(std::move(other));
     name      = std::move(other.name);
+    containsColor   = other.containsColor;
     width     = other.width;
     height    = other.height;
     channels  = other.channels;
@@ -72,7 +73,7 @@ template<> const GpuData<Texture>& GpuDataManager::CreateData(const Texture& res
     if (textures.find(resource.GetID()) != textures.end()) return textures.at(resource.GetID());
     
     GpuData<Texture>& data = textures.emplace(std::make_pair(resource.GetID(), GpuData<Texture>())).first->second;
-    data.vkImageFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    data.vkImageFormat = resource.ContainsColorData() ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
 
     // Get necessary vulkan resources.
     const VkDevice         device         = renderer->GetVkDevice();

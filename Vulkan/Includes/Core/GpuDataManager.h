@@ -9,7 +9,7 @@ namespace Core
 {
     class Renderer;
 
-    template<typename T> struct GpuData { GpuData() = delete; };
+    template<typename> struct GpuData { GpuData() = delete; };
 
     template<> struct GpuData<Resources::Texture>
     {
@@ -42,7 +42,7 @@ namespace Core
         void*           vkMvpBuffersMapped[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
     };
 
-    template<typename T> struct GpuArray
+    template<typename> struct GpuArray
     {
         VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
         VkDescriptorPool      vkDescriptorPool      = nullptr;

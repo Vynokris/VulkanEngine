@@ -1,0 +1,12 @@
+newmtl mt_SpaceCruiserPanels
+Kd 1 1 1
+Ke 0 0 0
+Pm .8
+Pr 1
+d 1
+map_Kd SpaceCruiserPanels_Albedo.png
+map_Pr SpaceCruiserPanels_Roughness.png
+map_Pm SpaceCruiserPanels_Metallic.png
+map_Pa SpaceCruiserPanels_AO.png
+map_Bump SpaceCruiserPanels_Normal.png
+map_Depth SpaceCruiserPanels_Depth.png

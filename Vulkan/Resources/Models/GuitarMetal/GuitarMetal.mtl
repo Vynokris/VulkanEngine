@@ -1,0 +1,12 @@
+newmtl mt_GuitarMetal
+Kd 1 1 1
+Ke 0 0 0
+Pm .8
+Pr 1
+d 1
+map_Kd GuitarMetal_Albedo.jpeg
+map_Pr GuitarMetal_Roughness.jpeg
+map_Pm GuitarMetal_Metallic.jpeg
+map_Pa GuitarMetal_AO.png
+map_Bump GuitarMetal_Normal.png
+# map_Depth GuitarMetal_Cavity.jpeg

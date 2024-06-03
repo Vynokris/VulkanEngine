@@ -78,8 +78,9 @@ void main()
     if (textureSize(materialTextures[DepthMapIdx], 0).x > 0)
     {
         texCoord = ParallaxMapping(texCoord, normalize(inverse(tbnMatrix) * viewDir), fragDistance);
-        if (texCoord.x > 1.0 || texCoord.y > 1.0 || texCoord.x < 0.0 || texCoord.y < 0.0)
-            discard;
+        // TODO: idk what this used to be for but I disabled it to sample outside of the texture.
+        // if (texCoord.x > 1.0 || texCoord.y > 1.0 || texCoord.x < 0.0 || texCoord.y < 0.0)
+        //     discard;
     }
     
     // Determine fragment transparency from material alpha value and texture.
@@ -106,12 +107,12 @@ void main()
     // Determine metallic from material metallic value and map.
     float metallic = materialData.metallic;
     if (textureSize(materialTextures[MetallicMapIdx], 0).x > 0)
-        metallic = texture(materialTextures[MetallicMapIdx], texCoord).r;
+        metallic *= texture(materialTextures[MetallicMapIdx], texCoord).r;
 
     // Determine roughness from material roughness value and map.
     float roughness = materialData.roughness;
     if (textureSize(materialTextures[RoughnessMapIdx], 0).x > 0)
-        roughness = texture(materialTextures[RoughnessMapIdx], texCoord).r;
+        roughness *= texture(materialTextures[RoughnessMapIdx], texCoord).r;
     
     // Determine ambient occlusion from ao map.
     float ambientOcclusion = 1;
@@ -126,7 +127,7 @@ void main()
     for (int i = 0; i < 5; i++) {
         lightSum += ComputeLighting(lights.data[i], viewDir, normal, albedo, metallic, roughness, reflectance);
     }
-    fragColor.rgb = lightSum;
+    fragColor.rgb = lightSum * ambientOcclusion;
     
     // Add emissive color from material emissive value and texture.
     vec3 emissive = materialData.emissive;
@@ -138,6 +139,8 @@ void main()
     fragColor.rgb = mix(fragColor.rgb, fogParams.color, 
                         (clamp(length(fragPos - pushConstants.viewPos), fogParams.start, fogParams.end) 
                         - fogParams.start) * fogParams.invLength);
+    
+    fragColor.rgb = pow(fragColor.rgb, vec3(1/1.6));
 }
 
 float PointAttenuation(Light light)
@@ -224,9 +227,9 @@ vec3 ComputeLighting(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float 
     float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * normalPolarity + 0.0001; // + 0.0001 to prevent divide by zero
     vec3  specular    = numerator / denominator;
     vec3  diffuse     = (vec3(1.0) - fresnel) * (1.0 - metallic);
-
+    
     // TODO: The diffuse term is broken.
-    return (/*diffuse * */albedo / PI + specular) * radiance * normalPolarity;
+    return (diffuse * albedo / PI + specular) * radiance * normalPolarity;
 }
 
 vec2 ParallaxMapping(vec2 fragTexCoord, vec3 viewDir, float fragDistance)
