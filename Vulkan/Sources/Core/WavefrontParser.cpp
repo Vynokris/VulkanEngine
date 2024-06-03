@@ -126,17 +126,17 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
                 {
                 // Roughness map.
                 case 'r':
-                    engine->LoadFile(texPath);
+                    engine->LoadFile(texPath, 1, false);
                     newMaterials[curMatName].textures[MaterialTextureType::Roughness] = engine->GetTexture(texPath);
                     break;
                 // Metallic map.
                 case 'm':
-                    engine->LoadFile(texPath);
+                    engine->LoadFile(texPath, 1, false);
                     newMaterials[curMatName].textures[MaterialTextureType::Metallic] = engine->GetTexture(texPath);
                     break;
                 // Ambient occlusion map.
                 case 'a':
-                    engine->LoadFile(texPath);
+                    engine->LoadFile(texPath, 1, false);
                     newMaterials[curMatName].textures[MaterialTextureType::AOcclusion] = engine->GetTexture(texPath);
                     break;
                 default:
@@ -147,7 +147,7 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             case 'd':
                 texName = line.substr(6, line.size()-7);
                 texPath = filepath + texName;
-                engine->LoadFile(texPath);
+                engine->LoadFile(texPath, 1, false);
                 newMaterials[curMatName].textures[MaterialTextureType::Alpha] = engine->GetTexture(texPath);
                 continue;
             default:
@@ -160,7 +160,7 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             {
                 texName = line.substr(bumpIndex+5, line.size()-(bumpIndex+5)-1);
                 texPath = filepath + texName;
-                engine->LoadFile(texPath);
+                engine->LoadFile(texPath, 1, false);
                 newMaterials[curMatName].textures[MaterialTextureType::Normal] = engine->GetTexture(texPath);
                 continue;
             }
@@ -171,7 +171,7 @@ std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::s
             {
                 texName = line.substr(depthIndex+6, line.size()-(depthIndex+6)-1);
                 texPath = filepath + texName;
-                engine->LoadFile(texPath);
+                engine->LoadFile(texPath, 1, false);
                 newMaterials[curMatName].textures[MaterialTextureType::Depth] = engine->GetTexture(texPath);
                 continue;
             }

@@ -1,7 +1,9 @@
 newmtl headcrab
-Kd 1.000000 1.000000 1.000000
-d 1.000000
-illum 2
+Kd 1 1 1
+Ke 0 0 0
+Pm 0
+Pr 1
+d 1
 map_Kd headcrab_base.png
 map_Pr headcrab_shininess.png
 map_bump headcrab_normal.png

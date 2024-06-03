@@ -40,13 +40,17 @@ namespace Core
 		float cameraSpeed       = 2;
 		float cameraSensitivity = 5e-3f;
 		const std::vector<std::string> defaultResources = {
-			R"(Resources\Models\Stadium\stadium.obj)",
-			R"(Resources\Meshes\Sphere.obj)",
-			R"(Resources\Meshes\Cube.obj)",
-			R"(Resources\Materials\GothicSculptedWall\GothicSculptedWall.mtl)",
-			R"(Resources\Models\Headcrab\headcrab.obj)",
-			R"(Resources\Models\Gizmo\gizmoTranslation.obj)",
+			// R"(Resources\Models\Stadium\stadium.obj)",
+			R"(Resources\Meshes\Quad.obj)",
+			// R"(Resources\Meshes\Cube.obj)",
+			// R"(Resources\Meshes\SphereLargeUV.obj)",
+			// R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
+			R"(Resources\Materials\SpaceshipPanels\SpaceshipPanels.mtl)",
+			// R"(Resources\Models\WeldingDroid\WeldingDroid.obj)",
+			// R"(Resources\Models\GuitarMetal\GuitarMetal.obj)",
+			// R"(Resources\Models\Headcrab\headcrab.obj)",
 			// R"(Resources\Models\DoomSlayer\doommarine.obj)",
+			// R"(Resources\Models\Gizmo\gizmoTranslation.obj)",
 		};
 		
 		Engine(Application* application) : app(application) {}
@@ -61,7 +65,7 @@ namespace Core
 		void Update(const float& deltaTime);
 		void Render(const Renderer* renderer) const;
 
-		void LoadFile(const std::string& filename);
+		void LoadFile(const std::string& filename, int additionalParamsCount = 0, ...);
 
 		Resources::Camera*   GetCamera() const { return camera; }
 		Resources::Model*    GetModel   (const std::string& name);

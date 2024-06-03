@@ -1,0 +1,12 @@
+newmtl mt_OilyTubes
+Kd 1 0.4784313725 0.168627451
+Ke 0 0 0
+Pm .8
+Pr 1
+d 1
+map_Kd OilyTubes_Albedo.png
+map_Pr OilyTubes_Roughness.png
+map_Pm OilyTubes_Metallic.png
+map_Bump OilyTubes_Normal.png
+map_Depth OilyTubes_Depth.png
+map_Pa OilyTubes_AO.png

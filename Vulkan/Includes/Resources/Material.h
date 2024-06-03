@@ -23,7 +23,7 @@ namespace Resources
         {
             Albedo,     // Texture used for the overall color of the object.
             Emissive,   // Texture used for the color of light emitted by the object.
-            Metallic,   // Texture map used to modify the object's metalness.
+            Metallic,   // Texture map used to modify the object's metallicity.
             Roughness,  // Texture map used to modify the object's roughness.
             AOcclusion, // Texture map used to add shadows to the object.
             Alpha,      // Texture map used to modify the object's transparency.
