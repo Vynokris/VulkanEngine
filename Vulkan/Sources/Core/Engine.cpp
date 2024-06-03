@@ -38,7 +38,7 @@ void Engine::Awake()
         LoadFile(filename);
 
     // Add default directional light.
-    lights.emplace_back(Light::Directional({1,1,1}, Vector3(-1, -1, -1).GetNormalized(), 1.8));
+    lights.emplace_back(Light::Directional({1,1,1}, Vector3(-1, -1, -1).GetNormalized(), 1.8f));
     // lights.emplace_back(Light::Point({1,1,1}, {1.5f,2,1}, 2, 8, 4));
     // lights.emplace_back(Light::Spot({1,1,1}, {3,3,2}, Vector3(-3,-3,-2).GetNormalized(), 1, 10, 4, 0.1f, 0.05f));
     Light::UpdateBufferData(lights);
@@ -65,14 +65,7 @@ void Engine::Start()
 }
 
 void Engine::Update(const float& deltaTime)
-{
-    // TEMP BEGIN
-    static float counter = 0;
-    counter += deltaTime;
-    lights.at(0).direction = Vector3(cos(counter)*2, -.8f, -1).GetNormalized();
-    Light::UpdateBufferData(lights);
-    // TEMP END
-    
+{    
     // Update camera transform.
     const WindowInputs inputs = app->GetWindow()->GetInputs();
     if (inputs.mouseRightClick)

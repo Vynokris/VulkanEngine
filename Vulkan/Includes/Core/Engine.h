@@ -45,7 +45,7 @@ namespace Core
 			// R"(Resources\Meshes\Cube.obj)",
 			// R"(Resources\Meshes\SphereLargeUV.obj)",
 			// R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
-			R"(Resources\Materials\SpaceshipPanels\SpaceshipPanels.mtl)",
+			R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
 			// R"(Resources\Models\WeldingDroid\WeldingDroid.obj)",
 			// R"(Resources\Models\GuitarMetal\GuitarMetal.obj)",
 			// R"(Resources\Models\Headcrab\headcrab.obj)",
