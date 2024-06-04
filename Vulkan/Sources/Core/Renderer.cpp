@@ -81,12 +81,24 @@ Renderer::~Renderer()
     vkDestroyInstance              (vkInstance,                   nullptr);
 }
 
+template<ShaderStage S> void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<S>& constants)
+{
+    vkCmdPushConstants(GetCurVkCommandBuffer(), GetVkPipelineLayout(), ShaderStageToFlagBits(S), 0, sizeof(ShaderFrameConstants<S>), &constants);
+}
+template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Vertex>&);
+template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::TessellationControl>&);
+template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::TessellationEvaluation>&);
+template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Geometry>&);
+template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Fragment>&);
+template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Compute>&);
+// Above is a hack to define templates in source files and force the compiler to link all specifications.
+
 void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end)
 {
-    const Resources::DistanceFogParams fogParams{ color, start, end, 1 / (end - start) };
+    const DistanceFogParams fogParams{ color, start, end, 1 / (end - start) };
     
     // Create a temporary staging buffer.
-    constexpr VkDeviceSize bufferSize = sizeof(Resources::DistanceFogParams);
+    constexpr VkDeviceSize bufferSize = sizeof(DistanceFogParams);
     VkBuffer       stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
@@ -122,7 +134,7 @@ void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start,
     VkDescriptorBufferInfo bufferInfo;
     bufferInfo.buffer = fogParamsBuffer;
     bufferInfo.offset = 0;
-    bufferInfo.range  = sizeof(Resources::DistanceFogParams);
+    bufferInfo.range  = sizeof(DistanceFogParams);
     VkWriteDescriptorSet descriptorWrite{};
     descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrite.dstSet          = constDataDescriptorSet;

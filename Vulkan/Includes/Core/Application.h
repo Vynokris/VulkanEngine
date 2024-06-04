@@ -44,8 +44,8 @@ namespace Core
 
         Logger*         GetLogger()   const { return logger;   }
         Window*         GetWindow()   const { return window;   }
-        Renderer*       GetRenderer() const { return renderer; }
         GpuDataManager* GetGpuData()  const { return gpuData;  }
+        Renderer*       GetRenderer() const { return renderer; }
         Engine*         GetEngine()   const { return engine;   }
         UserInterface*  GetUi()       const { return ui;       }
     };

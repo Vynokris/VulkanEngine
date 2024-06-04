@@ -1,20 +1,7 @@
 ﻿#pragma once
 #include "GraphicsUtils.h"
 
-namespace Resources
-{
-    class Camera;
-    class Model;
-
-    struct DistanceFogParams
-    {
-        alignas(16) Maths::RGB color;
-        float start;
-        float end;
-        float invLength;
-    };
-}
-
+namespace Resources { class Camera; class Model; }
 namespace Core
 {
     class Application;
@@ -73,6 +60,7 @@ namespace Core
         Renderer& operator=(Renderer&&)      = delete;
         ~Renderer();
 
+        template<GraphicsUtils::ShaderStage S> void SetShaderFrameConstants(const GraphicsUtils::ShaderFrameConstants<S>& constants);
         void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
         void BeginRender();
