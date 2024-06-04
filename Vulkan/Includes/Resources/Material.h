@@ -44,7 +44,7 @@ namespace Resources
         float        depthMultiplier = 0.1f; // Defines how intense the parallax depth effect should be.
         unsigned int depthLayerCount = 32;   // Defines how many layers are used in the parallax depth effect.
 
-        Texture* textures[MaterialTextureType::COUNT] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }; // Array of all different textures used by this material.
+        Texture* textures[MaterialTextureType::COUNT] = { nullptr }; // Array of all different textures used by this material.
     
     public:
         Material(const Maths::RGB& _albedo = 1, const Maths::RGB& _emissive = 0, const float& _metallic = 1, const float& _roughness = 1, const float& _alpha = 1,
@@ -56,6 +56,7 @@ namespace Resources
         ~Material();
 
         void FinalizeLoading();
+        bool IsLoadingFinalized();
         
         void SetParams(const Maths::RGB& _albedo, const Maths::RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha);
     };

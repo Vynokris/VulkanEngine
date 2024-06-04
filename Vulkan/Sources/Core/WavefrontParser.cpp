@@ -19,7 +19,7 @@ using namespace Maths;
 
 std::unordered_map<std::string, Material> WavefrontParser::ParseMtl(const std::string& filename)
 {
-    if (engine == nullptr) engine = Application::Get()->GetEngine();
+    if (!engine) engine = Application::Get()->GetEngine();
     
     // Read file contents and extract them to the data string.
     std::stringstream fileContents;

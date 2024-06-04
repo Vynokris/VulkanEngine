@@ -52,6 +52,11 @@ void Material::FinalizeLoading()
     Application::Get()->GetGpuData()->CreateData(*this);
 }
 
+bool Material::IsLoadingFinalized()
+{
+    return Application::Get()->GetGpuData()->CheckData(*this);
+}
+
 void Material::SetParams(const RGB& _albedo, const RGB& _emissive, const float& _metallic, const float& _roughness, const float& _alpha)
 {
     albedo    = _albedo;

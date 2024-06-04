@@ -65,7 +65,7 @@ void Engine::Start()
 }
 
 void Engine::Update(const float& deltaTime)
-{    
+{
     // Update camera transform.
     const WindowInputs inputs = app->GetWindow()->GetInputs();
     if (inputs.mouseRightClick)
@@ -76,15 +76,15 @@ void Engine::Update(const float& deltaTime)
     }
 }
 
-void Engine::Render(const Renderer* renderer) const
+void Engine::Render(Renderer& renderer) const
 {
-    // Set the viewPos in the fragment shader.
-    // TODO: Move this to the Renderer.
+    // Set the viewPos constant in the fragment shader.
     const Vector3 viewPos = camera->transform.GetPosition();
-    vkCmdPushConstants(renderer->GetCurVkCommandBuffer(), renderer->GetVkPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Vector3), &viewPos);
+    renderer.SetShaderFrameConstants<GraphicsUtils::ShaderStage::Fragment>({ viewPos });
 
+    // Draw all loaded models.
     for (const auto& [name, model] : models)
-        renderer->DrawModel(model, *camera);
+        renderer.DrawModel(model, *camera);
 }
 
 void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ...)
