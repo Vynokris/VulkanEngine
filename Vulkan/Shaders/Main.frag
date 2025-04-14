@@ -22,7 +22,8 @@ const uint SpotLightType  = 3;
 layout(location = 0) in vec3 fragPos;
 layout(location = 1) in vec2 fragTexCoord;
 layout(location = 2) in vec3 fragNormal;
-layout(location = 3) in mat3 tbnMatrix;
+layout(location = 3) in vec4 fragPosLight[4]; // This variable uses 4 locations in total.
+layout(location = 7) in mat3 tbnMatrix;       // This variable uses 3 locations in total.
 
 // Push constants input.
 layout(push_constant) uniform PushConstants {
@@ -30,7 +31,7 @@ layout(push_constant) uniform PushConstants {
 } pushConstants;
 
 // Fog params input.
-layout(set = 1, binding = 0) uniform FogParamsBuffer {
+layout(set = 2, binding = 0) uniform FogParamsBuffer {
     vec3  color;
     float start;
     float end;
@@ -38,7 +39,7 @@ layout(set = 1, binding = 0) uniform FogParamsBuffer {
 } fogParams;
 
 // Material data and textures inputs.
-layout(set = 2, binding = 0) uniform MaterialBuffer {
+layout(set = 3, binding = 0) uniform MaterialBuffer {
     vec3  albedo;
     vec3  emissive;
     float metallic;
@@ -47,24 +48,26 @@ layout(set = 2, binding = 0) uniform MaterialBuffer {
     float depthMultiplier;
     uint  depthLayerCount;
 } materialData;
-layout(set = 2, binding = 1) uniform sampler2D materialTextures[TextureTypesCount];
+layout(set = 3, binding = 1) uniform sampler2D materialTextures[TextureTypesCount];
 
 // Light data struct and inputs.
 struct Light {
-    int   type;
-    vec3  albedo;
+    vec4  albedo;
     vec3  position;
     vec3  direction;
-    float brightness, radius, falloff;
+    float radius, falloff;
     float outerCutoff, innerCutoff;
+    int   type;
 };
-layout(set = 3, binding = 0) uniform LightBuffer { Light data[2]; } lights;
+layout(set = 4, binding = 0) uniform LightBuffer { Light data[2]; } lights;
+layout(set = 1, binding = 2) uniform sampler2DShadow shadowMap;
 
 // Fragment color output.
 layout(location = 0) out vec4 fragColor;
 
-vec3 ComputeLighting(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float metallic, float roughness, vec3 reflectance);
-vec2 ParallaxMapping(vec2 fragTexCoord, vec3 viewDir, float fragDistance);
+vec3  ComputeLighting(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float metallic, float roughness, vec3 reflectance);
+vec3  ComputeShadows(Light light, vec4 fragPosLight[4], vec3 fragPos, vec3 normal);
+vec2  ParallaxMapping(vec2 fragTexCoord, vec3 viewDir, float fragDistance);
 
 void main()
 {
@@ -122,7 +125,7 @@ void main()
     // Calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
     vec3 reflectance = mix(vec3(0.04), albedo, metallic);
     
-    // Compute lighting.
+    // Compute lighting and shadows.
     vec3 lightSum = vec3(0.0);
     for (int i = 0; i < 5; i++) {
         lightSum += ComputeLighting(lights.data[i], viewDir, normal, albedo, metallic, roughness, reflectance);
@@ -140,7 +143,11 @@ void main()
                         (clamp(length(fragPos - pushConstants.viewPos), fogParams.start, fogParams.end) 
                         - fogParams.start) * fogParams.invLength);
     
-    fragColor.rgb = pow(fragColor.rgb, vec3(1/1.6));
+    // Apply gamma correction.
+    fragColor.rgb = pow(fragColor.rgb, vec3(1.0/1.6));
+    
+    // Apply shadows to the final color.
+    fragColor.rgb *= ComputeShadows(lights.data[0], fragPosLight, fragPos, normal);
 }
 
 float PointAttenuation(Light light)
@@ -216,7 +223,7 @@ vec3 ComputeLighting(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float 
         case SpotLightType:  attenuation = SpotAttenuation (light, fragToLight); break;
         default: break;
     }
-    vec3 radiance = light.albedo * light.brightness * attenuation;
+    vec3 radiance = light.albedo.rgb * light.albedo.a * attenuation;
 
     float NDF      = DistributionGGX(normal, height, roughness);
     float geoSmith = GeometrySmith  (normal, viewDir, fragToLight, roughness);
@@ -230,6 +237,109 @@ vec3 ComputeLighting(Light light, vec3 viewDir, vec3 normal, vec3 albedo, float 
     
     // TODO: The diffuse term is broken.
     return (diffuse * albedo / PI + specular) * radiance * normalPolarity;
+}
+
+vec3 ComputeShadows(Light light, vec4 fragPosLight[4], vec3 fragPos, vec3 normal)
+{
+    // Determine which of the 4 faces of the tetrahedron should be sampled.
+    uint faceIdx = 0;
+    if (light.type == PointLightType)
+    {
+        vec3 lightSpacePos = fragPos - light.position;
+        const vec3 faceDirs[4] = { vec3( 0.0,        -0.57735026,  0.81649661), // green
+                                   vec3( 0.0,        -0.57735026, -0.81649661), // yellow
+                                   vec3(-0.81649661,  0.57735026,  0.0),        // blue
+                                   vec3( 0.81649661,  0.57735026,  0.0) };      // red
+        float dots[4] = { dot(lightSpacePos, faceDirs[0]),
+                          dot(lightSpacePos, faceDirs[1]),
+                          dot(lightSpacePos, faceDirs[2]),
+                          dot(lightSpacePos, faceDirs[3]) };
+
+        float maxDot = dots[0];
+        for (uint i = 1; i < 4; ++i) 
+        {
+            if (dots[i] > maxDot) 
+            {
+                faceIdx = i;
+                maxDot = dots[i];
+            }
+        }
+    }
+    
+    // Perform perspective divide and remap from NDC [-1,1] to [0,1].
+    vec3 fragPosProj = fragPosLight[faceIdx].xyz / fragPosLight[faceIdx].w;
+    fragPosProj.xy = fragPosProj.xy * 0.5 + 0.5;
+    if (fragPosProj.z > 1.0)
+        return vec3(1.0, 1.0, 1.0);
+
+    float bias;
+    if (light.type == PointLightType)
+    {
+        // Offset and scale the UVs to be in the right quadrant of the point light shadow map.
+        vec2 uvOffset = vec2(float(faceIdx % 2), float(faceIdx / 2)) * 0.5;
+        fragPosProj.xy = fragPosProj.xy * 0.5 + uvOffset;
+        bias = 0.0065;
+    }
+    else
+    {
+        // Compute the optimal bias to avoid shadow acne.
+        vec3 fragToLight = light.type == DirLightType ? normalize(-light.direction) : normalize(light.position - fragPos);
+        float bias = max(0.05 * (1.0 - dot(normal, fragToLight)), 0.005);
+    }
+
+    // Predefine constants for the chosen PCF radius.
+    #define PCF3
+    #if defined(PCF3)
+    const int   radius = 1;
+    const float gaussian[4] = { 0.075, 0.124,
+                                0.124, 0.204 };
+    
+    #elif defined(PCF5)
+    const int   radius = 2;
+    const float gaussian[9] = { 0.003, 0.013, 0.022,
+                                0.013, 0.059, 0.097,
+                                0.022, 0.097, 0.159 };
+    #else
+    float shadow = texture(shadowMap, vec3(fragPosProj.xy, fragPosProj.z - bias));
+    switch (faceIdx)
+    {
+        case 0:
+            return /*vec3(0.0, 1.0, 0.0) * */shadow.xxx;
+        case 1:
+            return /*vec3(1.0, 1.0, 0.0) * */shadow.xxx;
+        case 2:
+            return /*vec3(0.0, 0.0, 1.0) * */shadow.xxx;
+        case 3:
+            return /*vec3(1.0, 0.0, 0.0) * */shadow.xxx;
+    }
+    return vec3(0.0, 0.0, 0.0);
+    // return shadow;
+    #undef PCF0
+    #endif
+    
+    // Perform percentage-closer filtering by neighbooring pixels and averaging them with gaussian weights.
+    #if defined(PCF3) || defined(PCF5)
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for (int y = -radius; y <= radius; ++y)
+    {
+        for (int x = -radius; x <= radius; ++x)
+        {
+            // Get the gaussian weight from the precomputed array.
+            #if defined(PCF3)
+            float factor = gaussian[((y+1)%2)*2 + (x+1)%2];
+            #elif defined(PCF5)
+            float factor = gaussian[((y+2)%3)*3 + (x+2)%3];
+            #endif
+
+            // Use depth comparison sampling to retrieve the shadow value.
+            shadow += texture(shadowMap, vec3(fragPosProj.xy + vec2(x, y) * texelSize, fragPosProj.z - bias)) * factor;
+        }
+    }
+    return shadow.xxx;
+    #undef PCF3
+    #undef PCF5
+    #endif
 }
 
 vec2 ParallaxMapping(vec2 fragTexCoord, vec3 viewDir, float fragDistance)

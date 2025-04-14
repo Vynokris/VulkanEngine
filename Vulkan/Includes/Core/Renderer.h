@@ -19,12 +19,14 @@ namespace Core
 {
     class Application;
     class GpuDataManager;
+    class RendererShadows;
 
     class Renderer
     {
     private:
         Application*                      app;
         GpuDataManager*                   gpuData;
+        RendererShadows*                  rendererShadows       = nullptr;
         VkInstance                        vkInstance            = nullptr;
         VkDebugUtilsMessengerEXT          vkDebugMessenger      = nullptr;
         VkSurfaceKHR                      vkSurface             = nullptr;
@@ -66,7 +68,7 @@ namespace Core
         uint32_t                          currentFrame              = 0;
         
     public:
-        Renderer(Application* application, const char* appName, const char* engineName = "No Engine");
+        Renderer(Application* application, const char* appName, const char* engineName = "No Engine", bool vsync = false);
         Renderer(const Renderer&)            = delete;
         Renderer(Renderer&&)                 = delete;
         Renderer& operator=(const Renderer&) = delete;
@@ -75,13 +77,19 @@ namespace Core
 
         void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
+        // Do not use this AND NewFrame/BeginRenderPass.
         void BeginRender();
+        // Use before BeginRenderPass WITHOUT using BeginRender.
+        void NewFrame();
+        // Use after NewFrame WITHOUT using BeginRender.
+        void BeginRenderPass() const;
         void DrawModel(const Resources::Model& model, const Resources::Camera& camera) const;
         void EndRender();
 
         void WaitUntilIdle() const;
         void ResizeSwapChain() { framebufferResized = true; }
 
+        RendererShadows*      GetRendererShadows()       const { return rendererShadows; }
         VkInstance            GetVkInstance()            const { return vkInstance; }
         VkSurfaceKHR          GetVkSurface()             const { return vkSurface; }
         VkPhysicalDevice      GetVkPhysicalDevice()      const { return vkPhysicalDevice; }
@@ -93,6 +101,7 @@ namespace Core
         VkRenderPass          GetVkRenderPass()          const { return vkRenderPass; }
         VkPipelineLayout      GetVkPipelineLayout()      const { return vkPipelineLayout; }
         VkCommandPool         GetVkCommandPool()         const { return vkCommandPool; }
+        uint32_t              GetCurFramebufferIdx()     const { return currentFrame; }
         VkCommandBuffer       GetCurVkCommandBuffer()    const { return vkCommandBuffers[currentFrame]; }
         VkSampler             GetVkTextureSampler()      const { return vkTextureSampler; }
         VkSampleCountFlagBits GetMsaaSamples()           const { return msaaSamples; }
@@ -104,7 +113,7 @@ namespace Core
         void CreateSurface();
         void PickPhysicalDevice();
         void CreateLogicalDevice();
-        void CreateSwapChain();
+        void CreateSwapChain(bool vsync);
         void CreateImageViews();
         void CreateRenderPass();
         void CreateDescriptorLayoutsAndPools();
@@ -121,8 +130,6 @@ namespace Core
         void DestroySwapChain() const;
         void DestroyDescriptorLayoutsAndPools() const;
 
-        void NewFrame();
-        void BeginRenderPass() const;
         void EndRenderPass() const;
         void PresentFrame();
     };

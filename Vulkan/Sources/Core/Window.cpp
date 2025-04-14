@@ -1,10 +1,14 @@
 ﻿#include "Core/Window.h"
+
+#include <algorithm>
+
 #include "Core/Application.h"
 #include "Core/Logger.h"
 #include "Core/Renderer.h"
 #include "Core/Engine.h"
 #include "GLFW/glfw3.h"
 #include <imgui.h>
+#include <thread>
 using namespace Core;
 
 InputKeys::InputKeys()
@@ -30,6 +34,11 @@ Window::Window(const WindowParams& windowParams)
         const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
         params.width = vidMode->width; params.height = vidMode->height - 30; // TODO: check this on different monitor resolutions.
         params.posX = 0; params.posY = 30;
+    }
+
+    // Set the target frame time based on the target FPS.
+    if (windowParams.targetFPS > 0) {
+        targetFrameTime = 1.0 / (double)windowParams.targetFPS;
     }
     
     // Create a new glfw window with the given parameters.
@@ -90,10 +99,19 @@ Window::~Window()
 
 void Window::Update()
 {
+    // Clamp the delta time to the target frame time.
+    if (targetFrameTime > 0)
+    {
+        const double error     = std::clamp(deltaTime - targetFrameTime, -0.0001, 0.1) * 2.5;
+        const double frameTime = TimeSinceFrameStart();
+        if (frameTime < targetFrameTime - error)
+            std::this_thread::sleep_for(std::chrono::duration<double>(targetFrameTime - error - frameTime));
+    }
+    
     // Update the delta time.
-    curTime   = std::chrono::high_resolution_clock::now();
-    deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(curTime - prevTime).count();
     prevTime  = curTime;
+    curTime   = std::chrono::high_resolution_clock::now();
+    deltaTime = std::chrono::duration<float>(curTime - prevTime).count();
     
     // Make sure the current context is the window.
     if (glfwWindow != glfwGetCurrentContext())
@@ -130,11 +148,19 @@ void Window::SetPos   (const int& windowPosX, const int& windowPosY)    const { 
 
 void Window::SetVsync(const bool& windowVsync)
 {
+    if (params.vsync == windowVsync) return;
+    
     if (glfwWindow != glfwGetCurrentContext())
         glfwMakeContextCurrent(glfwWindow);
     
     params.vsync = windowVsync;
     glfwSwapInterval(params.vsync);
+    Application::Get()->GetRenderer()->ResizeSwapChain();
+}
+
+double Window::TimeSinceFrameStart() const
+{
+    return std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - curTime).count();
 }
 
 bool Window::ShouldClose() const

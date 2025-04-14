@@ -57,6 +57,7 @@ namespace Core
         Log(const LogType& _type, const LogSeverity& _severity, std::string _message, const char* _sourceFile, const char* _sourceFunction, const long& _sourceLine)
             : type(_type), severity(_severity), message(std::move(_message)), sourceFile(_sourceFile), sourceFunction(_sourceFunction), sourceLine(_sourceLine) {}
 
+        bool operator==(const Log&) const;
         explicit operator std::string() const;
         std::string ToString() const { return std::string(*this); }
     };
@@ -79,7 +80,7 @@ namespace Core
         
         static void SetLogFilename(const std::string& _filename, const bool& clearFile = false);
         static void SaveLogs();
-        static void PushLog(const Log& log);
+        static void PushLog(const Log& log, size_t checkPreviousLogs = 2);
 
         static std::vector<Log>& GetLogs     () { return instance->logs;        }
         static Log&              GetLatestLog() { return instance->logs.back(); }

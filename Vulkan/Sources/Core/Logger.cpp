@@ -56,6 +56,16 @@ void Core::Assertion(const bool& condition, const std::string& message, const ch
     }
 }
 
+bool Log::operator==(const Log& other) const
+{
+    return type           == other.type
+        && severity       == other.severity
+        && sourceLine     == other.sourceLine
+        && sourceFunction == other.sourceFunction
+        && sourceFile     == other.sourceFile
+        && message        == other.message;
+}
+
 Log::operator std::string() const
 {
     std::string output;
@@ -132,9 +142,18 @@ void Logger::SaveLogs()
     LogWarning(LogType::FileIO, std::string("Unable to open log file: ") + instance->filename);
 }
 
-void Logger::PushLog(const Log& log)
+void Logger::PushLog(const Log& log, const size_t checkPreviousLogs)
 {
     CheckInstance();
+    if (!instance->logs.empty())
+    {
+        const size_t logCount = instance->logs.size();
+        for (size_t i = 0; i < checkPreviousLogs && logCount-i > 0; i++)
+        {
+            if (*(instance->logs.end()-1-i) == log)
+                return;
+        }
+    }
     instance->logs.push_back(log);
     std::cout << std::endl << log.ToString() << std::endl;
 }

@@ -13,13 +13,13 @@
 #include <array>
 #include <algorithm>
 #include <fstream>
-#include <functional>
 
 #include "Core/GpuDataManager.h"
+#include "Core/RendererShadows.h"
 using namespace Core;
 using namespace GraphicsUtils;
 
-Renderer::Renderer(Application* application, const char* appName, const char* engineName)
+Renderer::Renderer(Application* application, const char* appName, const char* engineName, bool vsync)
 {
     app     = application;
     gpuData = app->GetGpuData();
@@ -36,7 +36,7 @@ Renderer::Renderer(Application* application, const char* appName, const char* en
     CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
-    CreateSwapChain();
+    CreateSwapChain(vsync);
     CreateImageViews();
     vkDepthImageFormat = FindSupportedFormat(vkPhysicalDevice,
         { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
@@ -45,6 +45,7 @@ Renderer::Renderer(Application* application, const char* appName, const char* en
     );
     CreateRenderPass();
     CreateDescriptorLayoutsAndPools();
+    rendererShadows = new RendererShadows(app, this, 2048, 2048);
     CreateGraphicsPipeline();
     CreateColorResources();
     CreateDepthResources();
@@ -73,6 +74,7 @@ Renderer::~Renderer()
     vkDestroySampler               (vkDevice, vkTextureSampler,   nullptr);
     vkDestroyCommandPool           (vkDevice, vkCommandPool,      nullptr);
     vkDestroyPipeline              (vkDevice, vkGraphicsPipeline, nullptr);
+    delete rendererShadows;
     vkDestroyPipelineLayout        (vkDevice, vkPipelineLayout,   nullptr);
     vkDestroyRenderPass            (vkDevice, vkRenderPass,       nullptr);
     vkDestroyDevice                (vkDevice,                     nullptr);
@@ -145,7 +147,7 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera&
     // Get the light array as well as the model's GPU data and update it.
     const GpuArray<Resources::Light>& lightArray = gpuData->GetArray<Resources::Light>();
     const GpuData <Resources::Model>& modelData  = gpuData->GetData(model);
-    model.UpdateMvpBuffer(camera, currentFrame, &modelData);
+    model.UpdateMvpBuffer(camera, currentFrame, &modelData); // TODO: This should be done elsewhere, before the render.
 
     // Draw each of the model's meshes one by one.
     const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
@@ -163,8 +165,9 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera&
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[4] = { modelData.vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData.vkDescriptorSet, lightArray.vkDescriptorSet };
-        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
+        const VkDescriptorSet descriptorSets[5] = { modelData.vkDescriptorSets[currentFrame], rendererShadows->GetVkDescriptorSet(), constDataDescriptorSet, materialData.vkDescriptorSet, lightArray.vkDescriptorSet };
+        constexpr uint32_t dynamicOffset = 0;
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 5, descriptorSets, 1, &dynamicOffset);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 }
@@ -375,6 +378,12 @@ void Renderer::CreateLogicalDevice()
     deviceRobustnessFeatures.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
     deviceRobustnessFeatures.nullDescriptor = VK_TRUE;
 
+    // Enable uniform buffer update after bind.
+    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+    indexingFeatures.pNext = &deviceRobustnessFeatures;
+
     // Set the logical device creation information.
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -383,7 +392,7 @@ void Renderer::CreateLogicalDevice()
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
     deviceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(EXTENSIONS.size());
     deviceCreateInfo.ppEnabledExtensionNames = EXTENSIONS.data();
-    deviceCreateInfo.pNext                   = &deviceRobustnessFeatures;
+    deviceCreateInfo.pNext                   = &indexingFeatures;
     if (VALIDATION_LAYERS_ENABLED) {
         deviceCreateInfo.enabledLayerCount   = static_cast<uint32_t>(VALIDATION_LAYERS.size());
         deviceCreateInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
@@ -402,13 +411,13 @@ void Renderer::CreateLogicalDevice()
     vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.presentFamily .value(), 0, &vkPresentQueue );
 }
 
-void Renderer::CreateSwapChain()
+void Renderer::CreateSwapChain(const bool vsync)
 {
     const SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(vkPhysicalDevice, vkSurface);
 
     // Get the surface format, presentation mode and extent of the swap chain.
     const VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat( swapChainSupport.formats);
-    const VkPresentModeKHR   presentMode   = ChooseSwapPresentMode  ( swapChainSupport.presentModes);
+    const VkPresentModeKHR   presentMode   = ChooseSwapPresentMode  ( swapChainSupport.presentModes, vsync);
     const VkExtent2D         extent        = ChooseSwapExtent       (*swapChainSupport.capabilities);
 
     // Choose the number of images in the swap chain.
@@ -570,7 +579,7 @@ void Renderer::CreateDescriptorLayoutsAndPools()
     gpuData->CreateArray<Resources::Material>();
     gpuData->CreateArray<Resources::Light>();
 
-    // Create layout, poll and descriptor for constant data.
+    // Create layout, pool and descriptor for constant data.
     {
         // Set the binding of the const data buffer.
         VkDescriptorSetLayoutBinding layoutBinding{};
@@ -738,8 +747,9 @@ void Renderer::CreateGraphicsPipeline()
 
     // Define 1 push constant (viewPos) and 3 descriptor set layouts (model, material, lights).
     const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Maths::Vector3) };
-    const VkDescriptorSetLayout setLayouts[4] = {
+    const VkDescriptorSetLayout setLayouts[5] = {
         gpuData->GetArray<Resources::Model>().vkDescriptorSetLayout,
+        rendererShadows->GetVkDescriptorSetLayout(),
         constDataDescriptorLayout,
         gpuData->GetArray<Resources::Material>().vkDescriptorSetLayout,
         gpuData->GetArray<Resources::Light>().vkDescriptorSetLayout,
@@ -748,7 +758,7 @@ void Renderer::CreateGraphicsPipeline()
     // Set the pipeline layout creation information.
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount         = 4;
+    pipelineLayoutInfo.setLayoutCount         = 5;
     pipelineLayoutInfo.pSetLayouts            = setLayouts;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
@@ -925,7 +935,7 @@ void Renderer::RecreateSwapChain()
     WaitUntilIdle();
     DestroySwapChain();
     
-    CreateSwapChain();
+    CreateSwapChain(app->GetWindow()->GetVsync());
     CreateImageViews();
     CreateColorResources();
     CreateDepthResources();
@@ -979,10 +989,7 @@ void Renderer::NewFrame()
 
     // Only reset fences if we are going to be submitting work.
     vkResetFences(vkDevice, 1, &vkInFlightFences[currentFrame]);
-}
 
-void Renderer::BeginRenderPass() const
-{
     // Reset the command buffer.
     vkResetCommandBuffer(vkCommandBuffers[currentFrame],  0);
     
@@ -993,7 +1000,10 @@ void Renderer::BeginRenderPass() const
         LogError(LogType::Vulkan, "Failed to begin recording command buffer.");
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
     }
+}
 
+void Renderer::BeginRenderPass() const
+{
     // Define the clear color.
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color        = {{ 0.0f, 0.0f, 0.0f, 1.0f }};

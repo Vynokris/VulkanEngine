@@ -64,7 +64,7 @@ void Material::SetParams(const RGB& _albedo, const RGB& _emissive, const float& 
 
 template<> const GpuArray<Material>& GpuDataManager::CreateArray()
 {
-    if (materialArray.vkDescriptorSetLayout && materialArray.vkDescriptorPool) return materialArray;
+    if (materialsArray.vkDescriptorSetLayout && materialsArray.vkDescriptorPool) return materialsArray;
 
     // Get the necessary vulkan resources.
     const VkDevice vkDevice = renderer->GetVkDevice();
@@ -85,7 +85,7 @@ template<> const GpuArray<Material>& GpuDataManager::CreateArray()
     layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = 2;
     layoutInfo.pBindings    = layoutBindings;
-    if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &materialArray.vkDescriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &materialsArray.vkDescriptorSetLayout) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_SET_LAYOUT_ERROR");
     }
@@ -103,12 +103,12 @@ template<> const GpuArray<Material>& GpuDataManager::CreateArray()
     poolInfo.poolSizeCount = 2;
     poolInfo.pPoolSizes    = poolSizes;
     poolInfo.maxSets       = Engine::MAX_MATERIALS;
-    if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &materialArray.vkDescriptorPool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &materialsArray.vkDescriptorPool) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create descriptor pool.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
     }
 
-    return materialArray;
+    return materialsArray;
 }
 
 template<> const GpuData<Material>& GpuDataManager::CreateData(const Material& resource)
@@ -153,9 +153,9 @@ template<> const GpuData<Material>& GpuDataManager::CreateData(const Material& r
     // Allocate the descriptor set.
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool     = materialArray.vkDescriptorPool;
+    allocInfo.descriptorPool     = materialsArray.vkDescriptorPool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts        = &materialArray.vkDescriptorSetLayout;
+    allocInfo.pSetLayouts        = &materialsArray.vkDescriptorSetLayout;
     if (vkAllocateDescriptorSets(vkDevice, &allocInfo, &data.vkDescriptorSet) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to allocate descriptor sets.");
         throw std::runtime_error("VULKAN_DESCRIPTOR_SET_ALLOCATION_ERROR");

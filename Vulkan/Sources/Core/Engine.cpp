@@ -3,6 +3,7 @@
 #include "Core/Window.h"
 #include "Core/Logger.h"
 #include "Core/Renderer.h"
+#include "Core/RendererShadows.h"
 #include "Core/UserInterface.h"
 #include "Maths/MathConstants.h"
 #include "Maths/AngleAxis.h"
@@ -13,8 +14,7 @@
 #include "Core/WavefrontParser.h"
 #include "Resources/Light.h"
 #include <filesystem>
-#include <fstream>
-#include <stdarg.h>
+#include <cstdarg>
 namespace fs = std::filesystem;
 using namespace Core;
 using namespace Resources;
@@ -38,34 +38,47 @@ void Engine::Awake()
         LoadFile(filename);
 
     // Add default directional light.
-    lights.emplace_back(Light::Directional({1,1,1}, Vector3(-1, -1, -1).GetNormalized(), 1.8f));
-    // lights.emplace_back(Light::Point({1,1,1}, {1.5f,2,1}, 2, 8, 4));
-    // lights.emplace_back(Light::Spot({1,1,1}, {3,3,2}, Vector3(-3,-3,-2).GetNormalized(), 1, 10, 4, 0.1f, 0.05f));
+    // lights.emplace_back(Light::Directional(Vector3(-1, -1, -1).GetNormalized(), RGBA(1, 1.8f)));
+    // lights.emplace_back(Light::Spot(Vector3(1, 1, 1).GetNormalized(), Vector3(-1, -1, -1).GetNormalized(), RGBA(1), 10, 4, 0.1f, 0.05f));
+    lights.emplace_back(Light::Point(Vector3(0), RGBA(1, 2), 8, 4));
     Light::UpdateBufferData(lights);
 }
 
 void Engine::Start()
 {
     // Set camera transform.
-    camera->transform.Move({ .1f, .5f, 1 });
+    camera->transform.Move({ 0, .5f, 1 });
     camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.1f));
 
-    Model& model = models.begin()->second;
+    // Model& model = models.begin()->second;
     // model.transform.Scale({.05f});
     // model.transform.RotateEuler({ -PI/2.5f, 0, 0 });
     // model.transform.Move({ 0, -.5f, -2 });
 
-    model.GetMeshes()[0].SetMaterial(&materials.begin()->second);
-    model.transform.RotateEuler({ 0,PI,0 });
+    // model.GetMeshes()[0].SetMaterial(&materials.begin()->second);
+    // model.transform.RotateEuler({ 0,PI,0 });
     // models.at("model_Sphere").GetMeshes()[0].SetMaterial(&materials.begin()->second);
     // models.at("model_Sphere").transform.Move({ 1.5f, 1, 0 });
     // models.at("model_Sphere").transform.RotateEuler({ 0, -PIDIV2-PIDIV4*.5f, 0 });
     // models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_GothicSculptedWall"));
     // models.at("model_Cube").transform.Move({ -1.5f, 1, 0 });
+
+    models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
+    models.at("model_Cube").transform.SetScale({ .25f });
+    models.at("model_Quad").GetMeshes()[0].SetMaterial(&materials.at("mt_ShadedBasic"));
+    models.at("model_Quad").transform.RotateEuler({ PIDIV2, 0, 0 });
+    models.at("model_Quad").transform.Move(-Vector3::Up() * 2);
+    models.at("model_Quad").transform.SetScale({ 30 });
 }
 
 void Engine::Update(const float& deltaTime)
-{    
+{
+    static float time = 0;
+    lights.front().direction = Vector3(-cos(time), -1, -sin(time)).GetNormalized();
+    lights.front().position  = -lights.front().direction;
+    // models.at("model_Cube").transform.SetPosition(Vector3(-cos(time)*2, -1, -sin(time)*2));
+    time += deltaTime;
+    
     // Update camera transform.
     const WindowInputs inputs = app->GetWindow()->GetInputs();
     if (inputs.mouseRightClick)
@@ -83,8 +96,15 @@ void Engine::Render(const Renderer* renderer) const
     const Vector3 viewPos = camera->transform.GetPosition();
     vkCmdPushConstants(renderer->GetCurVkCommandBuffer(), renderer->GetVkPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Vector3), &viewPos);
 
+    Light::UpdateBufferData(lights);
     for (const auto& [name, model] : models)
         renderer->DrawModel(model, *camera);
+}
+
+void Engine::Render(const RendererShadows* renderer) const
+{
+    for (const auto& [name, model] : models)
+        renderer->DrawModel(model);
 }
 
 void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ...)
@@ -129,6 +149,13 @@ void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ..
             LogWarning(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
         return;
     }
+}
+
+Light* Engine::GetLight(const size_t& idx)
+{
+    if (idx < lights.size())
+        return &lights[idx];
+    return nullptr;
 }
 
 Model* Engine::GetModel(const std::string& name)

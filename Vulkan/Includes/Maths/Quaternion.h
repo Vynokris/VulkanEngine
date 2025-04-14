@@ -2,6 +2,7 @@
 
 namespace Maths
 {
+	class Quaternion;
     class Vector3;
     class AngleAxis;
     typedef Matrix<4, 4> Mat4;
@@ -21,6 +22,9 @@ namespace Maths
 		Quaternion(const AngleAxis& angleAxis  );                                   // Quaternion from angle axis.
 		Quaternion(const Mat4&      matrix     );                                   // Quaternion from 4x4 matrix.
 
+		// -- Constant values -- //
+		static Quaternion Identity() { return { 1, 0, 0, 0 }; }
+
 		// -- Static constructors -- //
 		static Quaternion FromPitch    (const float&     angle    ); // Quaternion that rotates around the X axis by the given angle.
 		static Quaternion FromRoll     (const float&     angle    ); // Quaternion that rotates around the Y axis by the given angle.
@@ -28,6 +32,8 @@ namespace Maths
 		static Quaternion FromEuler    (const Vector3&   angles   ); // Quaternion from euler angles (pitch, roll, yaw).
 		static Quaternion FromAngleAxis(const AngleAxis& angleAxis); // Quaternion from angle axis.
 		static Quaternion FromMatrix   (const Mat4&      matrix   ); // Quaternion from 4x4 matrix.
+		static Quaternion LookTowards  (const Vector3&   direction); // Quaternion that looks in the given direction.
+		static Quaternion LookAt       (const Vector3&   origin, const Vector3& target); // Quaternion that looks from origin to target.
 
 		// -- Operators -- //
         template <typename T> bool       operator==(const T& val) const;

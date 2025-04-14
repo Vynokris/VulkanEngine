@@ -55,6 +55,8 @@ namespace Core
         VkDescriptorSet       vkDescriptorSet       = nullptr;
         VkBuffer              vkBuffer              = nullptr;
         VkDeviceMemory        vkBufferMemory        = nullptr;
+        void*                 vkBufferMapped        = nullptr;
+        VkDeviceSize          vkBufferSize          = 0;
     };
 
     class GpuDataManager
@@ -62,9 +64,9 @@ namespace Core
     private:
         Renderer* renderer;
         
-        GpuArray<Resources::Material> materialArray;
-        GpuArray<Resources::Model>    modelArray;
-        GpuArray<Resources::Light>    lightArray;
+        GpuArray<Resources::Material> materialsArray;
+        GpuArray<Resources::Model>    modelsArray;
+        GpuArray<Resources::Light>    lightsArray;
         
         std::unordered_map<uid_t, GpuData<Resources::Texture>>  textures;
         std::unordered_map<uid_t, GpuData<Resources::Material>> materials;

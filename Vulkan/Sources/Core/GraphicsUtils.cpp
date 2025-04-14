@@ -171,10 +171,13 @@ VkSurfaceFormatKHR GraphicsUtils::ChooseSwapSurfaceFormat(const std::vector<VkSu
     return availableFormats[0];
 }
 
-VkPresentModeKHR GraphicsUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR GraphicsUtils::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, const bool vsync)
 {
+    if (vsync) return VK_PRESENT_MODE_FIFO_KHR;
+    
     // Try to find the best present mode (for triple buffering).
     for (const auto& availablePresentMode : availablePresentModes) {
+        // if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return availablePresentMode;
         }

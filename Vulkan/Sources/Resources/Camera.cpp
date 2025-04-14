@@ -10,7 +10,7 @@ Camera::Camera(const CameraParams& parameters)
 
 void Camera::SetParams(const CameraParams& parameters)
 {
-    params = CameraParams(parameters);
+    params = parameters;
     params.aspect = (float)params.width / (float)params.height;
 
     // Update the projection matrix.

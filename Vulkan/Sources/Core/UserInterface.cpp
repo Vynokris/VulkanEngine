@@ -131,8 +131,17 @@ void UserInterface::ShowStatsWindow() const
 {
     if (ImGui::Begin("Stats", NULL, ImGuiWindowFlags_NoMove))
     {
-        const float deltaTime = app->GetWindow()->GetDeltaTime();
-        ImGui::Text("FPS: %d | Delta Time: %.4fs", roundInt(1 / deltaTime), deltaTime);
+        static float deltaTimeAverage = 1.f / 60.f;
+        static bool  isFirstFrame = true;
+        if (isFirstFrame) {
+            isFirstFrame = false;
+        }
+        else {
+            const float deltaTime = (float)app->GetWindow()->GetDeltaTime();
+            deltaTimeAverage = lerp(deltaTimeAverage, deltaTime, clamp01(deltaTime));
+        }
+        
+        ImGui::Text("FPS: %d | Delta Time: %.4fs", roundInt(1.f / deltaTimeAverage), deltaTimeAverage);
         const Vector3 camPos = engine->GetCamera()->transform.GetPosition();
         ImGui::Text("Camera position: %.2f, %.2f, %.2f", camPos.x, camPos.y, camPos.z);
     }

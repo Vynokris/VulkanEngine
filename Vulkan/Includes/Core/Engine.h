@@ -19,19 +19,20 @@ namespace Core
 {
     class Application;
 	class Renderer;
+	class RendererShadows;
 	
 	class Engine
 	{
 	public:
-		static constexpr unsigned int MAX_LIGHTS = 5;
-		static constexpr unsigned int MAX_MODELS = 10;
-		static constexpr unsigned int MAX_MATERIALS = 50;
+		static constexpr size_t MAX_LIGHTS    = 5;
+		static constexpr size_t MAX_MODELS    = 10;
+		static constexpr size_t MAX_MATERIALS = 50;
 		
 	private:
         Application*       app    = nullptr;
         Resources::Camera* camera = nullptr;
 
-		std::vector<Resources::Light>                        lights;
+		std::vector<Resources::Light>                       lights;
 		std::unordered_map<std::string, Resources::Model>    models;
 		std::unordered_map<std::string, Resources::Material> materials;
 		std::unordered_map<std::string, Resources::Texture>  textures;
@@ -42,8 +43,9 @@ namespace Core
 		const std::vector<std::string> defaultResources = {
 			// R"(Resources\Models\Stadium\stadium.obj)",
 			R"(Resources\Meshes\Quad.obj)",
-			// R"(Resources\Meshes\Cube.obj)",
+			R"(Resources\Meshes\Cube.obj)",
 			// R"(Resources\Meshes\SphereLargeUV.obj)",
+			R"(Resources\Materials\ShadedBasic.mtl)",
 			// R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
 			R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
 			// R"(Resources\Models\WeldingDroid\WeldingDroid.obj)",
@@ -64,6 +66,7 @@ namespace Core
 		void Start();
 		void Update(const float& deltaTime);
 		void Render(const Renderer* renderer) const;
+		void Render(const RendererShadows* renderer) const;
 
 		void LoadFile(const std::string& filename, int additionalParamsCount = 0, ...);
 
@@ -71,6 +74,7 @@ namespace Core
 		Resources::Model*    GetModel   (const std::string& name);
 		Resources::Material* GetMaterial(const std::string& name);
 		Resources::Texture*  GetTexture (const std::string& name);
+		Resources::Light*    GetLight   (const size_t& idx);
 		
 		void ResizeCamera(const int& width, const int& height) const;
 	};

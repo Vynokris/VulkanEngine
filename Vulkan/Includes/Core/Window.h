@@ -16,6 +16,7 @@ namespace Core
         int  height = -1;
         int  posX = 50;
         int  posY = 70;
+        int  targetFPS = -1;
         bool vsync = false;
     };
 
@@ -46,7 +47,8 @@ namespace Core
         WindowInputs inputs;
         InputKeys    inputKeys;
         GLFWwindow*  glfwWindow;
-        float        deltaTime = 0;
+        double       deltaTime = 0;
+        double       targetFrameTime = -1;
         std::chrono::time_point<std::chrono::high_resolution_clock> prevTime, curTime;
     
     public:
@@ -72,15 +74,18 @@ namespace Core
         void SetExitKey(const int& windowExitKey) { inputKeys.exit = windowExitKey; }
         void RemoveExitKey()                      { inputKeys.exit = -1; }
 
-        const char*  GetName()       const { return params.name;   }
-        int          GetWidth()      const { return params.width;  }
-        int          GetHeight()     const { return params.height; }
-        int          GetPosX()       const { return params.posX;   }
-        int          GetPosY()       const { return params.posY;   }
-        float        GetDeltaTime()  const { return deltaTime;     }
-        WindowInputs GetInputs()     const { return inputs;        }
-        GLFWwindow*  GetGlfwWindow() const { return glfwWindow;    }
-        bool         ShouldClose()   const;
+        const char*  GetName()             const { return params.name;      }
+        int          GetWidth()            const { return params.width;     }
+        int          GetHeight()           const { return params.height;    }
+        int          GetPosX()             const { return params.posX;      }
+        int          GetPosY()             const { return params.posY;      }
+        int          GetTargetFPS()        const { return params.targetFPS; }
+        bool         GetVsync()            const { return params.vsync;     }
+        WindowInputs GetInputs()           const { return inputs;           }
+        GLFWwindow*  GetGlfwWindow()       const { return glfwWindow;       }
+        double       GetDeltaTime()        const { return deltaTime;        }
+        double       TimeSinceFrameStart() const;
+        bool         ShouldClose()         const;
 
     private:
         void UpdateInputs();

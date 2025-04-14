@@ -7,6 +7,7 @@ namespace Core
     struct WindowParams;
     class  Logger;
     class  Renderer;
+    class  RendererShadows;
     class  GpuDataManager;
     class  Engine;
     class  UserInterface;
