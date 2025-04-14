@@ -46,6 +46,7 @@ typedef enum   VkFormat              : int VkFormat;
 typedef enum   VkImageTiling         : int VkImageTiling;
 typedef enum   VkImageLayout         : int VkImageLayout;
 typedef enum   VkSampleCountFlagBits : int VkSampleCountFlagBits;
+typedef enum   VkShaderStageFlagBits : int VkShaderStageFlagBits;
 #pragma endregion 
 
 namespace GraphicsUtils
@@ -54,7 +55,7 @@ namespace GraphicsUtils
     extern const bool VALIDATION_LAYERS_ENABLED;
     extern const std::vector<const char*> VALIDATION_LAYERS;
     extern const std::vector<const char*> EXTENSIONS;
-
+    
     enum class ShaderStage
     {
         Vertex,
@@ -63,6 +64,20 @@ namespace GraphicsUtils
         Geometry,
         Fragment,
         Compute,
+    };
+        
+    template<ShaderStage> struct ShaderFrameConstants {};
+    template<> struct ShaderFrameConstants<ShaderStage::Fragment>
+    {
+        Maths::Vector3 viewPos;
+    };
+
+    struct DistanceFogParams
+    {
+        alignas(16) Maths::RGB color;
+        float start;
+        float end;
+        float invLength;
     };
 
     struct MaterialData
@@ -128,6 +143,7 @@ namespace GraphicsUtils
     VkCommandBuffer BeginSingleTimeCommands(const VkDevice& device, const VkCommandPool& commandPool);
     void            EndSingleTimeCommands  (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkCommandBuffer& commandBuffer);
 
+    VkShaderStageFlagBits ShaderStageToFlagBits(const ShaderStage& shaderStage);
     VkShaderModule CreateShaderModule(const VkDevice& device, const ShaderStage& type, const char* filename);
     void CreateBuffer         (const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void CopyBuffer           (const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize& size);

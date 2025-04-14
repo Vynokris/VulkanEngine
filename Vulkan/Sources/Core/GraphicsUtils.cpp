@@ -294,6 +294,20 @@ void GraphicsUtils::EndSingleTimeCommands(const VkDevice& device, const VkComman
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
+VkShaderStageFlagBits GraphicsUtils::ShaderStageToFlagBits(const ShaderStage& shaderStage)
+{
+    switch (shaderStage)
+    {
+        case ShaderStage::Vertex:                 return VK_SHADER_STAGE_VERTEX_BIT;
+        case ShaderStage::TessellationControl:    return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        case ShaderStage::TessellationEvaluation: return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        case ShaderStage::Geometry:               return VK_SHADER_STAGE_GEOMETRY_BIT;
+        case ShaderStage::Fragment:               return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case ShaderStage::Compute:                return VK_SHADER_STAGE_COMPUTE_BIT;
+        default:                                  return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+    }
+}
+
 VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const ShaderStage& type, const char* filename)
 {
     // Read the shader source code.
@@ -307,7 +321,7 @@ VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const S
     glslang::InitializeProcess();
     
     // Get the shader kind from the shader type enum value.
-    EShLanguage shaderStage;
+    EShLanguage shaderStage = EShLangCount;
     switch (type)
     {
         case ShaderStage::Vertex:                 shaderStage = EShLangVertex;         break;
@@ -317,6 +331,10 @@ VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const S
         case ShaderStage::Fragment:               shaderStage = EShLangFragment;       break;
         case ShaderStage::Compute:                shaderStage = EShLangCompute;        break;
         default: break;
+    }
+    if (shaderStage == EShLangCount) {
+        LogError(LogType::Vulkan, "Shader stage not found.");
+        throw std::runtime_error("VULKAN_SHADER_COMPILATION_ERROR");
     }
 
     // Compile the shader.

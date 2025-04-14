@@ -65,7 +65,7 @@ namespace Core
 		void Awake();
 		void Start();
 		void Update(const float& deltaTime);
-		void Render(const Renderer* renderer) const;
+		void Render(Renderer* renderer) const;
 		void Render(const RendererShadows* renderer) const;
 
 		void LoadFile(const std::string& filename, int additionalParamsCount = 0, ...);
