@@ -37,17 +37,17 @@ Model::~Model()
 
 void Model::UpdateMvpBuffer(const Camera& camera, const uint32_t& currentFrame, const GpuData<Model>* gpuData) const
 {
-     if (!gpuData) gpuData = &Application::Get()->GetGpuData()->GetData(*this);
+     if (!gpuData) gpuData = Application::Get()->GetGpuData()->GetData(*this);
      
      // Copy the matrices to buffer memory.
      const MvpBuffer mvp = { transform.GetLocalMat(), transform.GetLocalMat() * camera.GetViewMat() * camera.GetProjMat() };
-     memcpy(Application::Get()->GetGpuData()->GetData(*this).vkMvpBuffersMapped[currentFrame], &mvp, sizeof(mvp));
+     memcpy(gpuData->vkMvpBuffersMapped[currentFrame], &mvp, sizeof(mvp));
 }
 
 
 template<> const GpuArray<Model>& GpuDataManager::CreateArray()
 {
-     if (modelArray.vkDescriptorSetLayout && modelArray.vkDescriptorPool) return modelArray;
+     if (modelsArray.vkDescriptorSetLayout && modelsArray.vkDescriptorPool) return modelsArray;
 
      // Get the necessary vulkan resources.
      const VkDevice vkDevice = renderer->GetVkDevice();
@@ -57,14 +57,14 @@ template<> const GpuArray<Model>& GpuDataManager::CreateArray()
      mvpLayoutBinding.binding         = 0;
      mvpLayoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
      mvpLayoutBinding.descriptorCount = 1;
-     mvpLayoutBinding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
+     mvpLayoutBinding.stageFlags      = VK_SHADER_STAGE_ALL;
 
      // Create the descriptor set layout.
      VkDescriptorSetLayoutCreateInfo layoutInfo{};
      layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
      layoutInfo.bindingCount = 1;
      layoutInfo.pBindings    = &mvpLayoutBinding;
-     if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &modelArray.vkDescriptorSetLayout) != VK_SUCCESS) {
+     if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &modelsArray.vkDescriptorSetLayout) != VK_SUCCESS) {
           LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
           throw std::runtime_error("VULKAN_DESCRIPTOR_SET_LAYOUT_ERROR");
      }
@@ -80,12 +80,12 @@ template<> const GpuArray<Model>& GpuDataManager::CreateArray()
      poolInfo.poolSizeCount = 1;
      poolInfo.pPoolSizes    = &poolSize;
      poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS;
-     if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &modelArray.vkDescriptorPool) != VK_SUCCESS) {
+     if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &modelsArray.vkDescriptorPool) != VK_SUCCESS) {
           LogError(LogType::Vulkan, "Failed to create descriptor pool.");
           throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
      }
 
-     return modelArray;
+     return modelsArray;
 }
 
 template<> const GpuData<Model>& GpuDataManager::CreateData(const Model& resource)
@@ -112,10 +112,10 @@ template<> const GpuData<Model>& GpuDataManager::CreateData(const Model& resourc
     }
 
     // Allocate the descriptor sets.
-    const std::vector layouts(MAX_FRAMES_IN_FLIGHT, modelArray.vkDescriptorSetLayout);
+    const std::vector layouts(MAX_FRAMES_IN_FLIGHT, modelsArray.vkDescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool     = modelArray.vkDescriptorPool;
+    allocInfo.descriptorPool     = modelsArray.vkDescriptorPool;
     allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
     allocInfo.pSetLayouts        = layouts.data();
     if (vkAllocateDescriptorSets(vkDevice, &allocInfo, data.vkDescriptorSets) != VK_SUCCESS) {

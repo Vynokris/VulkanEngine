@@ -29,10 +29,13 @@ namespace Maths
     float clamp(float val, const float& min, const float& max);
 
     // Clamps the given value to be inferior or equal to the maximum value.
-    float clampUnder(float val, const float& max);
+    float min(float val, const float& max);
 
     // Clamps the given value to be superior or equal to the minimum value.
-    float clampAbove(float val, const float& min);
+    float max(float val, const float& min);
+
+    // Clamps the given value to be superior or equal to 0 and inferior or equal to 1.
+    float saturate(float val);
 
     // Compute linear interpolation between start and dest for the parameter val (if 0 <= val <= 1: start <= return <= end).
     float lerp(const float& start, const float& dest, const float& val);

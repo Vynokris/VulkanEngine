@@ -31,6 +31,44 @@ Quaternion Quaternion::FromEuler    (const Vector3&   angles   ) { return Quater
 Quaternion Quaternion::FromAngleAxis(const AngleAxis& angleAxis) { return angleAxis.ToQuaternion(); }
 Quaternion Quaternion::FromMatrix   (const Mat4&      matrix   ) { return matrix   .ToQuaternion(); }
 
+Quaternion Quaternion::LookTowards(const Vector3& direction)
+{
+    const Vector3 forwardVector = direction.GetNormalized();
+    const float dot = (-Vector3::Forward()).Dot(forwardVector);
+
+    if (abs(dot + 1.f) < .000001f)
+    {
+        return FromAngleAxis({ PI, Vector3::Up() });
+    }
+    if (abs(dot - 1.f) < .000001f)
+    {
+        return Identity();
+    }
+
+    const float   rotAngle = acos(dot);
+    const Vector3 rotAxis  = (-Vector3::Forward()).Cross(forwardVector).GetNormalized();
+    return FromAngleAxis({ rotAngle , rotAxis });
+}
+
+Quaternion Quaternion::LookAt(const Vector3&   origin, const Vector3& target)
+{
+    const Vector3 forwardVector = (target - origin).GetNormalized();
+    const float dot = (-Vector3::Forward()).Dot(forwardVector);
+
+    if (abs(dot + 1.f) < .000001f)
+    {
+        return FromAngleAxis({ PI, Vector3::Up() });
+    }
+    if (abs(dot - 1.f) < .000001f)
+    {
+        return Identity();
+    }
+
+    const float   rotAngle = acos(dot);
+    const Vector3 rotAxis  = (-Vector3::Forward()).Cross(forwardVector).GetNormalized();
+    return FromAngleAxis({ rotAngle , rotAxis });
+}
+
 // ----- Operators  ----- //
 
 Quaternion Quaternion::operator-() const

@@ -34,10 +34,13 @@ float Maths::clamp(float val, const float& min, const float& max)
 }
 
 // Clamps the given value to be inferior or equal to the maximum value.
-float Maths::clampUnder(float val, const float& max) { if (val > max) val = max; return val; }
+float Maths::min(float val, const float& max) { if (val > max) val = max; return val; }
 
 // Clamps the given value to be superior or equal to the minimum value.
-float Maths::clampAbove(float val, const float& min) { if (val < min) val = min; return val; }
+float Maths::max(float val, const float& min) { if (val < min) val = min; return val; }
+
+// Clamps the given value to be superior or equal to 0 and inferior or equal to 1.
+float Maths::saturate(float val) { return clamp(val, 0.f, 1.f); }
 
 // Compute linear interpolation between start and dest for the parameter val (if 0 <= val <= 1: start <= return <= end).
 float Maths::lerp(const float& start, const float& dest, const float& val)

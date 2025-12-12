@@ -1,0 +1,12 @@
+newmtl mt_WornPavement
+Kd 1 1 1
+Ke 0 0 0
+Pm 1
+Pr 1
+Pd 0.5
+d 1
+map_Kd WornPavement_Albedo.jpg
+map_Pr WornPavement_Roughness.jpg
+map_Pa WornPavement_AO.jpg
+map_Pm WornPavement_Specular.jpg
+map_Bump WornPavement_Normal.jpg

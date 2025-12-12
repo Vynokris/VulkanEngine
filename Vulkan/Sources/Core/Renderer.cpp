@@ -1,5 +1,6 @@
 ﻿#include "Core/Renderer.h"
 #include "Core/Application.h"
+#include "Core/GpuDataManager.h"
 #include "Core/Logger.h"
 #include "Core/Window.h"
 #include "Resources/Camera.h"
@@ -14,8 +15,6 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
-
-#include "Core/GpuDataManager.h"
 using namespace Core;
 using namespace GraphicsUtils;
 
@@ -156,26 +155,28 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera&
 {
     // Get the light array as well as the model's GPU data and update it.
     const GpuArray<Resources::Light>& lightArray = gpuData->GetArray<Resources::Light>();
-    const GpuData <Resources::Model>& modelData  = gpuData->GetData(model);
-    model.UpdateMvpBuffer(camera, currentFrame, &modelData);
+    const GpuData <Resources::Model>* modelData  = gpuData->GetData(model);
+    if (!modelData) return;
+    model.UpdateMvpBuffer(camera, currentFrame, modelData);
 
     // Draw each of the model's meshes one by one.
     const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
     for (const Resources::Mesh& mesh : meshes)
     {
         // Get the mesh and material GPU data.
-        const GpuData<Resources::Mesh>&     meshData     = gpuData->GetData(mesh);
-        const GpuData<Resources::Material>& materialData = gpuData->GetData(*mesh.GetMaterial());
+        const GpuData<Resources::Mesh>*     meshData     = gpuData->GetData(mesh);
+        const GpuData<Resources::Material>* materialData = gpuData->GetData(*mesh.GetMaterial());
+        if (!meshData || !materialData) continue;
         
         // Bind the vertex and index buffers.
-        const VkBuffer vertexBuffer = meshData.vkVertexBuffer;
-        const VkBuffer indexBuffer  = meshData.vkIndexBuffer ;
+        const VkBuffer vertexBuffer = meshData->vkVertexBuffer;
+        const VkBuffer indexBuffer  = meshData->vkIndexBuffer ;
         constexpr VkDeviceSize vertexOffset = 0;
         vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, &vertexBuffer, &vertexOffset);
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[4] = { modelData.vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData.vkDescriptorSet, lightArray.vkDescriptorSet };
+        const VkDescriptorSet descriptorSets[4] = { modelData->vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet };
         vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
     }
@@ -387,6 +388,18 @@ void Renderer::CreateLogicalDevice()
     deviceRobustnessFeatures.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
     deviceRobustnessFeatures.nullDescriptor = VK_TRUE;
 
+    // Enable uniform buffer update after bind.
+    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+    indexingFeatures.pNext = &deviceRobustnessFeatures;
+
+    // Enable VK 1.3 features
+    VkPhysicalDeviceVulkan13Features features13 = {};
+    features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    features13.shaderDemoteToHelperInvocation = VK_TRUE;
+    features13.pNext = &indexingFeatures;
+
     // Set the logical device creation information.
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -395,7 +408,7 @@ void Renderer::CreateLogicalDevice()
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
     deviceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(EXTENSIONS.size());
     deviceCreateInfo.ppEnabledExtensionNames = EXTENSIONS.data();
-    deviceCreateInfo.pNext                   = &deviceRobustnessFeatures;
+    deviceCreateInfo.pNext                   = &features13;
     if (VALIDATION_LAYERS_ENABLED) {
         deviceCreateInfo.enabledLayerCount   = static_cast<uint32_t>(VALIDATION_LAYERS.size());
         deviceCreateInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
@@ -582,7 +595,7 @@ void Renderer::CreateDescriptorLayoutsAndPools()
     gpuData->CreateArray<Resources::Material>();
     gpuData->CreateArray<Resources::Light>();
 
-    // Create layout, poll and descriptor for constant data.
+    // Create layout, pool and descriptor for constant data.
     {
         // Set the binding of the const data buffer.
         VkDescriptorSetLayoutBinding layoutBinding{};
@@ -695,8 +708,8 @@ void Renderer::CreateGraphicsPipeline()
     depthStencil.back                  = {}; // Optional.
 
     // Load vulkan fragment and vertex shaders.
-    VkShaderModule vertShaderModule = CreateShaderModule(vkDevice, ShaderStage::Vertex,   "Shaders/Main.vert");
-    VkShaderModule fragShaderModule = CreateShaderModule(vkDevice, ShaderStage::Fragment, "Shaders/Main.frag");
+    VkShaderModule vertShaderModule = CreateShaderModule(vkDevice, ShaderStage::Vertex,   "Shaders/MainVert.hlsl");
+    VkShaderModule fragShaderModule = CreateShaderModule(vkDevice, ShaderStage::Fragment, "Shaders/MainFrag.hlsl");
 
     // Set the vertex shader's pipeline stage and entry point.
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};

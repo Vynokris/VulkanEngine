@@ -55,6 +55,8 @@ namespace Core
         VkDescriptorSet       vkDescriptorSet       = nullptr;
         VkBuffer              vkBuffer              = nullptr;
         VkDeviceMemory        vkBufferMemory        = nullptr;
+        void*                 vkBufferMapped        = nullptr;
+        VkDeviceSize          vkBufferSize          = 0;
     };
 
     class GpuDataManager
@@ -62,9 +64,9 @@ namespace Core
     private:
         Renderer* renderer;
         
-        GpuArray<Resources::Material> materialArray;
-        GpuArray<Resources::Model>    modelArray;
-        GpuArray<Resources::Light>    lightArray;
+        GpuArray<Resources::Material> materialsArray;
+        GpuArray<Resources::Model>    modelsArray;
+        GpuArray<Resources::Light>    lightsArray;
         
         std::unordered_map<uid_t, GpuData<Resources::Texture>>  textures;
         std::unordered_map<uid_t, GpuData<Resources::Material>> materials;
@@ -91,7 +93,7 @@ namespace Core
         template<typename T> bool CheckData(const T& resource) const;
 
         template<typename T> const GpuArray<T>& GetArray() const;
-        template<typename T> const GpuData<T>&  GetData(const T& resource) const;
+        template<typename T> const GpuData<T>*  GetData(const T& resource) const;
     };
     
     template<> const GpuArray<Resources::Material>& GpuDataManager::CreateArray<Resources::Material>();
@@ -121,8 +123,8 @@ namespace Core
     template<> const GpuArray<Resources::Material>& GpuDataManager::GetArray<Resources::Material>() const;
     template<> const GpuArray<Resources::Model   >& GpuDataManager::GetArray<Resources::Model   >() const;
     template<> const GpuArray<Resources::Light   >& GpuDataManager::GetArray<Resources::Light   >() const;
-    template<> const GpuData <Resources::Texture >& GpuDataManager::GetData(const Resources::Texture&  resource) const;
-    template<> const GpuData <Resources::Material>& GpuDataManager::GetData(const Resources::Material& resource) const;
-    template<> const GpuData <Resources::Model   >& GpuDataManager::GetData(const Resources::Model&    resource) const;
-    template<> const GpuData <Resources::Mesh    >& GpuDataManager::GetData(const Resources::Mesh&     resource) const;
+    template<> const GpuData <Resources::Texture >* GpuDataManager::GetData(const Resources::Texture&  resource) const;
+    template<> const GpuData <Resources::Material>* GpuDataManager::GetData(const Resources::Material& resource) const;
+    template<> const GpuData <Resources::Model   >* GpuDataManager::GetData(const Resources::Model&    resource) const;
+    template<> const GpuData <Resources::Mesh    >* GpuDataManager::GetData(const Resources::Mesh&     resource) const;
 }

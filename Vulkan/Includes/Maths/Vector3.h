@@ -20,6 +20,13 @@ namespace Maths
         Vector3(const Vector3& p1, const Vector3& p2);              // Vector from 2 points.
         Vector3(const Vector3& angles, const float& length);        // Vector from angles and length.
 
+        // -- Constant values -- //
+        static Vector3 Zero   () { return { 0, 0, 0 }; }
+        static Vector3 One    () { return { 1, 1, 1 }; }
+        static Vector3 Right  () { return { 1, 0, 0 }; }
+        static Vector3 Up     () { return { 0, 1, 0 }; }
+        static Vector3 Forward() { return { 0, 0, 1 }; }
+
         // -- Static constructors -- //
         static Vector3 FromSphericalCoords(const Vector3& spherical); // Vector from spherical coordinates (x: longitude, y: latitude, z: length). Longitude and latitude are angles in radians. Latitude: 0 = top, pi = bottom.
 

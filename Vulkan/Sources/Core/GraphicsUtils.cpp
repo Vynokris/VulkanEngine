@@ -6,7 +6,6 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ResourceLimits.h>
-#include <chrono>
 #include <set>
 #include <limits>
 #include <algorithm>
@@ -27,8 +26,9 @@ const std::vector<const char*> GraphicsUtils::VALIDATION_LAYERS = {
 
 const std::vector<const char*> GraphicsUtils::EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
+    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+    VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
 };
 
 SwapChainSupportDetails::SwapChainSupportDetails()
@@ -336,18 +336,28 @@ VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const S
 
     // Compile the shader.
     glslang::TShader shader(shaderStage);
-    shader.setEnvClient(glslang::EShClient::EShClientVulkan, glslang::EShTargetVulkan_1_3);
+    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_4);
     shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
-    shader.setEnvInput(glslang::EShSource::EShSourceGlsl, shaderStage, glslang::EShClient::EShClientVulkan, glslang::EShTargetClientVersion::EShTargetVulkan_1_3);
+    shader.setEnvInput(glslang::EShSourceHlsl, shaderStage, glslang::EShClientVulkan, glslang::EShTargetVulkan_1_4);
     shader.setStrings(&shaderSource, 1);
+    shader.setEntryPoint("main");
     shader.parse(GetDefaultResources(), 100, false, EShMsgDefault);
-    if (const char* infoLog = shader.getInfoLog(); infoLog[0] != '\0') {
-        LogError(LogType::Vulkan, infoLog);
+    if (const char* infoLog = shader.getInfoLog(); infoLog[0] != '\0')
+    {
+        std::string message = std::string(infoLog);
+        size_t insert = message.find("): ");
+        while (message[insert] != '\n' && insert != 0)
+            --insert;
+        message.insert(insert+1, std::string(filename) + " ");
+        LogError(LogType::Vulkan, message);
         throw std::runtime_error("VULKAN_SHADER_COMPILATION_ERROR");
     }
+
+    // Link the shader program.
     glslang::TProgram program;
     program.addShader(&shader);
-    if (!program.link(EShMsgDefault)) {
+    if (!program.link(EShMsgDefault))
+    {
         LogError(LogType::Vulkan, program.getInfoLog());
         throw std::runtime_error("VULKAN_SHADER_COMPILATION_ERROR");
     }
@@ -355,6 +365,9 @@ VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const S
     // Retrieve the compiled SPIR-V shader code.
     std::vector<uint32_t> compiledCode{};
     glslang::GlslangToSpv(*program.getIntermediate(shaderStage), compiledCode);
+
+    // Write binary SPIR-V to a file for debug purposes.
+    // glslang::OutputSpvBin(compiledCode, (std::string(filename) + ".bin").c_str());
     
     // Set shader module creation information.
     VkShaderModuleCreateInfo createInfo{};
