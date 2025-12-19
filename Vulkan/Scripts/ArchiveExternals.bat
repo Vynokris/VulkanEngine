@@ -1,0 +1,1 @@
+7zr.exe a -mx=9 -r "Externals.zip" "../Externals"

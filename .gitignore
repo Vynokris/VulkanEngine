@@ -12,3 +12,4 @@ hooks/
 **/x64/*
 
 Vulkan/Resources/app.log
+Vulkan/Externals/*
