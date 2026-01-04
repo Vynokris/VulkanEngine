@@ -41,11 +41,11 @@ namespace Core
 		float cameraSensitivity = 5e-3f;
 		const std::vector<std::string> defaultResources = {
 			// R"(Resources\Models\Stadium\stadium.obj)",
-			R"(Resources\Meshes\Quad.obj)",
+			// R"(Resources\Meshes\Quad.obj)",
 			R"(Resources\Meshes\Cube.obj)",
 			// R"(Resources\Meshes\SphereLargeUV.obj)",
 			// R"(Resources\Materials\ShadedBasic.mtl)",
-			R"(Resources\Materials\WornPavement\WornPavement.mtl)",
+			// R"(Resources\Materials\WornPavement\WornPavement.mtl)",
 			R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
 			// R"(Resources\Models\WeldingDroid\WeldingDroid.obj)",
 			// R"(Resources\Models\GuitarMetal\GuitarMetal.obj)",

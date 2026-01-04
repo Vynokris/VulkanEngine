@@ -27,7 +27,7 @@ Engine::~Engine()
 void Engine::Awake()
 {
     // Create camera.
-    camera = new Camera({ app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), 0.1f, 100, 80 });
+    camera = new Camera({ app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), 0.1f, 10, 80 });
     
     // Update the vertex count and set the UI's resource pointers.
     app->GetUi()->SetResourceRefs(camera, &models, &textures);
@@ -37,9 +37,9 @@ void Engine::Awake()
         LoadFile(filename);
 
     // Add default directional light.
-    // lights.emplace_back(Light::Directional(Vector3(-1, -1, -1).GetNormalized(), RGBA(1, 1.8f)));
+    lights.emplace_back(Light::Directional(Vector3(-1, -1, -1).GetNormalized(), RGBA(1, 1.8f)));
     // lights.emplace_back(Light::Spot(Vector3(1, 1, 1).GetNormalized(), Vector3(-1, -1, -1).GetNormalized(), RGBA(1), 10, 4, 0.1f, 0.05f));
-    lights.emplace_back(Light::Point(Vector3(0), RGBA(1, 2), 8, 4));
+    // lights.emplace_back(Light::Point(Vector3(0), RGBA(1, 2), 8, 4));
     Light::UpdateBufferData(lights);
 }
 
@@ -50,7 +50,7 @@ void Engine::Start()
     camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.1f));
 
     // Model& model = models.begin()->second;
-    // model.transform.Scale({.005f});
+    // model.transform.Scale({.01f});
     // model.transform.RotateEuler({ 0, PIDIV2, 0 });
     // model.transform.RotateEuler({ -PI/2.5f, 0, 0 });
     // model.transform.Move({ 0, -.5f, -2 });
@@ -63,22 +63,22 @@ void Engine::Start()
     // models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_GothicSculptedWall"));
     // models.at("model_Cube").transform.Move({ -1.5f, 1, 0 });
 
-    materials.at("mt_WornPavement").depthMultiplier = 0.01f;
     models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
     models.at("model_Cube").transform.SetScale({ .25f });
-    models.at("model_Quad").GetMeshes()[0].SetMaterial(&materials.at("mt_WornPavement"));
-    models.at("model_Quad").transform.RotateEuler({ PIDIV2, 0, 0 });
-    models.at("model_Quad").transform.Move(-Vector3::Up() * 2);
-    models.at("model_Quad").transform.SetScale({ 30 });
+    // materials.at("mt_WornPavement").depthMultiplier = 0.01f;
+    // models.at("model_Quad").GetMeshes()[0].SetMaterial(&materials.at("mt_WornPavement"));
+    // models.at("model_Quad").transform.RotateEuler({ PIDIV2, 0, 0 });
+    // models.at("model_Quad").transform.Move(-Vector3::Up() * 2);
+    // models.at("model_Quad").transform.SetScale({ 30 });
 
-    lights.front().direction = Vector3(0, -1, -1).GetNormalized();
-    lights.front().position  = -lights.front().direction;
+    // lights.front().direction = Vector3(0, -1, -1).GetNormalized();
+    // lights.front().position  = -lights.front().direction;
 }
 
 void Engine::Update(const float& deltaTime)
 {
     static float time = 0;
-    // lights.front().direction = Vector3(-cos(time), -1, -sin(time)).GetNormalized();
+    // lights.front().direction = Vector3(-cos(time), -sin(time), -1).GetNormalized();
     // lights.front().position  = -lights.front().direction;
     // lights.front().position = Vector3(0, 2, cos(time / 3) * 3);
     // models.at("model_Cube").transform.SetPosition(Vector3(-cos(time)*2, -1, -sin(time)*2));

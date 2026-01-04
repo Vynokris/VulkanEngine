@@ -1,4 +1,4 @@
-const float PI = 3.14159265359;
+#define PI  3.14159265359f
 
 // Texture indices definition.
 #define AlbedoTextureIdx   0
@@ -11,6 +11,15 @@ const float PI = 3.14159265359;
 #define DepthMapIdx        7
 #define TextureTypesCount  8
 
+// Inserts an if check that passes if the given texture is set.
+#define if_HasTexture(texIdx) \
+    materialTextures[texIdx].GetDimensions(0, width, height, levelCount); \
+    if (width > 0)
+
+// Samples the given texture at the given tex coords.
+#define SampleTexture(texIdx, texCoord) \
+    materialTextures[texIdx].Sample(materialSamplers[texIdx], texCoord)
+
 // Light types definition.
 #define DirLightType   1
 #define PointLightType 2
@@ -21,8 +30,7 @@ struct FSInput
 {
     [[vk::location(0)]] float3   fragPos   : POSITION;
     [[vk::location(1)]] float2   texCoord  : TEXCOORD;
-    [[vk::location(2)]] float3   normal    : NORMAL;
-    [[vk::location(3)]] float3x3 tbnMatrix : NORMAL1; // This variable uses 3 locations in total.
+    [[vk::location(2)]] float3x3 tbnMatrix : NORMAL; // This variable uses 3 locations in total.
 };
 
 // Fragment color output.
@@ -32,11 +40,10 @@ struct FSOutput
 };
 
 // Push constants input.
-struct PushConstants
-{
+[[vk::push_constant]]
+cbuffer pushConstants {
     float3 viewPos;
 };
-[[vk::push_constant]] PushConstants pushConstants;
 
 // Fog params input.
 struct FogParams
@@ -79,81 +86,71 @@ struct LightBuffer
 };
 [[vk::binding(0, 3)]] ConstantBuffer<LightBuffer> lights;
 
-float3  ComputeLighting(Light light, float3 fragPos, float3 viewDir, float3 normal, float3 albedo, float metallic, float roughness, float3 reflectance);
-float2  ParallaxMapping(float2 fragTexCoord, float3 viewDir, float fragDistance);
+float3 ComputeLighting(Light light, float3 fragPos, float3 viewDir, float3 normal, float3 albedo, float metallic, float roughness, float3 reflectance);
+float2 ParallaxMapping(float2 fragTexCoord, float3 viewDir, float fragDistance);
 
+// Fragment shader main function
 FSOutput main(FSInput input)
 {
+    // Define output, and variables used to fetch texture dimensions.
     FSOutput output = (FSOutput)0;
+    uint width, height, levelCount;
     
     // Compute the view direction.
-    const float3 fragToView   = pushConstants.viewPos - input.fragPos;
+    const float3 fragToView   = viewPos - input.fragPos;
     const float3 viewDir      = normalize(fragToView);
     const float  fragDistance = length(fragToView);
     
     // Compute parallax mapping if necessary.
     float2 texCoord = input.texCoord;
-    uint width, height, levelCount;
-    materialTextures[DepthMapIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0)
-    {
-        texCoord = ParallaxMapping(texCoord, normalize(/*inverse*/transpose(input.tbnMatrix) * viewDir), fragDistance);
-    }
-    else
-    {
-        const float uvScale = materialData.depthMultiplier * 10.0;
-        texCoord *= uvScale;
-    }
+    if_HasTexture(DepthMapIdx)
+        texCoord = ParallaxMapping(texCoord, normalize(transpose(input.tbnMatrix) * viewDir), fragDistance);
     
     // Determine fragment transparency from material alpha value and texture.
     output.color.a = materialData.alpha;
-    materialTextures[AlphaMapIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0)
-        output.color.a *= materialTextures[AlphaMapIdx].Sample(materialSamplers[AlphaMapIdx], texCoord).a;
+    if_HasTexture(AlphaMapIdx)
+        output.color.a *= SampleTexture(AlphaMapIdx, texCoord).a;
     
     // Determine albedo from material albedo value and texture.
     float3 albedo = materialData.albedo.rgb;
-    materialTextures[AlbedoTextureIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0) {
-        float4 texSample = materialTextures[AlbedoTextureIdx].Sample(materialSamplers[AlbedoTextureIdx], texCoord);
+    if_HasTexture(AlbedoTextureIdx) {
+        float4 texSample = SampleTexture(AlbedoTextureIdx, texCoord);
         albedo *= texSample.rgb;
         output.color.a *= texSample.a;
     }
 
     // Stop computations if the fragment is fully transparent.
     if (output.color.a <= 0)
-        discard; // Might cause visual artifacts.
+        discard;
     
     // Determine metallic from material metallic value and map.
     float metallic = materialData.metallic;
-    materialTextures[MetallicMapIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0)
-        metallic *= materialTextures[MetallicMapIdx].Sample(materialSamplers[MetallicMapIdx], texCoord).r;
+    if_HasTexture(MetallicMapIdx)
+        metallic *= SampleTexture(MetallicMapIdx, texCoord).r;
 
     // Determine roughness from material roughness value and map.
     float roughness = materialData.roughness;
-    materialTextures[RoughnessMapIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0)
-        roughness *= materialTextures[RoughnessMapIdx].Sample(materialSamplers[RoughnessMapIdx], texCoord).r;
+    if_HasTexture(RoughnessMapIdx)
+        roughness *= SampleTexture(RoughnessMapIdx, texCoord).r;
     
     // Determine ambient occlusion from ao map.
     float ambientOcclusion = 1;
-    materialTextures[AOcclusionMapIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0)
-        ambientOcclusion = materialTextures[AOcclusionMapIdx].Sample(materialSamplers[AOcclusionMapIdx], texCoord).r;
+    if_HasTexture(AOcclusionMapIdx)
+        ambientOcclusion = SampleTexture(AOcclusionMapIdx, texCoord).r;
 
     // Determine fragment normal from mesh normal and normal map.
-    float3 normal = input.normal.xyz;
-    materialTextures[NormalMapIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0) {
-        normal = materialTextures[NormalMapIdx].Sample(materialSamplers[NormalMapIdx], texCoord).rgb * 2.0 - 1.0;
+    float3 normal = input.tbnMatrix[2];
+    if_HasTexture(NormalMapIdx) {
+        normal = SampleTexture(NormalMapIdx, texCoord).rgb * 2.0 - 1.0;
         normal = normalize(input.tbnMatrix * normal);
     }
 
-    // Calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
+    // Calculate reflectance at normal incidence.
+    // For high metalness, use albedo as F0 (metallic workflow)
+    // For low metalness, use F0 of 0.04
     const float3 reflectance = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
     
-    // Compute lighting and shadows.
+    // Compute sum of lighting contributions for all lights.
     float3 lightSum = float3(0,0,0);
     for (int i = 0; i < 5; i++) {
         lightSum += ComputeLighting(lights.data[i], input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
@@ -162,18 +159,18 @@ FSOutput main(FSInput input)
     
     // Add emissive color from material emissive value and texture.
     float3 emissive = materialData.emissive;
-    materialTextures[EmissiveTextureIdx].GetDimensions(0, width, height, levelCount);
-    if (width > 0)
-        emissive *= materialTextures[EmissiveTextureIdx].Sample(materialSamplers[EmissiveTextureIdx], texCoord).rgb;
+    if_HasTexture(EmissiveTextureIdx)
+        emissive *= SampleTexture(EmissiveTextureIdx, texCoord).rgb;
     output.color.rgb += emissive;
     
     // Compute distance fog.
     output.color.rgb = lerp(output.color.rgb, fogParams.color, 
-                        (clamp(length(input.fragPos - pushConstants.viewPos), fogParams.start, fogParams.end) 
+                        (clamp(length(input.fragPos - viewPos), fogParams.start, fogParams.end) 
                         - fogParams.start) * fogParams.invLength);
     
     // Apply gamma correction.
     output.color.rgb = pow(output.color.rgb, 1.0/1.6);
+
     return output;
 }
 
@@ -279,8 +276,11 @@ float2 ParallaxMapping(float2 fragTexCoord, float3 viewDir, float fragDistance)
     float  curDepthVal   = 1 - materialTextures[DepthMapIdx].Sample(materialSamplers[DepthMapIdx], curTexCoord).r;
     float  curLayerDepth = 0.0;
 
-    while (curLayerDepth < curDepthVal)
+    for (uint i = 0; i < 32; i++)
     {
+        if (curLayerDepth >= curDepthVal)
+            break;
+        
         curTexCoord   -= deltaTexCoord;
         curDepthVal    = 1 - materialTextures[DepthMapIdx].Sample(materialSamplers[DepthMapIdx], curTexCoord).r;
         curLayerDepth += layerDepth;

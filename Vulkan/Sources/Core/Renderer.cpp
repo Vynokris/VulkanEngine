@@ -3,7 +3,6 @@
 #include "Core/GpuDataManager.h"
 #include "Core/Logger.h"
 #include "Core/Window.h"
-#include "Resources/Camera.h"
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
@@ -52,7 +51,7 @@ Renderer::Renderer(Application* application, const char* appName, const char* en
     CreateTextureSampler();
     CreateCommandBuffers();
     CreateSyncObjects();
-    SetDistanceFogParams(0, 60, 100);
+    SetDistanceFogParams(0, 6, 10);
 }
 
 Renderer::~Renderer()
