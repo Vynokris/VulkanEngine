@@ -25,10 +25,10 @@ namespace Maths
 		Transform(const Vector3& position, const Quaternion& rotation, const Vector3& _scale, const bool& _isCamera = false); // Transform from position, rotation and scale and optional parameter to set transform type (camera or object).
 
         // -- Position -- //
-		Vector3 GetPosition() const;                  // Returns the transform's position.
-    	Vector3 GetWorldPosition() const;             // Returns the transform's position taking the parent transform into account.
-		void    SetPosition(const Vector3& position); // Modifies the transform's position.
-		void    Move       (const Vector3& movement); // Adds the given vector to the transform's position.
+		const Vector3& GetPosition()      const { return pos; }      // Returns the transform's position.
+    	const Vector3& GetWorldPosition() const { return worldPos; } // Returns the transform's position taking the parent transform into account.
+		void SetPosition(const Vector3& position); // Modifies the transform's position.
+		void Move       (const Vector3& movement); // Adds the given vector to the transform's position.
 
 		// -- Direction vectors -- //
 		Vector3 Forward() const;                    // Returns the transform's forward vector.
@@ -37,33 +37,33 @@ namespace Maths
 		void    SetForward(const Vector3& forward); // Modifies the transform's rotation to point in the given direction.
 
 		// -- Rotation -- //
-		Quaternion GetRotation() const;                     // Returns the transform's quaternion rotation.
-		Vector3    GetEulerRot() const;                     // Returns the transform's euler angles rotation.
-		void       SetRotation(const Quaternion& rotation); // Modifies the transform's quaternion rotation.
-    	void       SetEulerRot(const Vector3& euler);       // Modifies the transform's euler angles rotation.
-		void       Rotate     (const Quaternion& rotation); // Rotates the transform by the given quaternion.
-    	void       RotateEuler(const Vector3& euler);       // Rotates the transform by the given euler angles.
+		const Quaternion& GetRotation() const { return rot;      } // Returns the transform's quaternion rotation.
+		const Vector3&    GetEulerRot() const { return eulerRot; } // Returns the transform's euler angles rotation.
+		void SetRotation(const Quaternion& rotation); // Modifies the transform's quaternion rotation.
+    	void SetEulerRot(const Vector3& euler);       // Modifies the transform's euler angles rotation.
+		void Rotate     (const Quaternion& rotation); // Rotates the transform by the given quaternion.
+    	void RotateEuler(const Vector3& euler);       // Rotates the transform by the given euler angles.
 
 		// -- Scale -- //
-		Vector3 GetScale       () const;         // Returns the transform's scale.
+		const Vector3& GetScale() const { return scale; } // Returns the transform's scale.
 		Vector3 GetUniformScale() const;		 // Returns the maximum value between the x, y and z elements of the transform's scale.
 		void    SetScale(const Vector3& _scale); // Sets the transform's scale to the given one.
     	void    Scale   (const Vector3& _scale); // Scales the transform by the given value.
 
     	// -- Is Camera -- //
-    	bool IsCamera() const;                   // Returns true if the transform is a camera transform, false if it is an object transform.
-    	void SetIsCamera(const bool& _isCamera); // Modifies the transform's type (object transform or camera transform).
+    	bool IsCamera() const { return isCamera; } // Returns true if the transform is a camera transform, false if it is an object transform.
+    	void SetIsCamera(const bool& _isCamera);   // Modifies the transform's type (object transform or camera transform).
 
     	// -- Setting multiple values at a time -- //
     	void SetPosRot(const Vector3& position, const Quaternion& rotation);                        // Modifies the transform's position and rotation.
     	void SetValues(const Vector3& position, const Quaternion& rotation, const Vector3& _scale); // Modifies all of the transform's values.
 
 		// -- Matrices -- //
-		Mat4 GetLocalMat () const { return localMat;  } // Returns the transform's local matrix.
-    	Mat4 GetViewMat  () const { return isCamera ? viewMat : Mat4(); } // Returns the transform's view matrix (identity if not camera).
-		Mat4 GetParentMat() const { return parentMat; } // Returns the transform's parent matrix.
-    	Mat4 GetWorldMat () const { return worldMat;  } // Returns the transform's world matrix (local * parent).
-		void SetParentMat(const Mat4& mat);             // Modifies the transform's parent matrix.
+		const Mat4& GetLocalMat () const { return localMat;  } // Returns the transform's local matrix.
+    	const Mat4& GetViewMat  () const { return viewMat;   } // Returns the transform's view matrix (identity if not camera).
+		const Mat4& GetParentMat() const { return parentMat; } // Returns the transform's parent matrix.
+    	const Mat4& GetWorldMat () const { return worldMat;  } // Returns the transform's world matrix (local * parent).
+		void SetParentMat(const Mat4& mat); // Modifies the transform's parent matrix.
 
     	// -- Interpolation -- //
     	static Transform Lerp(const Transform& start, const Transform& dest, const float& val, const bool& useSlerp = true); // Linearly interpolates between start and dest.

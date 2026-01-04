@@ -16,8 +16,6 @@ Transform::Transform(const Vector3& position, const Quaternion& rotation, const 
 }
 
 // ----- Position ----- //
-Vector3 Transform::GetPosition() const { return pos; }
-Vector3 Transform::GetWorldPosition() const { return worldPos; }
 void    Transform::SetPosition(const Vector3& position) { pos  = position; UpdateMatrices(); }
 void    Transform::Move       (const Vector3& movement) { pos += movement; UpdateMatrices(); }
 
@@ -28,21 +26,17 @@ Vector3 Transform::Right()   const                    { return (Vector4(1,0,0,0)
 void    Transform::SetForward(const Vector3& forward) { rot = AngleAxis(TWOPI, forward); UpdateMatrices(); }
 
 // ----- Rotation ----- //
-Quaternion Transform::GetRotation() const                     { return rot;      }
-Vector3    Transform::GetEulerRot() const                     { return eulerRot; }
 void       Transform::SetRotation(const Quaternion& rotation) { rot = rotation;                 eulerRot = rot.ToEuler(); UpdateMatrices(); }
 void       Transform::Rotate     (const Quaternion& rotation) { rot = rotation.RotateQuat(rot); eulerRot = rot.ToEuler(); UpdateMatrices(); }
 void       Transform::SetEulerRot(const Vector3& euler)       { eulerRot  = euler; rot = Quaternion::FromEuler(eulerRot); UpdateMatrices(); }
 void       Transform::RotateEuler(const Vector3& euler)       { eulerRot += euler; rot = Quaternion::FromEuler(eulerRot); UpdateMatrices(); }
 
 // ----- Scale ----- //
-Vector3 Transform::GetScale()        const         { return scale;   }
 Vector3 Transform::GetUniformScale() const         { return std::max(scale.x, std::max(scale.y, scale.z)); }
 void    Transform::SetScale(const Vector3& _scale) { scale = _scale;  UpdateMatrices(); }
 void    Transform::Scale   (const Vector3& _scale) { scale *= _scale; UpdateMatrices(); }
 
 // ----- Is Camera ----- //
-bool Transform::IsCamera() const                   { return isCamera; }
 void Transform::SetIsCamera(const bool& _isCamera) { isCamera = _isCamera; UpdateMatrices(); }
 
 // ----- Multiple Values ----- //

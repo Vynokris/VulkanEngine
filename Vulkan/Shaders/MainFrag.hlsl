@@ -40,8 +40,9 @@ struct FSOutput
 };
 
 // Push constants input.
-[[vk::push_constant]]
-cbuffer pushConstants {
+[[vk::push_constant]] cbuffer pushConstants
+{
+    row_major float4x4 viewProj;
     float3 viewPos;
 };
 

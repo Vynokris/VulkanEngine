@@ -60,11 +60,11 @@ namespace Core
         Renderer& operator=(Renderer&&)      = delete;
         ~Renderer();
 
-        template<GraphicsUtils::ShaderStage S> void SetShaderFrameConstants(const GraphicsUtils::ShaderFrameConstants<S>& constants);
+        void SetShaderFrameConstants(const GraphicsUtils::ShaderFrameConstants& constants) const;
         void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
         void BeginRender();
-        void DrawModel(const Resources::Model& model, const Resources::Camera& camera) const;
+        void DrawModel(const Resources::Model& model) const;
         void EndRender();
 
         void WaitUntilIdle() const;

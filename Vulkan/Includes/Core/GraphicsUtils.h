@@ -65,10 +65,10 @@ namespace GraphicsUtils
         Fragment,
         Compute,
     };
-        
-    template<ShaderStage> struct ShaderFrameConstants {};
-    template<> struct ShaderFrameConstants<ShaderStage::Fragment>
+    
+    struct ShaderFrameConstants
     {
+        Maths::Mat4 viewProj;
         Maths::Vector3 viewPos;
     };
 

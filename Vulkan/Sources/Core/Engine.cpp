@@ -26,8 +26,11 @@ Engine::~Engine()
 
 void Engine::Awake()
 {
-    // Create camera.
-    camera = new Camera({ app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), 0.1f, 10, 80 });
+    // Create camera and init distance fog params.
+    const float camNear = 0.1f, camFar = 100, camFov = 80;
+    const float fogStart = camFar * 0.6f;
+    camera = new Camera({ app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), camNear, camFar, camFov });
+    app->GetRenderer()->SetDistanceFogParams(0, fogStart, camFar);
     
     // Update the vertex count and set the UI's resource pointers.
     app->GetUi()->SetResourceRefs(camera, &models, &textures);
@@ -64,7 +67,7 @@ void Engine::Start()
     // models.at("model_Cube").transform.Move({ -1.5f, 1, 0 });
 
     models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
-    models.at("model_Cube").transform.SetScale({ .25f });
+    // models.at("model_Cube").transforms.front().SetScale({ .25f });
     // materials.at("mt_WornPavement").depthMultiplier = 0.01f;
     // models.at("model_Quad").GetMeshes()[0].SetMaterial(&materials.at("mt_WornPavement"));
     // models.at("model_Quad").transform.RotateEuler({ PIDIV2, 0, 0 });
@@ -96,14 +99,17 @@ void Engine::Update(const float& deltaTime)
 
 void Engine::Render(Renderer* renderer) const
 {
-    // Set the viewPos constant in the fragment shader.
-    const Vector3 viewPos = camera->transform.GetPosition();
-    renderer->SetShaderFrameConstants<GraphicsUtils::ShaderStage::Fragment>({ viewPos });
+    // Set the viewProj and viewPos constants in the shaders.
+    const GraphicsUtils::ShaderFrameConstants frameConstants = {
+        camera->GetViewMat() * camera->GetProjMat(),
+        camera->transform.GetPosition()
+    };
+    renderer->SetShaderFrameConstants(frameConstants);
     Light::UpdateBufferData(lights);
 
     // Draw all loaded models.
     for (const auto& [name, model] : models)
-        renderer->DrawModel(model, *camera);
+        renderer->DrawModel(model);
 }
 
 void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ...)

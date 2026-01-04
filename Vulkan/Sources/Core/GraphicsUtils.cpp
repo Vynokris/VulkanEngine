@@ -346,9 +346,16 @@ VkShaderModule GraphicsUtils::CreateShaderModule(const VkDevice& device, const S
     {
         std::string message = std::string(infoLog);
         size_t insert = message.find("): ");
-        while (message[insert] != '\n' && insert != 0)
-            --insert;
-        message.insert(insert+1, std::string(filename) + " ");
+        if (insert != std::string::npos)
+        {
+            while (message[insert] != '\n' && insert != 0)
+                --insert;
+            message.insert(insert+1, std::string(filename) + " ");
+        }
+        else
+        {
+            message.insert(0, std::string(filename) + "\n");
+        }
         LogError(LogType::Vulkan, message);
         throw std::runtime_error("VULKAN_SHADER_COMPILATION_ERROR");
     }

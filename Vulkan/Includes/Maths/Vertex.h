@@ -68,12 +68,6 @@ namespace Maths
                 && normal == other.normal;
         }
     };
-
-    // Holds model, view and projection matrices.
-    struct MvpBuffer {
-        Mat4 model;
-        Mat4 mvp;
-    };
 }
 
 // Define hashing methods for Maths classes.

@@ -25,8 +25,8 @@ namespace Resources
 		Camera& operator=(Camera&&)      = delete;
         void SetParams(const CameraParams& parameters);
 		
-		CameraParams GetParams () const { return params;  }
-		Maths::Mat4  GetProjMat() const { return projMat; }
-		Maths::Mat4  GetViewMat() const { return transform.GetViewMat(); }
+		const CameraParams& GetParams () const { return params;  }
+		const Maths::Mat4&  GetProjMat() const { return projMat; }
+		const Maths::Mat4&  GetViewMat() const { return transform.GetViewMat(); }
 	};
 }

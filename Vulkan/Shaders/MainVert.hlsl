@@ -17,26 +17,29 @@ struct VSOutput
     [[vk::location(2)]] float3x3 tbnMatrix : NORMAL; // This variable uses 3 locations in total.
 };
 
-// Model, view and projection matrices input.
-struct ModelMatrices
+// Push constants input.
+[[vk::push_constant]] cbuffer pushConstants
 {
-    float4x4 model;
-    float4x4 mvp;
+    row_major float4x4 viewProj;
+    float3 viewPos;
 };
-[[vk::binding(0, 0)]] row_major ConstantBuffer<ModelMatrices> matrices;
+
+// Model matrices input.
+[[vk::binding(0, 0)]] row_major StructuredBuffer<float4x4> modelMatrices;
 
 // Vertex shader main function
-VSOutput main(VSInput input)
+VSOutput main(VSInput input, uint instanceID : SV_InstanceID)
 {
     VSOutput output = (VSOutput)0;
+    const float4x4 modelMat = modelMatrices[instanceID];
     
-    output.position = matrices.mvp   * float4(input.position, 1);
-    output.fragPos  = matrices.model * float4(input.position, 1);
+    output.fragPos  = modelMat * float4(input.position, 1);
+    output.position = viewProj * float4(output.fragPos, 1);
     output.texCoord = input.texCoord;
     
-    const float3 normal    = normalize((matrices.model * float4(input.normal,   0)).xyz);
-    const float3 tangent   = normalize((matrices.model * float4(input.tangent,  0)).xyz);
-    const float3 binormal  = normalize((matrices.model * float4(input.binormal, 0)).xyz);
+    const float3 normal    = normalize((modelMat * float4(input.normal,   0)).xyz);
+    const float3 tangent   = normalize((modelMat * float4(input.tangent,  0)).xyz);
+    const float3 binormal  = normalize((modelMat * float4(input.binormal, 0)).xyz);
     output.tbnMatrix = float3x3(tangent, binormal, normal);
     
     return output;

@@ -14,6 +14,9 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
+
+#include "Core/Engine.h"
+#include "Resources/Camera.h"
 using namespace Core;
 using namespace GraphicsUtils;
 
@@ -51,7 +54,6 @@ Renderer::Renderer(Application* application, const char* appName, const char* en
     CreateTextureSampler();
     CreateCommandBuffers();
     CreateSyncObjects();
-    SetDistanceFogParams(0, 6, 10);
 }
 
 Renderer::~Renderer()
@@ -79,17 +81,10 @@ Renderer::~Renderer()
     vkDestroyInstance              (vkInstance,                   nullptr);
 }
 
-template<ShaderStage S> void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<S>& constants)
+void Renderer::SetShaderFrameConstants(const ShaderFrameConstants& constants) const
 {
-    vkCmdPushConstants(GetCurVkCommandBuffer(), GetVkPipelineLayout(), ShaderStageToFlagBits(S), 0, sizeof(ShaderFrameConstants<S>), &constants);
+    vkCmdPushConstants(GetCurVkCommandBuffer(), GetVkPipelineLayout(), VK_SHADER_STAGE_ALL, 0, sizeof(ShaderFrameConstants), &constants);
 }
-template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Vertex>&);
-template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::TessellationControl>&);
-template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::TessellationEvaluation>&);
-template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Geometry>&);
-template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Fragment>&);
-template void Renderer::SetShaderFrameConstants(const ShaderFrameConstants<ShaderStage::Compute>&);
-// Above is a hack to define templates in source files and force the compiler to link all specifications.
 
 void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end)
 {
@@ -150,13 +145,13 @@ void Renderer::BeginRender()
     BeginRenderPass();
 }
 
-void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera& camera) const
+void Renderer::DrawModel(const Resources::Model& model) const
 {
     // Get the light array as well as the model's GPU data and update it.
     const GpuArray<Resources::Light>& lightArray = gpuData->GetArray<Resources::Light>();
     const GpuData <Resources::Model>* modelData  = gpuData->GetData(model);
     if (!modelData) return;
-    model.UpdateMvpBuffer(camera, currentFrame, modelData);
+    model.UpdateMvpBuffer(currentFrame, modelData);
 
     // Draw each of the model's meshes one by one.
     const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
@@ -177,7 +172,7 @@ void Renderer::DrawModel(const Resources::Model& model, const Resources::Camera&
         // Bind the descriptor sets and draw.
         const VkDescriptorSet descriptorSets[4] = { modelData->vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet };
         vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
-        vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), (uint32_t)model.transforms.size(), 0, 0, 0);
     }
 }
 
@@ -760,8 +755,8 @@ void Renderer::CreateGraphicsPipeline()
     colorBlending.blendConstants[2] = 0.f; // Optional.
     colorBlending.blendConstants[3] = 0.f; // Optional.
 
-    // Define 1 push constant (viewPos) and 3 descriptor set layouts (model, material, lights).
-    const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Maths::Vector3) };
+    // Define push constants and descriptor set layouts.
+    const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_ALL, 0, sizeof(ShaderFrameConstants) };
     const VkDescriptorSetLayout setLayouts[4] = {
         gpuData->GetArray<Resources::Model>().vkDescriptorSetLayout,
         constDataDescriptorLayout,
