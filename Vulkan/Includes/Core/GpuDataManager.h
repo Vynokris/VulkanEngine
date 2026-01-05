@@ -36,10 +36,10 @@ namespace Core
 
     template<> struct GpuData<Resources::Model>
     {
-        VkDescriptorSet vkDescriptorSets  [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
-        VkBuffer        vkMvpBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
-        VkDeviceMemory  vkMvpBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
-        void*           vkMvpBuffersMapped[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDescriptorSet vkDescriptorSets        [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkTransformBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDeviceMemory  vkTransformBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        void*           vkTransformBuffersMapped[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
     };
 
     template<typename> struct GpuArray

@@ -23,19 +23,19 @@ namespace Maths
     // - TangentVertex: Point in 3D space with rendering data and tangent space info - //
     struct TangentVertex
     {
-        Vector3 pos;       // Vertex position.
-        Vector2 uv;        // Vertex texture coordinates.
-        Vector3 normal;    // Vertex normal vector.
-        Vector3 tangent;   // Vertex tangent vector.
-        Vector3 bitangent; // Vertex bitangent vector (orthogonal to normal and tangent).
+        Vector3 pos;      // Vertex position.
+        Vector2 uv;       // Vertex texture coordinates.
+        Vector3 normal;   // Vertex normal vector.
+        Vector3 tangent;  // Vertex tangent vector.
+        Vector3 binormal; // Vertex binormal vector (orthogonal to normal and tangent).
 
         bool operator==(const TangentVertex& other) const
         {
-            return pos       == other.pos
-                && uv        == other.uv
-                && normal    == other.normal
-                && tangent   == other.tangent
-                && bitangent == other.bitangent;
+            return pos      == other.pos
+                && uv       == other.uv
+                && normal   == other.normal
+                && tangent  == other.tangent
+                && binormal == other.binormal;
         }
     };
 

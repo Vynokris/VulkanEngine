@@ -79,8 +79,8 @@ template<> void GpuDataManager::DestroyData(const Model& resource)
     const VkDevice vkDevice = renderer->GetVkDevice();
     const GpuData<Model>& data = models.at(resource.GetID());
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (data.vkMvpBuffers[i])       vkDestroyBuffer(vkDevice, data.vkMvpBuffers[i],       nullptr);
-        if (data.vkMvpBuffersMemory[i]) vkFreeMemory   (vkDevice, data.vkMvpBuffersMemory[i], nullptr);
+        if (data.vkTransformBuffers[i])       vkDestroyBuffer(vkDevice, data.vkTransformBuffers[i],       nullptr);
+        if (data.vkTransformBuffersMemory[i]) vkFreeMemory   (vkDevice, data.vkTransformBuffersMemory[i], nullptr);
     }
     materials.erase(resource.GetID());
 }

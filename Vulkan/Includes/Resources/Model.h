@@ -1,9 +1,7 @@
 #pragma once
 #include "Core/UniqueID.h"
 #include "Maths/Transform.h"
-#include "Core/GraphicsUtils.h"
 #include <vector>
-#include <optional>
 
 namespace Core { class WavefrontParser; template<typename T> struct GpuData; }
 namespace Resources

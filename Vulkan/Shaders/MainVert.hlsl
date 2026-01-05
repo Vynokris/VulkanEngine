@@ -37,9 +37,9 @@ VSOutput main(VSInput input, uint instanceID : SV_InstanceID)
     output.position = viewProj * float4(output.fragPos, 1);
     output.texCoord = input.texCoord;
     
-    const float3 normal    = normalize((modelMat * float4(input.normal,   0)).xyz);
-    const float3 tangent   = normalize((modelMat * float4(input.tangent,  0)).xyz);
-    const float3 binormal  = normalize((modelMat * float4(input.binormal, 0)).xyz);
+    const float3 normal   = normalize((modelMat * float4(input.normal,   0)).xyz);
+    const float3 tangent  = normalize((modelMat * float4(input.tangent,  0)).xyz);
+    const float3 binormal = normalize((modelMat * float4(input.binormal, 0)).xyz);
     output.tbnMatrix = float3x3(tangent, binormal, normal);
     
     return output;

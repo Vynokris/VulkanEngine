@@ -46,7 +46,7 @@ Model::~Model()
 void Model::UpdateMvpBuffer(const uint32_t& currentFrame, const GpuData<Model>* gpuData) const
 {
      if (!gpuData) gpuData = Application::Get()->GetGpuData()->GetData(*this);
-     Mat4* mappedMatrices = (Mat4*)gpuData->vkMvpBuffersMapped[currentFrame];
+     Mat4* mappedMatrices = (Mat4*)gpuData->vkTransformBuffersMapped[currentFrame];
      
      // Copy the matrices to buffer memory.
      for (size_t i = 0; i < transforms.size(); i++)
@@ -119,9 +119,9 @@ template<> const GpuData<Model>& GpuDataManager::CreateData(const Model& resourc
     {
         CreateBuffer(vkDevice, vkPhysicalDevice, bufferSize,
                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     data.vkMvpBuffers[i], data.vkMvpBuffersMemory[i]);
+                     data.vkTransformBuffers[i], data.vkTransformBuffersMemory[i]);
 
-        vkMapMemory(vkDevice, data.vkMvpBuffersMemory[i], 0, bufferSize, 0, &data.vkMvpBuffersMapped[i]);
+        vkMapMemory(vkDevice, data.vkTransformBuffersMemory[i], 0, bufferSize, 0, &data.vkTransformBuffersMapped[i]);
     }
 
     // Allocate the descriptor sets.
@@ -140,7 +140,7 @@ template<> const GpuData<Model>& GpuDataManager::CreateData(const Model& resourc
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         VkDescriptorBufferInfo mvpBufferInfo{};
-        mvpBufferInfo.buffer = data.vkMvpBuffers[i];
+        mvpBufferInfo.buffer = data.vkTransformBuffers[i];
         mvpBufferInfo.offset = 0;
         mvpBufferInfo.range  = bufferSize;
         
