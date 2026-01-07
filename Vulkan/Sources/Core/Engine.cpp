@@ -52,7 +52,11 @@ void Engine::Start()
     camera->transform.Move({ 0, .5f, 1 });
     camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.1f));
 
-    // Model& model = models.begin()->second;
+    Model& model = models.begin()->second;
+    Material& material = materials.begin()->second;
+    for (Mesh& mesh : model.GetMeshes())
+        mesh.SetMaterial(&material);
+    
     // model.transform.Scale({.01f});
     // model.transform.RotateEuler({ 0, PIDIV2, 0 });
     // model.transform.RotateEuler({ -PI/2.5f, 0, 0 });
@@ -66,7 +70,7 @@ void Engine::Start()
     // models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_GothicSculptedWall"));
     // models.at("model_Cube").transform.Move({ -1.5f, 1, 0 });
 
-    models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
+    // models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
     // models.at("model_Cube").transforms.front().SetScale({ .25f });
     // materials.at("mt_WornPavement").depthMultiplier = 0.01f;
     // models.at("model_Quad").GetMeshes()[0].SetMaterial(&materials.at("mt_WornPavement"));

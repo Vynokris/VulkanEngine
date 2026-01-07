@@ -6,9 +6,6 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-typedef struct VkBuffer_T*       VkBuffer;
-typedef struct VkDeviceMemory_T* VkDeviceMemory;
-
 namespace Core { class WavefrontParser; }
 namespace Resources
 {
@@ -17,6 +14,15 @@ namespace Resources
 	
 	class Mesh : public UniqueID
 	{
+	public:
+		struct Section
+		{
+			uint32_t vtxOffset;
+			uint32_t idxOffset;
+			uint32_t vtxCount;
+			uint32_t idxCount;
+		};
+
 	private:
 		friend Core::WavefrontParser;
 		
@@ -26,6 +32,7 @@ namespace Resources
 		
 		std::vector<Maths::TangentVertex> vertices;
 		std::vector<uint32_t>             indices;
+		std::vector<Section>              sections;
 
 	public:
 		Mesh(std::string _name, Model& _parentModel) : name(std::move(_name)), parentModel(_parentModel) {}
@@ -35,17 +42,24 @@ namespace Resources
 		Mesh& operator=(Mesh&&)      = delete;
 		~Mesh();
 
-		void FinalizeLoading();
-
 		std::string     GetName    () const { return name;     }
 		const Material* GetMaterial() const { return material; }
 		void            SetMaterial(Material* _material) { material = _material; }
 
 		const std::vector<Maths::TangentVertex>& GetVertices() const { return vertices; }
 		const std::vector<uint32_t>&             GetIndices()  const { return indices; }
-		uint32_t GetIndexCount() const { return (uint32_t)indices.size(); }
+		const std::vector<Section>&              GetSections() const { return sections; }
+
+		uint32_t GetVertexCount()  const { return (uint32_t)vertices.size(); }
+		uint32_t GetIndexCount()   const { return (uint32_t)indices.size(); }
+		uint32_t GetSectionCount() const { return (uint32_t)sections.size(); }
+		bool     HasSections()     const { return GetSectionCount() > 1; }
 		
 		static VkVertexInputBindingDescription GetVertexBindingDescription();
 		static std::array<VkVertexInputAttributeDescription, 5> GetVertexAttributeDescriptions();
+
+	private:
+		void StartNewSection();
+		void FinalizeLoading();
 	};
 }

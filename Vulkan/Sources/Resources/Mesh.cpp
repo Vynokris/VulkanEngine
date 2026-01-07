@@ -11,8 +11,8 @@ using namespace Resources;
 using namespace GraphicsUtils;
 
 Mesh::Mesh(Mesh&& other) noexcept
-    : UniqueID(std::move(other)), name(std::move(other.name)), material(other.material),
-      parentModel(other.parentModel), vertices(std::move(other.vertices)), indices(std::move(other.indices))
+    : UniqueID(std::move(other)), name(std::move(other.name)), material(other.material), parentModel(other.parentModel),
+      vertices(std::move(other.vertices)), indices(std::move(other.indices)), sections(std::move(other.sections))
 {
     other.material = nullptr;
 }
@@ -20,11 +20,6 @@ Mesh::Mesh(Mesh&& other) noexcept
 Mesh::~Mesh()
 {
     Application::Get()->GetGpuData()->DestroyData(*this);
-}
-
-void Mesh::FinalizeLoading()
-{
-    Application::Get()->GetGpuData()->CreateData(*this);
 }
 
 VkVertexInputBindingDescription Mesh::GetVertexBindingDescription()
@@ -67,6 +62,29 @@ std::array<VkVertexInputAttributeDescription, 5> Mesh::GetVertexAttributeDescrip
     attributeDescriptions[4].offset   = offsetof(Maths::TangentVertex, binormal);
 
     return attributeDescriptions;
+}
+
+void Mesh::StartNewSection()
+{
+    if (sections.empty())
+    {
+        sections.push_back({ 0u, 0u, GetVertexCount(), GetIndexCount() });
+    }
+    else
+    {
+        const Section& prev = sections.back();
+        const uint32_t vtxStart = prev.vtxOffset + prev.vtxCount;
+        const uint32_t idxStart = prev.idxOffset + prev.idxCount;
+        const uint32_t vtxCount = GetVertexCount() - vtxStart;
+        const uint32_t idxCount = GetIndexCount() - idxStart;
+        sections.push_back({ vtxStart, idxStart, vtxCount, idxCount });
+    }
+}
+
+void Mesh::FinalizeLoading()
+{
+    StartNewSection();
+    Application::Get()->GetGpuData()->CreateData(*this);
 }
 
 

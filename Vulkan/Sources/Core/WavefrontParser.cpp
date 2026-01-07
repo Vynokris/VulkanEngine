@@ -367,46 +367,86 @@ void WavefrontParser::ParseObjTriangle(const std::string& line, std::array<std::
 #pragma region Line Parsing
 void WavefrontParser::ParseObjObjectLine(const std::string& line, Model& model, std::unordered_map<std::string, Model>& newModels)
 {
-    if (!model.name.empty())
-        newModels[model.name] = std::move(model);
-    model = Model(line.substr(2, line.size()-3));
+    std::string modelName = line.substr(2, line.size() - 3);
+    const bool isLOD = modelName.substr(modelName.size() - 5, 4) == "_lod";
+    // const uint8_t idxLOD = (uint8_t)std::clamp(meshName.back() - '0', 0, 7);
+    if (isLOD)
+        modelName.resize(modelName.size() - 5);
+
+    if (!isLOD)
+    {
+        if (!model.name.empty())
+            newModels[model.name] = std::move(model);
+        model = Model(modelName);
+    }
+    else
+    {
+        // Create a mesh if not done already.
+        if (model.meshes.empty())
+            model.meshes.emplace_back(modelName, model);
+
+        // Otherwise start a new sub-section for the current group.
+        else
+            model.meshes.back().StartNewSection();
+    }
 }
 
 void WavefrontParser::ParseObjGroupLine(const std::string& filename, const std::string& line, Model& model)
 {
     if (line[2] == '\0')
         return;
+    
+    std::string meshName = line.substr(2, line.size() - 3);
+    const bool isLOD = meshName.substr(meshName.size() - 5, 4) == "_lod";
+    // const uint8_t idxLOD = (uint8_t)std::clamp(meshName.back() - '0', 0, 7);
+    if (isLOD)
+        meshName.resize(meshName.size() - 5);
 
     // Make sure a model was already created.
     if (model.name.empty())
         model = Model("model_" + fs::path(filename).stem().string());
 
-    // Finalize loading of the previous mesh.
-    if (!model.meshes.empty())
-        model.meshes.back().FinalizeLoading();
+    if (!isLOD)
+    {
+        // Finalize loading of the previous mesh.
+        if (!model.meshes.empty())
+            model.meshes.back().FinalizeLoading();
 
-    // Create a sub-mesh and add it to the model.
-    model.meshes.emplace_back(line.substr(2, line.size() - 3), model);
+        // Create a sub-mesh and add it to the model.
+        model.meshes.emplace_back(meshName, model);
+    }
+    else
+    {
+        // Create a mesh if not done already.
+        if (model.meshes.empty())
+            model.meshes.emplace_back(meshName, model);
+
+        // Otherwise start a new sub-section for the current group.
+        else
+            model.meshes.back().StartNewSection();
+    }
 }
 
 void WavefrontParser::ParseObjUsemtlLine(const std::string& filename, const std::string& line, Model& model)
 {
+    const std::string mtlName = line.substr(7, line.size() - 8);
+    
     // Make sure a model was already created.
     if (model.name.empty())
         model = Model("model_" + fs::path(filename).stem().string());
-
+    
     // Make sure a mesh was already created.
     if (model.meshes.empty())
-        model.meshes.emplace_back("mesh_" + line.substr(7, line.size() - 8), model);
+        model.meshes.emplace_back("mesh_" + mtlName, model);
 
     // Make sure the current mesh doesn't already have a material.
     else if (model.meshes.back().GetMaterial()) {
         model.meshes.back().FinalizeLoading();
-        model.meshes.emplace_back("mesh_" + line.substr(7, line.size() - 8), model);
+        model.meshes.emplace_back("mesh_" + mtlName, model);
     }
 
     // Set the current mesh's material.
-    model.meshes.back().SetMaterial(engine->GetMaterial(line.substr(7, line.size() - 8)));
+    model.meshes.back().SetMaterial(engine->GetMaterial(mtlName));
 }
 
 void WavefrontParser::ParseObjIndicesLine(const std::string& filename, const std::string& line, std::stringstream& fileContents, Model& model, const std::array<std::vector<float>, 3>& vertexData)
@@ -468,6 +508,9 @@ void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vec
     uint32_t startIndex = 0;
     if (!mesh->indices.empty())
         startIndex = mesh->indices[mesh->indices.size()-1] + 1;
+
+    const bool hasUVs = !vertexData[1].empty();
+    const bool hasNormals = !vertexData[2].empty();
     
     // Add all parsed data to the vertices array.
     for (uint32_t i = 0; i < vertexIndices[0].size(); i++)
@@ -477,15 +520,15 @@ void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vec
 
         // Get the current vertex's texture coordinates.
         Vector2 curUv;
-        if (!vertexData[1].empty()) curUv = Vector2(vertexData[1][vertexIndices[1][i] * (size_t)2], vertexData[1][vertexIndices[1][i] * 2+1]);
+        if (hasUVs) curUv = Vector2(vertexData[1][vertexIndices[1][i] * (size_t)2], vertexData[1][vertexIndices[1][i] * 2+1]);
 
         // Get the current vertex's normal.
         Vector3 curNormal;
-        if (!vertexData[2].empty()) curNormal = Vector3(vertexData[2][vertexIndices[2][i] * (size_t)3], vertexData[2][vertexIndices[2][i] * 3+1], vertexData[2][vertexIndices[2][i] * 3+2]);
+        if (hasNormals) curNormal = Vector3(vertexData[2][vertexIndices[2][i] * (size_t)3], vertexData[2][vertexIndices[2][i] * 3+1], vertexData[2][vertexIndices[2][i] * 3+2]);
 
         // Get the current face's tangent and bitangent.
         static Vector3 curTangent, curBitangent;
-        if (i % 3 == 0)
+        if (hasUVs && i % 3 == 0)
         {
             const Vector3 edge1    = Vector3(vertexData[0][vertexIndices[0][i+1] * (size_t)3], vertexData[0][vertexIndices[0][i+1] * 3+1], vertexData[0][vertexIndices[0][i+1] * 3+2]) - curPos;
             const Vector3 edge2    = Vector3(vertexData[0][vertexIndices[0][i+2] * (size_t)3], vertexData[0][vertexIndices[0][i+2] * 3+1], vertexData[0][vertexIndices[0][i+2] * 3+2]) - curPos;
@@ -504,8 +547,12 @@ void WavefrontParser::ParseObjMeshVertices(Mesh* mesh, const std::array<std::vec
         }
 
         // Create a new vertex with the computed data.
-        mesh->vertices.push_back(TangentVertex{ flipYZ(curPos), curUv, flipYZ(curNormal), flipYZ(curTangent), flipYZ(curBitangent) });
         mesh->indices .push_back(startIndex + i);
+        mesh->vertices.push_back(TangentVertex{
+            flipYZ(curPos), curUv, flipYZ(curNormal),
+            hasUVs ? flipYZ(curTangent)   : Vector3::Zero(),
+            hasUVs ? flipYZ(curBitangent) : Vector3::Zero()
+        });
     }
 
     // TODO: Use the following code to prevent vertex duplication for systems with low GPU memory.

@@ -169,10 +169,14 @@ void Renderer::DrawModel(const Resources::Model& model) const
         vkCmdBindVertexBuffers(vkCommandBuffers[currentFrame], 0, 1, &vertexBuffer, &vertexOffset);
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        // Bind the descriptor sets and draw.
+        // Bind all necessary descriptor sets.
         const VkDescriptorSet descriptorSets[4] = { modelData->vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet };
         vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
-        vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), (uint32_t)model.transforms.size(), 0, 0, 0);
+
+        if (!mesh.HasSections())
+            vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), (uint32_t)model.transforms.size(), 0, 0, 0);
+        else
+            vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetSections().back().idxCount, 1, mesh.GetSections().back().idxOffset, 0, 0);
     }
 }
 
