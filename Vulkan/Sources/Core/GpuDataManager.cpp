@@ -24,11 +24,20 @@ template<> void GpuDataManager::DestroyArray<Material>()
     if (materialsArray.vkDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, materialsArray.vkDescriptorPool,      nullptr);
 }
 
+template<> void GpuDataManager::DestroyArray<Mesh>()
+{
+    const VkDevice vkDevice = renderer->GetVkDevice();
+    if (modelsArray.vkComputeDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkComputeDescriptorSetLayout, nullptr);
+    if (modelsArray.vkComputeDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, modelsArray.vkComputeDescriptorPool,      nullptr);
+}
+
 template<> void GpuDataManager::DestroyArray<Model>()
 {
     const VkDevice vkDevice = renderer->GetVkDevice();
-    if (modelsArray.vkDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkDescriptorSetLayout, nullptr);
-    if (modelsArray.vkDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, modelsArray.vkDescriptorPool,      nullptr);
+    if (modelsArray.vkComputeDescriptorSetLayout)  vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkComputeDescriptorSetLayout,  nullptr);
+    if (modelsArray.vkComputeDescriptorPool)       vkDestroyDescriptorPool     (vkDevice, modelsArray.vkComputeDescriptorPool,       nullptr);
+    if (modelsArray.vkGraphicsDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkGraphicsDescriptorSetLayout, nullptr);
+    if (modelsArray.vkGraphicsDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, modelsArray.vkGraphicsDescriptorPool,      nullptr);
 }
 
 template<> void GpuDataManager::DestroyArray<Light>()
@@ -70,6 +79,12 @@ template<> void GpuDataManager::DestroyData(const Mesh& resource)
     if (data.vkIndexBufferMemory ) vkFreeMemory   (vkDevice, data.vkIndexBufferMemory,  nullptr);
     if (data.vkVertexBuffer      ) vkDestroyBuffer(vkDevice, data.vkVertexBuffer,       nullptr);
     if (data.vkVertexBufferMemory) vkFreeMemory   (vkDevice, data.vkVertexBufferMemory, nullptr);
+    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (data.vkIndirectionOffsetsBuffers[i])       vkDestroyBuffer(vkDevice, data.vkIndirectionOffsetsBuffers[i],       nullptr);
+        if (data.vkIndirectionOffsetsBuffersMemory[i]) vkFreeMemory   (vkDevice, data.vkIndirectionOffsetsBuffersMemory[i], nullptr);
+        if (data.vkDrawIndirectBuffers[i])             vkDestroyBuffer(vkDevice, data.vkDrawIndirectBuffers[i],             nullptr);
+        if (data.vkDrawIndirectBuffersMemory[i])       vkFreeMemory   (vkDevice, data.vkDrawIndirectBuffersMemory[i],       nullptr);
+    }
     materials.erase(resource.GetID());
 }
 
@@ -79,15 +94,20 @@ template<> void GpuDataManager::DestroyData(const Model& resource)
     const VkDevice vkDevice = renderer->GetVkDevice();
     const GpuData<Model>& data = models.at(resource.GetID());
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (data.vkTransformBuffers[i])       vkDestroyBuffer(vkDevice, data.vkTransformBuffers[i],       nullptr);
-        if (data.vkTransformBuffersMemory[i]) vkFreeMemory   (vkDevice, data.vkTransformBuffersMemory[i], nullptr);
+        if (data.vkTransformBuffers[i])              vkDestroyBuffer(vkDevice, data.vkTransformBuffers[i],              nullptr);
+        if (data.vkTransformBuffersMemory[i])        vkFreeMemory   (vkDevice, data.vkTransformBuffersMemory[i],        nullptr);
+        if (data.vkSelectedSectionsBuffers[i])       vkDestroyBuffer(vkDevice, data.vkSelectedSectionsBuffers[i],       nullptr);
+        if (data.vkSelectedSectionsBuffersMemory[i]) vkFreeMemory   (vkDevice, data.vkSelectedSectionsBuffersMemory[i], nullptr);
+        if (data.vkIndirectionBuffers[i])            vkDestroyBuffer(vkDevice, data.vkIndirectionBuffers[i],            nullptr);
+        if (data.vkIndirectionBuffersMemory[i])      vkFreeMemory   (vkDevice, data.vkIndirectionBuffersMemory[i],      nullptr);
     }
     materials.erase(resource.GetID());
 }
 
 template<> bool GpuDataManager::CheckArray<Material>() const { return materialsArray.vkDescriptorPool && materialsArray.vkDescriptorSetLayout; }
-template<> bool GpuDataManager::CheckArray<Model>()    const { return modelsArray   .vkDescriptorPool && modelsArray   .vkDescriptorSetLayout; }
-template<> bool GpuDataManager::CheckArray<Light>()    const { return lightsArray   .vkDescriptorPool && lightsArray   .vkDescriptorSetLayout
+template<> bool GpuDataManager::CheckArray<Mesh>()     const { return modelsArray.vkComputeDescriptorPool && modelsArray.vkComputeDescriptorSetLayout; }
+template<> bool GpuDataManager::CheckArray<Model>()    const { return modelsArray.vkComputeDescriptorPool && modelsArray.vkComputeDescriptorSetLayout && modelsArray.vkGraphicsDescriptorPool && modelsArray.vkGraphicsDescriptorSetLayout; }
+template<> bool GpuDataManager::CheckArray<Light>()    const { return lightsArray.vkDescriptorPool && lightsArray.vkDescriptorSetLayout
                                                                    && lightsArray.vkDescriptorSet && lightsArray.vkBuffer && lightsArray.vkBufferMemory; }
 
 template<> bool GpuDataManager::CheckData(const Texture&  resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && textures .find(id) != textures .end(); }
@@ -96,6 +116,7 @@ template<> bool GpuDataManager::CheckData(const Mesh&     resource) const { cons
 template<> bool GpuDataManager::CheckData(const Model&    resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && models   .find(id) != models   .end(); }
 
 template<> const GpuArray<Material>& GpuDataManager::GetArray() const { return materialsArray; }
+template<> const GpuArray<Mesh>&     GpuDataManager::GetArray() const { return meshesArray;    }
 template<> const GpuArray<Model>&    GpuDataManager::GetArray() const { return modelsArray;    }
 template<> const GpuArray<Light>&    GpuDataManager::GetArray() const { return lightsArray;    }
 

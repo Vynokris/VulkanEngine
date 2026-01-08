@@ -111,9 +111,17 @@ void Engine::Render(Renderer* renderer) const
     renderer->SetShaderFrameConstants(frameConstants);
     Light::UpdateBufferData(lights);
 
-    // Draw all loaded models.
+    // Dispatch indirect compute shaders for models with LODs.
     for (const auto& [name, model] : models)
-        renderer->DrawModel(model);
+        renderer->DispatchIndirectCompute(model);
+    
+    // Draw all loaded models.
+    renderer->BeginRenderPass();
+    {
+        for (const auto& [name, model] : models)
+            renderer->DrawModel(model);
+    }
+    renderer->EndRenderPass();
 }
 
 void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ...)

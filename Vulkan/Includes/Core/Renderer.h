@@ -1,7 +1,8 @@
 ﻿#pragma once
+#include "GpuDataManager.h"
 #include "GraphicsUtils.h"
 
-namespace Resources { class Camera; class Model; }
+namespace Resources { class Camera; class Model; class Mesh; }
 namespace Core
 {
     class Application;
@@ -12,26 +13,29 @@ namespace Core
     private:
         Application*                      app;
         GpuDataManager*                   gpuData;
-        VkInstance                        vkInstance            = nullptr;
-        VkDebugUtilsMessengerEXT          vkDebugMessenger      = nullptr;
-        VkSurfaceKHR                      vkSurface             = nullptr;
-        VkPhysicalDevice                  vkPhysicalDevice      = nullptr;
-        VkDevice                          vkDevice              = nullptr;
+        VkInstance                        vkInstance       = nullptr;
+        VkDebugUtilsMessengerEXT          vkDebugMessenger = nullptr;
+        VkSurfaceKHR                      vkSurface        = nullptr;
+        VkPhysicalDevice                  vkPhysicalDevice = nullptr;
+        VkDevice                          vkDevice         = nullptr;
         GraphicsUtils::QueueFamilyIndices vkQueueFamilyIndices;
-        VkQueue                           vkGraphicsQueue       = nullptr;
-        VkQueue                           vkPresentQueue        = nullptr;
-        VkSwapchainKHR                    vkSwapChain           = nullptr;
-        VkRenderPass                      vkRenderPass          = nullptr;
-        VkPipelineLayout                  vkPipelineLayout      = nullptr;
-        VkPipeline                        vkGraphicsPipeline    = nullptr;
-        VkCommandPool                     vkCommandPool         = nullptr;
-        VkSampler                         vkTextureSampler      = nullptr;
-        VkImage                           vkColorImage          = nullptr;
-        VkDeviceMemory                    vkColorImageMemory    = nullptr;
-        VkImageView                       vkColorImageView      = nullptr;
-        VkImage                           vkDepthImage          = nullptr;
-        VkDeviceMemory                    vkDepthImageMemory    = nullptr;
-        VkImageView                       vkDepthImageView      = nullptr;
+        VkQueue                           vkComputeQueue           = nullptr;
+        VkQueue                           vkGraphicsQueue          = nullptr;
+        VkQueue                           vkPresentQueue           = nullptr;
+        VkSwapchainKHR                    vkSwapChain              = nullptr;
+        VkRenderPass                      vkRenderPass             = nullptr;
+        VkPipelineLayout                  vkComputePipelineLayout  = nullptr;
+        VkPipeline                        vkComputePipelines[5]    = { nullptr };
+        VkPipelineLayout                  vkGraphicsPipelineLayout = nullptr;
+        VkPipeline                        vkGraphicsPipeline       = nullptr;
+        VkCommandPool                     vkCommandPool            = nullptr;
+        VkSampler                         vkTextureSampler         = nullptr;
+        VkImage                           vkColorImage             = nullptr;
+        VkDeviceMemory                    vkColorImageMemory       = nullptr;
+        VkImageView                       vkColorImageView         = nullptr;
+        VkImage                           vkDepthImage             = nullptr;
+        VkDeviceMemory                    vkDepthImageMemory       = nullptr;
+        VkImageView                       vkDepthImageView         = nullptr;
         VkFormat                          vkDepthImageFormat;
         std::vector<VkCommandBuffer>      vkCommandBuffers;
         std::vector<VkSemaphore>          vkImageAvailableSemaphores;
@@ -64,7 +68,10 @@ namespace Core
         void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
         void BeginRender();
+        void DispatchIndirectCompute(const Resources::Model& model) const;
+        void BeginRenderPass() const;
         void DrawModel(const Resources::Model& model) const;
+        void EndRenderPass() const;
         void EndRender();
 
         void WaitUntilIdle() const;
@@ -74,12 +81,12 @@ namespace Core
         VkSurfaceKHR          GetVkSurface()             const { return vkSurface; }
         VkPhysicalDevice      GetVkPhysicalDevice()      const { return vkPhysicalDevice; }
         VkDevice              GetVkDevice()              const { return vkDevice; }
-        uint32_t              GetVkGraphicsQueueIndex()  const { return vkQueueFamilyIndices.graphicsFamily.value(); }
+        uint32_t              GetVkGraphicsQueueIndex()  const { return vkQueueFamilyIndices.graphicsAndComputeFamily.value(); }
         VkQueue               GetVkGraphicsQueue()       const { return vkGraphicsQueue; }
         uint32_t              GetVkSwapChainImageCount() const { return (uint32_t)vkSwapChainImages.size(); }
         VkFormat              GetVkDepthImageFormat()    const { return vkDepthImageFormat; }
         VkRenderPass          GetVkRenderPass()          const { return vkRenderPass; }
-        VkPipelineLayout      GetVkPipelineLayout()      const { return vkPipelineLayout; }
+        VkPipelineLayout      GetVkPipelineLayout()      const { return vkGraphicsPipelineLayout; }
         VkCommandPool         GetVkCommandPool()         const { return vkCommandPool; }
         VkCommandBuffer       GetCurVkCommandBuffer()    const { return vkCommandBuffers[currentFrame]; }
         VkSampler             GetVkTextureSampler()      const { return vkTextureSampler; }
@@ -96,6 +103,7 @@ namespace Core
         void CreateImageViews();
         void CreateRenderPass();
         void CreateDescriptorLayoutsAndPools();
+        void CreateComputePipeline();
         void CreateGraphicsPipeline();
         void CreateColorResources();
         void CreateDepthResources();
@@ -110,8 +118,8 @@ namespace Core
         void DestroyDescriptorLayoutsAndPools() const;
 
         void NewFrame();
-        void BeginRenderPass() const;
-        void EndRenderPass() const;
+        void BeginCommandBuffer() const;
+        void EndCommandBuffer() const;
         void PresentFrame();
     };
 }

@@ -17,8 +17,8 @@ void main(uint3 threadID : SV_DispatchThreadID)
         return;
 
     const uint selectedSection = selectedSections[instanceID];
-    const uint writeOffset = DRAW_INDIRECT_ARGS_COUNT * selectedSection + 1;
+    const uint writeIndex = DRAW_INDIRECT_ARGS_COUNT * selectedSection + 1;
     
     uint dummyOutput;
-    InterlockedAdd(drawIndirect[writeOffset], 1, dummyOutput);
+    InterlockedAdd(drawIndirect[writeIndex], 1, dummyOutput);
 }

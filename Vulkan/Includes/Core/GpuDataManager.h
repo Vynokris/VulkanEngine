@@ -32,20 +32,47 @@ namespace Core
         VkDeviceMemory vkVertexBufferMemory = nullptr;
         VkBuffer       vkIndexBuffer        = nullptr;
         VkDeviceMemory vkIndexBufferMemory  = nullptr;
+
+        VkDescriptorSet vkIndirectDescriptorSets         [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkDrawIndirectBuffers            [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDeviceMemory  vkDrawIndirectBuffersMemory      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkIndirectionOffsetsBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDeviceMemory  vkIndirectionOffsetsBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
     };
 
     template<> struct GpuData<Resources::Model>
     {
-        VkDescriptorSet vkDescriptorSets        [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
-        VkBuffer        vkTransformBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
-        VkDeviceMemory  vkTransformBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
-        void*           vkTransformBuffersMapped[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDescriptorSet vkTransformDescriptorSets[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkTransformBuffers       [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDeviceMemory  vkTransformBuffersMemory [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        void*           vkTransformBuffersMapped [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        
+        VkDescriptorSet vkIndirectDescriptorSets       [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkSelectedSectionsBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDeviceMemory  vkSelectedSectionsBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkIndirectionBuffers           [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkDeviceMemory  vkIndirectionBuffersMemory     [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
     };
 
     template<typename> struct GpuArray
     {
         VkDescriptorSetLayout vkDescriptorSetLayout = nullptr;
         VkDescriptorPool      vkDescriptorPool      = nullptr;
+    };
+
+    template<> struct GpuArray<Resources::Mesh>
+    {
+        VkDescriptorSetLayout vkComputeDescriptorSetLayout = nullptr;
+        VkDescriptorPool      vkComputeDescriptorPool      = nullptr;
+    };
+
+    template<> struct GpuArray<Resources::Model>
+    {
+        VkDescriptorSetLayout vkComputeDescriptorSetLayout = nullptr;
+        VkDescriptorPool      vkComputeDescriptorPool      = nullptr;
+        
+        VkDescriptorSetLayout vkGraphicsDescriptorSetLayout = nullptr;
+        VkDescriptorPool      vkGraphicsDescriptorPool      = nullptr;
     };
 
     template<> struct GpuArray<Resources::Light>
@@ -65,6 +92,7 @@ namespace Core
         Renderer* renderer;
         
         GpuArray<Resources::Material> materialsArray;
+        GpuArray<Resources::Mesh>     meshesArray;
         GpuArray<Resources::Model>    modelsArray;
         GpuArray<Resources::Light>    lightsArray;
         

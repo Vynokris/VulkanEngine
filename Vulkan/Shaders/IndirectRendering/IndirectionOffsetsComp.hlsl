@@ -9,7 +9,7 @@
 
 #define DRAW_INDIRECT_ARGS_COUNT 5
 
-[numthreads(16, 16, 1)]
+[numthreads(8, 8, 1)]
 void main(uint3 threadID : SV_DispatchThreadID)
 {
     const uint sectionID       = threadID.x;
@@ -17,8 +17,8 @@ void main(uint3 threadID : SV_DispatchThreadID)
     if (sectionID >= sectionCount - 1 || targetSectionID >= sectionCount || targetSectionID <= sectionID)
         return;
 
-    const uint readOffset = DRAW_INDIRECT_ARGS_COUNT * sectionID + 1;
-    const uint subSectionInstanceCount = drawIndirect.Load(readOffset);
+    const uint readIndex = DRAW_INDIRECT_ARGS_COUNT * sectionID + 1;
+    const uint subSectionInstanceCount = drawIndirect[readIndex];
     
     uint dummyOutput;
     InterlockedAdd(indirectionOffsets[targetSectionID],                subSectionInstanceCount, dummyOutput);

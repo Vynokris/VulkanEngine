@@ -29,7 +29,7 @@ namespace Resources
 		Model& operator=(Model&&) noexcept;
 		~Model();
 
-		void UpdateMvpBuffer(const uint32_t& currentFrame, const Core::GpuData<Model>* modelData = nullptr) const;
+		void UpdateTransformBuffer(const uint32_t& currentFrame, const Core::GpuData<Model>* modelData = nullptr) const;
 		
 		std::string              GetName  () const { return name;    }
 		const std::vector<Mesh>& GetMeshes() const { return meshes;  }

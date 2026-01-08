@@ -73,7 +73,7 @@ Renderer::~Renderer()
     vkDestroySampler               (vkDevice, vkTextureSampler,   nullptr);
     vkDestroyCommandPool           (vkDevice, vkCommandPool,      nullptr);
     vkDestroyPipeline              (vkDevice, vkGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout        (vkDevice, vkPipelineLayout,   nullptr);
+    vkDestroyPipelineLayout        (vkDevice, vkGraphicsPipelineLayout,   nullptr);
     vkDestroyRenderPass            (vkDevice, vkRenderPass,       nullptr);
     vkDestroyDevice                (vkDevice,                     nullptr);
     vkDestroySurfaceKHR            (vkInstance, vkSurface,        nullptr);
@@ -142,7 +142,44 @@ void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start,
 void Renderer::BeginRender()
 {
     NewFrame();
-    BeginRenderPass();
+    BeginCommandBuffer();
+}
+
+void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
+{
+    // Get the model's GPU data.
+    const GpuData <Resources::Model>* modelData = gpuData->GetData(model);
+    if (!modelData) return;
+
+    // Draw each of the model's meshes one by one.
+    for (const Resources::Mesh& mesh : model.GetMeshes())
+    {
+        if (!mesh.HasSections()) continue;
+
+        // Get the mesh GPU data.
+        const GpuData<Resources::Mesh>* meshData = gpuData->GetData(mesh);
+        if (!meshData) continue;
+
+        const VkDescriptorSet descriptorSets[3] = { constDataDescriptorSet, meshData->vkIndirectDescriptorSets[currentFrame], modelData->vkIndirectDescriptorSets[currentFrame] };
+        for (uint32_t i = 0; i < 5; i++)
+        {
+            vkCmdBindPipeline(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelines[i]);
+            
+            vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelineLayout, 0, 3, descriptorSets, 0, nullptr);
+
+            uint32_t groupCountX, groupCountY;
+            if (i == 0 || i == 3) { // ClearInstanceCountComp, IndirectionOffsetsComp
+                groupCountX = 1;
+                groupCountY = 1;
+            }
+            else { // SelectLODComp, InstanceCountsComp, IndirectionComp
+                groupCountX = ((uint32_t)model.transforms.size() + 128 - 1) / 128;
+                groupCountY = 1;
+            }
+            
+            vkCmdDispatch(vkCommandBuffers[currentFrame], groupCountX, groupCountY, 1);
+        }
+    }
 }
 
 void Renderer::DrawModel(const Resources::Model& model) const
@@ -151,11 +188,10 @@ void Renderer::DrawModel(const Resources::Model& model) const
     const GpuArray<Resources::Light>& lightArray = gpuData->GetArray<Resources::Light>();
     const GpuData <Resources::Model>* modelData  = gpuData->GetData(model);
     if (!modelData) return;
-    model.UpdateMvpBuffer(currentFrame, modelData);
+    model.UpdateTransformBuffer(currentFrame, modelData);
 
     // Draw each of the model's meshes one by one.
-    const std::vector<Resources::Mesh>& meshes = model.GetMeshes();
-    for (const Resources::Mesh& mesh : meshes)
+    for (const Resources::Mesh& mesh : model.GetMeshes())
     {
         // Get the mesh and material GPU data.
         const GpuData<Resources::Mesh>*     meshData     = gpuData->GetData(mesh);
@@ -170,19 +206,19 @@ void Renderer::DrawModel(const Resources::Model& model) const
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind all necessary descriptor sets.
-        const VkDescriptorSet descriptorSets[4] = { modelData->vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet };
-        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
+        const VkDescriptorSet descriptorSets[4] = { modelData->vkTransformDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet };
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
 
         if (!mesh.HasSections())
             vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), (uint32_t)model.transforms.size(), 0, 0, 0);
         else
-            vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetSections().back().idxCount, 1, mesh.GetSections().back().idxOffset, 0, 0);
+            vkCmdDrawIndexedIndirect(vkCommandBuffers[currentFrame], meshData->vkDrawIndirectBuffers[currentFrame], 0, mesh.GetSectionCount(), sizeof(VkDrawIndexedIndirectCommand));
     }
 }
 
 void Renderer::EndRender()
 {
-    EndRenderPass();
+    EndCommandBuffer();
     PresentFrame();
 }
 
@@ -363,7 +399,7 @@ void Renderer::CreateLogicalDevice()
 
     // Set creation information for all required queues.
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    const std::set<uint32_t> uniqueQueueFamilies = { vkQueueFamilyIndices.graphicsFamily.value(), vkQueueFamilyIndices.presentFamily.value() };
+    const std::set<uint32_t> uniqueQueueFamilies = { vkQueueFamilyIndices.graphicsAndComputeFamily.value(), vkQueueFamilyIndices.presentFamily.value() };
     for (const uint32_t& queueFamily : uniqueQueueFamilies)
     {
         const float queuePriority = 1.0f;
@@ -421,8 +457,9 @@ void Renderer::CreateLogicalDevice()
     }
 
     // Get the graphics and present queue handles.
-    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.graphicsFamily.value(), 0, &vkGraphicsQueue);
-    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.presentFamily .value(), 0, &vkPresentQueue );
+    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.graphicsAndComputeFamily.value(), 0, &vkComputeQueue);
+    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.graphicsAndComputeFamily.value(), 0, &vkGraphicsQueue);
+    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.presentFamily.value(),            0, &vkPresentQueue);
 }
 
 void Renderer::CreateSwapChain()
@@ -457,9 +494,9 @@ void Renderer::CreateSwapChain()
 
     // Set the used queue families.
     const QueueFamilyIndices indices = FindQueueFamilies(vkPhysicalDevice, vkSurface);
-    const uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    const uint32_t queueFamilyIndices[] = { indices.graphicsAndComputeFamily.value(), indices.presentFamily.value() };
     
-    if (indices.graphicsFamily != indices.presentFamily)
+    if (indices.graphicsAndComputeFamily != indices.presentFamily)
     {
         // If the graphics and present family are different, share the swapchain between them.
         createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
@@ -641,6 +678,74 @@ void Renderer::CreateDescriptorLayoutsAndPools()
     }
 }
 
+void Renderer::CreateComputePipeline()
+{
+    // Load vulkan compute shaders.
+    const VkShaderModule shaderModules[5] = {
+        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/ClearInstanceCountComp.hlsl"),
+        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/SelectLODComp.hlsl"),
+        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/InstanceCountsComp.hlsl"),
+        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/IndirectionOffsetsComp.hlsl"),
+        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/IndirectionComp.hlsl"),
+    };
+
+    // Define the shaders' pipeline stage and entry points.
+    VkPipelineShaderStageCreateInfo defaultShaderStageInfo{};
+    defaultShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    defaultShaderStageInfo.stage  = VK_SHADER_STAGE_COMPUTE_BIT;
+    defaultShaderStageInfo.module = nullptr;
+    defaultShaderStageInfo.pName  = "main";
+
+    // Set the shader module for each stage.
+    VkPipelineShaderStageCreateInfo shaderStages[5];
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        shaderStages[i] = defaultShaderStageInfo;
+        shaderStages[i].module = shaderModules[i];
+    }
+
+    // Define push constants and descriptor set layouts.
+    const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_ALL, 0, sizeof(ShaderFrameConstants) };
+    const VkDescriptorSetLayout setLayouts[3] = {
+        constDataDescriptorLayout, // TODO: Compute const data
+        gpuData->GetArray<Resources::Mesh>().vkComputeDescriptorSetLayout,
+        gpuData->GetArray<Resources::Model>().vkComputeDescriptorSetLayout,
+    };
+
+    // Set the pipeline layout creation information.
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount         = 3;
+    pipelineLayoutInfo.pSetLayouts            = setLayouts;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
+
+    // Create the pipeline layout.
+    if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkComputePipelineLayout) != VK_SUCCESS) {
+        LogError(LogType::Vulkan, "Failed to create pipeline layout.");
+        throw std::runtime_error("VULKAN_PIPELINE_LAYOUT_ERROR");
+    }
+
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        // Set the graphics pipeline creation information.
+        VkComputePipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipelineInfo.stage  = shaderStages[i];
+        pipelineInfo.layout = vkComputePipelineLayout;
+
+        // Create the compute pipeline.
+        if (vkCreateComputePipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkComputePipelines[i]) != VK_SUCCESS) {
+            LogError(LogType::Vulkan, "Failed to create compute pipeline.");
+            throw std::runtime_error("VULKAN_GRAPHICS_PIPELINE_ERROR");
+        }
+    }
+
+    // Destroy all shader modules.
+    for (const VkShaderModule& shaderModule : shaderModules)
+        vkDestroyShaderModule(vkDevice, shaderModule, nullptr);
+}
+
 void Renderer::CreateGraphicsPipeline()
 {
     // Setup vertex bindings and attributes.
@@ -762,7 +867,7 @@ void Renderer::CreateGraphicsPipeline()
     // Define push constants and descriptor set layouts.
     const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_ALL, 0, sizeof(ShaderFrameConstants) };
     const VkDescriptorSetLayout setLayouts[4] = {
-        gpuData->GetArray<Resources::Model>().vkDescriptorSetLayout,
+        gpuData->GetArray<Resources::Model>().vkGraphicsDescriptorSetLayout,
         constDataDescriptorLayout,
         gpuData->GetArray<Resources::Material>().vkDescriptorSetLayout,
         gpuData->GetArray<Resources::Light>().vkDescriptorSetLayout,
@@ -777,7 +882,7 @@ void Renderer::CreateGraphicsPipeline()
     pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
 
     // Create the pipeline layout.
-    if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkGraphicsPipelineLayout) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create pipeline layout.");
         throw std::runtime_error("VULKAN_PIPELINE_LAYOUT_ERROR");
     }
@@ -795,7 +900,7 @@ void Renderer::CreateGraphicsPipeline()
     pipelineInfo.pDepthStencilState  = &depthStencil;
     pipelineInfo.pColorBlendState    = &colorBlending;
     pipelineInfo.pDynamicState       = &dynamicState;
-    pipelineInfo.layout              = vkPipelineLayout;
+    pipelineInfo.layout              = vkGraphicsPipelineLayout;
     pipelineInfo.renderPass          = vkRenderPass;
     pipelineInfo.subpass             = 0;
 
@@ -862,7 +967,7 @@ void Renderer::CreateCommandPool()
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsAndComputeFamily.value();
 
     // Create the command pool.
     if (vkCreateCommandPool(vkDevice, &poolInfo, nullptr, &vkCommandPool) != VK_SUCCESS) {
@@ -1004,7 +1109,7 @@ void Renderer::NewFrame()
     vkResetFences(vkDevice, 1, &vkInFlightFences[currentFrame]);
 }
 
-void Renderer::BeginRenderPass() const
+void Renderer::BeginCommandBuffer() const
 {
     // Reset the command buffer.
     vkResetCommandBuffer(vkCommandBuffers[currentFrame],  0);
@@ -1016,7 +1121,10 @@ void Renderer::BeginRenderPass() const
         LogError(LogType::Vulkan, "Failed to begin recording command buffer.");
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
     }
+}
 
+void Renderer::BeginRenderPass() const
+{
     // Define the clear color.
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color        = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
@@ -1055,9 +1163,11 @@ void Renderer::BeginRenderPass() const
 
 void Renderer::EndRenderPass() const
 {
-    // End the render pass.
     vkCmdEndRenderPass(vkCommandBuffers[currentFrame]);
+}
 
+void Renderer::EndCommandBuffer() const
+{
     // Stop recording the command buffer.
     if (vkEndCommandBuffer(vkCommandBuffers[currentFrame]) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to record command buffer.");
