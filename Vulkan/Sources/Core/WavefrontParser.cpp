@@ -262,6 +262,7 @@ std::unordered_map<std::string, Model> WavefrontParser::ParseObj(const std::stri
     }
     else {
         model.meshes.back().FinalizeLoading();
+        model.FinalizeLoading();
         newModels[model.name] = std::move(model);
     }
 
@@ -376,7 +377,10 @@ void WavefrontParser::ParseObjObjectLine(const std::string& line, Model& model, 
     if (!isLOD)
     {
         if (!model.name.empty())
+        {
+            model.FinalizeLoading();
             newModels[model.name] = std::move(model);
+        }
         model = Model(modelName);
     }
     else

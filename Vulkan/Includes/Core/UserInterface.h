@@ -23,6 +23,7 @@ namespace Resources
 
 namespace Core
 {
+    class Renderer;
     class Application;
     class Engine;
     class Logger;
@@ -48,7 +49,7 @@ namespace Core
         ~UserInterface();
 
         void SetResourceRefs(Resources::Camera* _camera, std::unordered_map<std::string, Resources::Model>* _models, std::unordered_map<std::string, Resources::Texture>* _textures);
-        void Render() const;
+        void Render(Renderer* renderer) const;
 
     private:
         void CreateDescriptorPool();

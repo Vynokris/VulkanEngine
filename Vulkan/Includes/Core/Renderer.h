@@ -19,7 +19,6 @@ namespace Core
         VkPhysicalDevice                  vkPhysicalDevice = nullptr;
         VkDevice                          vkDevice         = nullptr;
         GraphicsUtils::QueueFamilyIndices vkQueueFamilyIndices;
-        VkQueue                           vkComputeQueue           = nullptr;
         VkQueue                           vkGraphicsQueue          = nullptr;
         VkQueue                           vkPresentQueue           = nullptr;
         VkSwapchainKHR                    vkSwapChain              = nullptr;

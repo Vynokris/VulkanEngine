@@ -117,11 +117,8 @@ void Engine::Render(Renderer* renderer) const
     
     // Draw all loaded models.
     renderer->BeginRenderPass();
-    {
-        for (const auto& [name, model] : models)
-            renderer->DrawModel(model);
-    }
-    renderer->EndRenderPass();
+    for (const auto& [name, model] : models)
+        renderer->DrawModel(model);
 }
 
 void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ...)

@@ -1,4 +1,4 @@
-﻿[[vk::binding(0, 0)]] cbuffer constData
+[[vk::binding(3, 1)]] cbuffer constData
 {
     uint totalInstanceCount;
     uint sectionCount;
@@ -23,8 +23,7 @@ void main(uint3 threadID : SV_DispatchThreadID)
     const float3 instancePos = modelMatrices[instanceID][3].xyz;
     const float  camDist = distance(viewPos, instancePos);
 
-    // Temporary
-    const float farPlaneDist = 100.f;
+    const float farPlaneDist = 10.f;
     const float camDist01 = saturate(camDist / farPlaneDist);
     const uint  selectedSection = uint(floor(camDist01 * (float(sectionCount) - 1e-5f)));
 

@@ -1,11 +1,11 @@
-﻿[[vk::binding(0, 0)]] cbuffer constData
+[[vk::binding(3, 1)]] cbuffer constData
 {
     uint totalInstanceCount;
     uint sectionCount;
 };
 
 [[vk::binding(1, 1)]] StructuredBuffer<uint>   selectedSections;
-[[vk::binding(0, 2)]] RWStructuredBuffer<uint> drawIndirect;
+[[vk::binding(0, 0)]] RWStructuredBuffer<uint> drawIndirect;
 
 #define DRAW_INDIRECT_ARGS_COUNT 5
 

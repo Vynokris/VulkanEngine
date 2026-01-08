@@ -56,7 +56,7 @@ void Application::Run() const
         renderer->BeginRender();
         {
             engine->Render(renderer);
-            ui->Render();
+            ui->Render(renderer);
         }
         renderer->EndRender();
         window->EndFrame();

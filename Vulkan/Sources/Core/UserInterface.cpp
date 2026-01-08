@@ -116,15 +116,16 @@ void UserInterface::UploadImGuiFonts() const
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
-void UserInterface::Render() const
+void UserInterface::Render(Renderer* renderer) const
 {
     NewFrame();
-    
+
     ShowStatsWindow();
     ShowLogsWindow();
     ShowResourcesWindow();
-    
+
     RenderFrame();
+    renderer->EndRenderPass();
 }
 
 void UserInterface::ShowStatsWindow() const

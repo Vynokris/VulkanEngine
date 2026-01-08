@@ -34,5 +34,8 @@ namespace Resources
 		std::string              GetName  () const { return name;    }
 		const std::vector<Mesh>& GetMeshes() const { return meshes;  }
 		      std::vector<Mesh>& GetMeshes()       { return meshes;  }
+
+	private:
+		void FinalizeLoading();
 	};
 }

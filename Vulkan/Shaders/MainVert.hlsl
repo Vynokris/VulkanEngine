@@ -26,12 +26,15 @@ struct VSOutput
 
 // Model matrices input.
 [[vk::binding(0, 0)]] row_major StructuredBuffer<float4x4> modelMatrices;
+[[vk::binding(1, 0)]]           StructuredBuffer<uint>     indirection;
 
 // Vertex shader main function
 VSOutput main(VSInput input, uint instanceID : SV_InstanceID)
 {
     VSOutput output = (VSOutput)0;
-    const float4x4 modelMat = modelMatrices[instanceID];
+
+    const uint     indirectID = indirection  [instanceID];
+    const float4x4 modelMat   = modelMatrices[indirectID];
     
     output.fragPos  = modelMat * float4(input.position, 1);
     output.position = viewProj * float4(output.fragPos, 1);

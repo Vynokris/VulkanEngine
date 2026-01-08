@@ -63,16 +63,14 @@ namespace Core
     template<> struct GpuArray<Resources::Mesh>
     {
         VkDescriptorSetLayout vkComputeDescriptorSetLayout = nullptr;
-        VkDescriptorPool      vkComputeDescriptorPool      = nullptr;
+        VkDescriptorPool      vkDescriptorPool             = nullptr;
     };
 
     template<> struct GpuArray<Resources::Model>
     {
-        VkDescriptorSetLayout vkComputeDescriptorSetLayout = nullptr;
-        VkDescriptorPool      vkComputeDescriptorPool      = nullptr;
-        
+        VkDescriptorSetLayout vkComputeDescriptorSetLayout  = nullptr;
         VkDescriptorSetLayout vkGraphicsDescriptorSetLayout = nullptr;
-        VkDescriptorPool      vkGraphicsDescriptorPool      = nullptr;
+        VkDescriptorPool      vkDescriptorPool              = nullptr;
     };
 
     template<> struct GpuArray<Resources::Light>

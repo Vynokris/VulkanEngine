@@ -92,7 +92,7 @@
   <ItemGroup>
     <Content Include="Shaders\MainFrag.hlsl" />
     <Content Include="Shaders\MainVert.hlsl" />
-    <Content Include="Shaders\IndirectRendering\ClearInstanceCountComp.hlsl" />
+    <Content Include="Shaders\IndirectRendering\ClearTransientDataComp.hlsl" />
     <Content Include="Shaders\IndirectRendering\IndirectionComp.hlsl" />
     <Content Include="Shaders\IndirectRendering\IndirectionOffsetsComp.hlsl" />
     <Content Include="Shaders\IndirectRendering\InstanceCountsComp.hlsl" />

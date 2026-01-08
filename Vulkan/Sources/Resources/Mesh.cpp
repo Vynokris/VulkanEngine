@@ -91,7 +91,7 @@ void Mesh::FinalizeLoading()
 
 template<> const GpuArray<Mesh>& GpuDataManager::CreateArray()
 {
-    if (meshesArray.vkComputeDescriptorSetLayout  && meshesArray.vkComputeDescriptorPool)
+    if (meshesArray.vkComputeDescriptorSetLayout  && meshesArray.vkDescriptorPool)
         return meshesArray;
 
     // Get the necessary vulkan resources.
@@ -131,7 +131,7 @@ template<> const GpuArray<Mesh>& GpuDataManager::CreateArray()
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes    = &poolSize;
         poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS * 2;
-        if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &meshesArray.vkComputeDescriptorPool) != VK_SUCCESS) {
+        if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &meshesArray.vkDescriptorPool) != VK_SUCCESS) {
              LogError(LogType::Vulkan, "Failed to create descriptor pool.");
              throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
         }
@@ -269,7 +269,7 @@ template<> const GpuData<Mesh>& GpuDataManager::CreateData(const Mesh& resource)
         const std::vector layouts(MAX_FRAMES_IN_FLIGHT, meshesArray.vkComputeDescriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = meshesArray.vkComputeDescriptorPool;
+        allocInfo.descriptorPool     = meshesArray.vkDescriptorPool;
         allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
         allocInfo.pSetLayouts        = layouts.data();
         if (vkAllocateDescriptorSets(vkDevice, &allocInfo, data.vkIndirectDescriptorSets) != VK_SUCCESS) {
@@ -281,12 +281,12 @@ template<> const GpuData<Mesh>& GpuDataManager::CreateData(const Mesh& resource)
         for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkDescriptorBufferInfo bufferInfos[2] = {};
-            bufferInfos[0].buffer = data.vkIndirectionOffsetsBuffers[i];
+            bufferInfos[0].buffer = data.vkDrawIndirectBuffers[i];
+            bufferInfos[0].range  = drawIndirectBufferSize;
             bufferInfos[0].offset = 0;
-            bufferInfos[0].range  = bufferElemCount * sizeof(uint32_t);
-            bufferInfos[1].buffer = data.vkDrawIndirectBuffers[i];
-            bufferInfos[1].offset = 0;
+            bufferInfos[1].buffer = data.vkIndirectionOffsetsBuffers[i];
             bufferInfos[1].range  = bufferElemCount * sizeof(uint32_t);
+            bufferInfos[1].offset = 0;
 
             VkWriteDescriptorSet descriptorWrites[2] = {};
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

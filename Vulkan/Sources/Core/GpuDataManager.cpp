@@ -28,16 +28,15 @@ template<> void GpuDataManager::DestroyArray<Mesh>()
 {
     const VkDevice vkDevice = renderer->GetVkDevice();
     if (modelsArray.vkComputeDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkComputeDescriptorSetLayout, nullptr);
-    if (modelsArray.vkComputeDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, modelsArray.vkComputeDescriptorPool,      nullptr);
+    if (modelsArray.vkDescriptorPool)             vkDestroyDescriptorPool     (vkDevice, modelsArray.vkDescriptorPool,             nullptr);
 }
 
 template<> void GpuDataManager::DestroyArray<Model>()
 {
     const VkDevice vkDevice = renderer->GetVkDevice();
     if (modelsArray.vkComputeDescriptorSetLayout)  vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkComputeDescriptorSetLayout,  nullptr);
-    if (modelsArray.vkComputeDescriptorPool)       vkDestroyDescriptorPool     (vkDevice, modelsArray.vkComputeDescriptorPool,       nullptr);
     if (modelsArray.vkGraphicsDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkGraphicsDescriptorSetLayout, nullptr);
-    if (modelsArray.vkGraphicsDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, modelsArray.vkGraphicsDescriptorPool,      nullptr);
+    if (modelsArray.vkDescriptorPool)              vkDestroyDescriptorPool     (vkDevice, modelsArray.vkDescriptorPool,              nullptr);
 }
 
 template<> void GpuDataManager::DestroyArray<Light>()
@@ -105,8 +104,8 @@ template<> void GpuDataManager::DestroyData(const Model& resource)
 }
 
 template<> bool GpuDataManager::CheckArray<Material>() const { return materialsArray.vkDescriptorPool && materialsArray.vkDescriptorSetLayout; }
-template<> bool GpuDataManager::CheckArray<Mesh>()     const { return modelsArray.vkComputeDescriptorPool && modelsArray.vkComputeDescriptorSetLayout; }
-template<> bool GpuDataManager::CheckArray<Model>()    const { return modelsArray.vkComputeDescriptorPool && modelsArray.vkComputeDescriptorSetLayout && modelsArray.vkGraphicsDescriptorPool && modelsArray.vkGraphicsDescriptorSetLayout; }
+template<> bool GpuDataManager::CheckArray<Mesh>()     const { return modelsArray.vkDescriptorPool && modelsArray.vkComputeDescriptorSetLayout; }
+template<> bool GpuDataManager::CheckArray<Model>()    const { return modelsArray.vkDescriptorPool && modelsArray.vkComputeDescriptorSetLayout && modelsArray.vkGraphicsDescriptorSetLayout; }
 template<> bool GpuDataManager::CheckArray<Light>()    const { return lightsArray.vkDescriptorPool && lightsArray.vkDescriptorSetLayout
                                                                    && lightsArray.vkDescriptorSet && lightsArray.vkBuffer && lightsArray.vkBufferMemory; }
 

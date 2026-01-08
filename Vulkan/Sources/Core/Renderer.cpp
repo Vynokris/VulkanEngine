@@ -46,6 +46,7 @@ Renderer::Renderer(Application* application, const char* appName, const char* en
     );
     CreateRenderPass();
     CreateDescriptorLayoutsAndPools();
+    CreateComputePipeline();
     CreateGraphicsPipeline();
     CreateColorResources();
     CreateDepthResources();
@@ -160,12 +161,12 @@ void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
         const GpuData<Resources::Mesh>* meshData = gpuData->GetData(mesh);
         if (!meshData) continue;
 
-        const VkDescriptorSet descriptorSets[3] = { constDataDescriptorSet, meshData->vkIndirectDescriptorSets[currentFrame], modelData->vkIndirectDescriptorSets[currentFrame] };
+        const VkDescriptorSet descriptorSets[2] = { meshData->vkIndirectDescriptorSets[currentFrame], modelData->vkIndirectDescriptorSets[currentFrame] };
         for (uint32_t i = 0; i < 5; i++)
         {
             vkCmdBindPipeline(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelines[i]);
             
-            vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelineLayout, 0, 3, descriptorSets, 0, nullptr);
+            vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelineLayout, 0, 2, descriptorSets, 0, nullptr);
 
             uint32_t groupCountX, groupCountY;
             if (i == 0 || i == 3) { // ClearInstanceCountComp, IndirectionOffsetsComp
@@ -176,7 +177,7 @@ void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
                 groupCountX = ((uint32_t)model.transforms.size() + 128 - 1) / 128;
                 groupCountY = 1;
             }
-            
+
             vkCmdDispatch(vkCommandBuffers[currentFrame], groupCountX, groupCountY, 1);
         }
     }
@@ -416,10 +417,11 @@ void Renderer::CreateLogicalDevice()
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.sampleRateShading = VK_TRUE;
     deviceFeatures.shaderStorageImageExtendedFormats = VK_TRUE;
+    deviceFeatures.multiDrawIndirect = VK_TRUE;
 
     // Enable null descriptors.
     VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustnessFeatures{};
-    deviceRobustnessFeatures.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+    deviceRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
     deviceRobustnessFeatures.nullDescriptor = VK_TRUE;
 
     // Enable uniform buffer update after bind.
@@ -428,10 +430,12 @@ void Renderer::CreateLogicalDevice()
     indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
     indexingFeatures.pNext = &deviceRobustnessFeatures;
 
-    // Enable VK 1.3 features
+    // Enable VK 1.3 features (shader DemoteToHelperInvocation and inline uniform blocks with update after bind).
     VkPhysicalDeviceVulkan13Features features13 = {};
     features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     features13.shaderDemoteToHelperInvocation = VK_TRUE;
+    features13.inlineUniformBlock = VK_TRUE;
+    features13.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_TRUE;
     features13.pNext = &indexingFeatures;
 
     // Set the logical device creation information.
@@ -457,7 +461,6 @@ void Renderer::CreateLogicalDevice()
     }
 
     // Get the graphics and present queue handles.
-    vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.graphicsAndComputeFamily.value(), 0, &vkComputeQueue);
     vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.graphicsAndComputeFamily.value(), 0, &vkGraphicsQueue);
     vkGetDeviceQueue(vkDevice, vkQueueFamilyIndices.presentFamily.value(),            0, &vkPresentQueue);
 }
@@ -625,7 +628,8 @@ void Renderer::CreateRenderPass()
 
 void Renderer::CreateDescriptorLayoutsAndPools()
 {
-    // Create layouts and pools for lights, models and materials.
+    // Create layouts and pools for meshes, models, materials and lights.
+    gpuData->CreateArray<Resources::Mesh>();
     gpuData->CreateArray<Resources::Model>();
     gpuData->CreateArray<Resources::Material>();
     gpuData->CreateArray<Resources::Light>();
@@ -682,7 +686,7 @@ void Renderer::CreateComputePipeline()
 {
     // Load vulkan compute shaders.
     const VkShaderModule shaderModules[5] = {
-        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/ClearInstanceCountComp.hlsl"),
+        CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/ClearTransientDataComp.hlsl"),
         CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/SelectLODComp.hlsl"),
         CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/InstanceCountsComp.hlsl"),
         CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/IndirectionOffsetsComp.hlsl"),
@@ -706,8 +710,7 @@ void Renderer::CreateComputePipeline()
 
     // Define push constants and descriptor set layouts.
     const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_ALL, 0, sizeof(ShaderFrameConstants) };
-    const VkDescriptorSetLayout setLayouts[3] = {
-        constDataDescriptorLayout, // TODO: Compute const data
+    const VkDescriptorSetLayout setLayouts[2] = {
         gpuData->GetArray<Resources::Mesh>().vkComputeDescriptorSetLayout,
         gpuData->GetArray<Resources::Model>().vkComputeDescriptorSetLayout,
     };
@@ -715,7 +718,7 @@ void Renderer::CreateComputePipeline()
     // Set the pipeline layout creation information.
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount         = 3;
+    pipelineLayoutInfo.setLayoutCount         = 2;
     pipelineLayoutInfo.pSetLayouts            = setLayouts;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
