@@ -146,6 +146,61 @@ void Renderer::BeginRender()
     BeginCommandBuffer();
 }
 
+void AddIndirectComputeBarriers(uint32_t shaderIdx, uint32_t currentFrame, const Renderer& renderer,
+                                const Resources::Model& model,              const Resources::Mesh& mesh,
+                                const GpuData<Resources::Model>* modelData, const GpuData<Resources::Mesh>* meshData)
+{
+    const uint32_t instanceCount = (uint32_t)model.transforms.size();
+    const uint32_t sectionCount  = mesh.GetSectionCount();
+    
+    VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    
+    VkBufferMemoryBarrier defaultBarrier{};
+    defaultBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    defaultBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    defaultBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    defaultBarrier.srcQueueFamilyIndex = renderer.GetVkGraphicsQueueIndex();
+    defaultBarrier.dstQueueFamilyIndex = renderer.GetVkGraphicsQueueIndex();
+
+    std::vector<VkBufferMemoryBarrier> barriers;
+    switch (shaderIdx)
+    {
+    case 0: // ClearTransientDataComp
+        barriers.resize(2, defaultBarrier);
+        barriers[0].buffer = meshData->vkDrawIndirectBuffers[currentFrame];
+        barriers[0].size   = sectionCount * sizeof(VkDrawIndexedIndirectCommand);
+        barriers[1].buffer = meshData->vkIndirectionOffsetsBuffers[currentFrame];
+        barriers[1].size   = sectionCount * sizeof(uint32_t);
+        break;
+    case 1: // SelectLODComp
+        barriers.resize(1, defaultBarrier);
+        barriers[0].buffer = modelData->vkSelectedSectionsBuffers[currentFrame];
+        barriers[0].size   = instanceCount * sizeof(uint32_t);
+        break;
+    case 2: // InstanceCountsComp
+        barriers.resize(1, defaultBarrier);
+        barriers[0].buffer = meshData->vkDrawIndirectBuffers[currentFrame];
+        barriers[0].size   = sectionCount * sizeof(VkDrawIndexedIndirectCommand);
+        break;
+    case 3: // IndirectionOffsetsComp
+        barriers.resize(1, defaultBarrier);
+        barriers[0].buffer = meshData->vkIndirectionOffsetsBuffers[currentFrame];
+        barriers[0].size   = sectionCount * sizeof(uint32_t);
+        break;
+    case 4: // IndirectionComp
+        dstStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        barriers.resize(1, defaultBarrier);
+        barriers[0].buffer = modelData->vkIndirectionBuffers[currentFrame];
+        barriers[0].size   = instanceCount * sizeof(uint32_t);
+        break;
+    default:
+        return;
+    }
+
+    vkCmdPipelineBarrier(renderer.GetCurVkCommandBuffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, dstStageMask,
+        VK_DEPENDENCY_DEVICE_GROUP_BIT, 0, nullptr, (uint32_t)barriers.size(), barriers.data(), 0, nullptr);
+}
+
 void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
 {
     // Get the model's GPU data.
@@ -164,12 +219,12 @@ void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
         const VkDescriptorSet descriptorSets[2] = { meshData->vkIndirectDescriptorSets[currentFrame], modelData->vkIndirectDescriptorSets[currentFrame] };
         for (uint32_t i = 0; i < 5; i++)
         {
-            vkCmdBindPipeline(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelines[i]);
-            
-            vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelineLayout, 0, 2, descriptorSets, 0, nullptr);
+            vkCmdBindPipeline      (vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelines[i]);
+            vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipelineLayout,
+                                    0, 2, descriptorSets, 0, nullptr);
 
             uint32_t groupCountX, groupCountY;
-            if (i == 0 || i == 3) { // ClearInstanceCountComp, IndirectionOffsetsComp
+            if (i == 0 || i == 3) { // ClearTransientDataComp, IndirectionOffsetsComp
                 groupCountX = 1;
                 groupCountY = 1;
             }
@@ -179,6 +234,7 @@ void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
             }
 
             vkCmdDispatch(vkCommandBuffers[currentFrame], groupCountX, groupCountY, 1);
+            AddIndirectComputeBarriers(i, currentFrame, *this, model, mesh, modelData, meshData);
         }
     }
 }
