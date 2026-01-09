@@ -27,8 +27,8 @@ template<> void GpuDataManager::DestroyArray<Material>()
 template<> void GpuDataManager::DestroyArray<Mesh>()
 {
     const VkDevice vkDevice = renderer->GetVkDevice();
-    if (modelsArray.vkComputeDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, modelsArray.vkComputeDescriptorSetLayout, nullptr);
-    if (modelsArray.vkDescriptorPool)             vkDestroyDescriptorPool     (vkDevice, modelsArray.vkDescriptorPool,             nullptr);
+    if (meshesArray.vkComputeDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, meshesArray.vkComputeDescriptorSetLayout, nullptr);
+    if (meshesArray.vkDescriptorPool)             vkDestroyDescriptorPool     (vkDevice, meshesArray.vkDescriptorPool,             nullptr);
 }
 
 template<> void GpuDataManager::DestroyArray<Model>()

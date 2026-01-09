@@ -256,7 +256,7 @@ template<> const GpuData<Mesh>& GpuDataManager::CreateData(const Mesh& resource)
             CopyBuffer(vkDevice, vkCommandPool, vkGraphicsQueue, stagingBuffer, data.vkDrawIndirectBuffers[i], drawIndirectBufferSize);
             
             // Create the indirection offsets buffers (written in compute).
-            CreateBuffer(vkDevice, vkPhysicalDevice, bufferElemCount * sizeof(uint32_t) * 2,
+            CreateBuffer(vkDevice, vkPhysicalDevice, bufferElemCount * sizeof(uint32_t),
                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                          data.vkIndirectionOffsetsBuffers[i], data.vkIndirectionOffsetsBuffersMemory[i]);
         }

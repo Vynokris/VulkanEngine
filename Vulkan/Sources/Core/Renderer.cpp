@@ -71,15 +71,18 @@ Renderer::~Renderer()
     }
     DestroySwapChain();
     DestroyDescriptorLayoutsAndPools();
-    vkDestroySampler               (vkDevice, vkTextureSampler,   nullptr);
-    vkDestroyCommandPool           (vkDevice, vkCommandPool,      nullptr);
-    vkDestroyPipeline              (vkDevice, vkGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout        (vkDevice, vkGraphicsPipelineLayout,   nullptr);
-    vkDestroyRenderPass            (vkDevice, vkRenderPass,       nullptr);
-    vkDestroyDevice                (vkDevice,                     nullptr);
-    vkDestroySurfaceKHR            (vkInstance, vkSurface,        nullptr);
-    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger, nullptr);
-    vkDestroyInstance              (vkInstance,                   nullptr);
+    vkDestroySampler               (vkDevice, vkTextureSampler,         nullptr);
+    vkDestroyCommandPool           (vkDevice, vkCommandPool,            nullptr);
+    for (const VkPipeline& vkComputePipeline : vkComputePipelines)
+        vkDestroyPipeline          (vkDevice, vkComputePipeline,        nullptr);
+    vkDestroyPipelineLayout        (vkDevice, vkComputePipelineLayout,  nullptr);
+    vkDestroyPipeline              (vkDevice, vkGraphicsPipeline,       nullptr);
+    vkDestroyPipelineLayout        (vkDevice, vkGraphicsPipelineLayout, nullptr);
+    vkDestroyRenderPass            (vkDevice, vkRenderPass,             nullptr);
+    vkDestroyDevice                (vkDevice,                           nullptr);
+    vkDestroySurfaceKHR            (vkInstance, vkSurface,              nullptr);
+    vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger,       nullptr);
+    vkDestroyInstance              (vkInstance,                         nullptr);
 }
 
 void Renderer::SetShaderFrameConstants(const ShaderFrameConstants& constants) const
@@ -1136,6 +1139,7 @@ void Renderer::DestroySwapChain() const
 
 void Renderer::DestroyDescriptorLayoutsAndPools() const
 {
+    gpuData->DestroyArray<Resources::Mesh>();
     gpuData->DestroyArray<Resources::Model>();
     gpuData->DestroyArray<Resources::Material>();
     gpuData->DestroyArray<Resources::Light>();
