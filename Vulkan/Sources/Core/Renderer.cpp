@@ -209,10 +209,10 @@ void AddIndirectComputeBarriers(uint32_t shaderIdx, uint32_t currentFrame,  cons
 void Renderer::DispatchIndirectCompute(const Resources::Model& model) const
 {
     // Get the model's GPU data.
-    const GpuData <Resources::Model>* modelData = gpuData->GetData(model);
+    const GpuData<Resources::Model>* modelData = gpuData->GetData(model);
     if (!modelData) return;
 
-    // Draw each of the model's meshes one by one.
+    // Loop over each mesh to dispatch compute shaders if necessary.
     for (const Resources::Mesh& mesh : model.GetMeshes())
     {
         if (!mesh.HasSections()) continue;
