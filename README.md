@@ -1,4 +1,4 @@
-# **Vulkan Photorealistic Renderer**
+# **Vulkan Renderer**
 
 ### General Information
 
@@ -12,3 +12,9 @@ This is a solo passion project with the aim of getting a deeper understanding of
 - Texture mapping (albedo, alpha, normal, roughness, metallic, ambient occlusion)
 - Lighting (directional, point, spot)
 - Physically based rendering
+
+### Building & Running
+
+- Requires Windows x64 with Visual Studio 2022
+- Run `Vulkan/Scripts/DownloadExternals.bat` to fetch all necessary external libs
+- Open `Vulkan.sln`, then compile and run in release x64
