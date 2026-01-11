@@ -15,7 +15,7 @@ using namespace Core;
 using namespace GraphicsUtils;
 
 #ifdef NDEBUG
-    const bool VkUtils::VALIDATION_LAYERS_ENABLED = false;
+    const bool GraphicsUtils::VALIDATION_LAYERS_ENABLED = false;
 #else
     const bool GraphicsUtils::VALIDATION_LAYERS_ENABLED = true;
 #endif
