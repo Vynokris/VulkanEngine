@@ -149,7 +149,7 @@ void Renderer::BeginRender()
     BeginCommandBuffer();
 }
 
-void AddIndirectComputeBarriers(uint32_t shaderIdx, uint32_t currentFrame, const Renderer& renderer,
+void AddIndirectComputeBarriers(uint32_t shaderIdx, uint32_t currentFrame,  const Renderer& renderer,
                                 const Resources::Model& model,              const Resources::Mesh& mesh,
                                 const GpuData<Resources::Model>* modelData, const GpuData<Resources::Mesh>* meshData)
 {
@@ -176,9 +176,11 @@ void AddIndirectComputeBarriers(uint32_t shaderIdx, uint32_t currentFrame, const
         barriers[1].size   = sectionCount * sizeof(uint32_t);
         break;
     case 1: // SelectLODComp
-        barriers.resize(1, defaultBarrier);
+        barriers.resize(2, defaultBarrier);
         barriers[0].buffer = modelData->vkSelectedSectionsBuffers[currentFrame];
         barriers[0].size   = instanceCount * sizeof(uint32_t);
+        barriers[1].buffer = modelData->vkTransformBuffers[currentFrame];
+        barriers[1].size   = instanceCount * sizeof(Maths::Mat4);
         break;
     case 2: // InstanceCountsComp
         barriers.resize(1, defaultBarrier);
@@ -752,19 +754,14 @@ void Renderer::CreateComputePipeline()
         CreateShaderModule(vkDevice, ShaderStage::Compute, "Shaders/IndirectRendering/IndirectionComp.hlsl"),
     };
 
-    // Define the shaders' pipeline stage and entry points.
-    VkPipelineShaderStageCreateInfo defaultShaderStageInfo{};
-    defaultShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    defaultShaderStageInfo.stage  = VK_SHADER_STAGE_COMPUTE_BIT;
-    defaultShaderStageInfo.module = nullptr;
-    defaultShaderStageInfo.pName  = "main";
-
     // Set the shader module for each stage.
-    VkPipelineShaderStageCreateInfo shaderStages[5];
+    VkPipelineShaderStageCreateInfo shaderStages[5] = {};
     for (uint32_t i = 0; i < 5; i++)
     {
-        shaderStages[i] = defaultShaderStageInfo;
+        shaderStages[i].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStages[i].stage  = VK_SHADER_STAGE_COMPUTE_BIT;
         shaderStages[i].module = shaderModules[i];
+        shaderStages[i].pName  = "main";
     }
 
     // Define push constants and descriptor set layouts.
@@ -788,19 +785,19 @@ void Renderer::CreateComputePipeline()
         throw std::runtime_error("VULKAN_PIPELINE_LAYOUT_ERROR");
     }
 
+    // Set the graphics pipeline creation information.
+    VkComputePipelineCreateInfo pipelineInfos[5] = {};
     for (uint32_t i = 0; i < 5; i++)
     {
-        // Set the graphics pipeline creation information.
-        VkComputePipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-        pipelineInfo.stage  = shaderStages[i];
-        pipelineInfo.layout = vkComputePipelineLayout;
-
-        // Create the compute pipeline.
-        if (vkCreateComputePipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkComputePipelines[i]) != VK_SUCCESS) {
-            LogError(LogType::Vulkan, "Failed to create compute pipeline.");
-            throw std::runtime_error("VULKAN_GRAPHICS_PIPELINE_ERROR");
-        }
+        pipelineInfos[i].sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipelineInfos[i].stage  = shaderStages[i];
+        pipelineInfos[i].layout = vkComputePipelineLayout;
+    }
+    
+    // Create the compute pipelines.
+    if (vkCreateComputePipelines(vkDevice, VK_NULL_HANDLE, 5, pipelineInfos, nullptr, vkComputePipelines) != VK_SUCCESS) {
+        LogError(LogType::Vulkan, "Failed to create compute pipeline.");
+        throw std::runtime_error("VULKAN_GRAPHICS_PIPELINE_ERROR");
     }
 
     // Destroy all shader modules.

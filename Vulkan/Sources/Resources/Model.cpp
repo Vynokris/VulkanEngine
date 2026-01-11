@@ -18,11 +18,11 @@ Model::Model(std::string _name)
      : name(std::move(_name))
 {
      // TODO: Instance matrices shouldn't be hardcoded
-     transforms.resize(10000);
+     transforms.resize(4096);
      for (size_t i = 0; i < transforms.size(); i++)
      {
           Transform& t = transforms[i];
-          t.SetPosition({ (float)(i / 100), 0, -(float)(i % 100) });
+          t.SetPosition({ (float)(i / 64), 0, -(float)(i % 64) });
           t.SetRotation({ 0, 1, 0, 0 });
           t.SetScale({ 0.25f });
      }
@@ -221,20 +221,17 @@ template<> const GpuData<Model>& GpuDataManager::CreateData(const Model& resourc
                bufferInfos[1].range  = bufferElemCount * sizeof(uint32_t);
                bufferInfos[2].buffer = data.vkIndirectionBuffers[i];
                bufferInfos[2].range  = bufferElemCount * sizeof(uint32_t);
-
-               VkWriteDescriptorSet defaultDescriptorWrite = {};
-               defaultDescriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-               defaultDescriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-               defaultDescriptorWrite.descriptorCount = 1;
-               defaultDescriptorWrite.dstSet          = data.vkIndirectDescriptorSets[i];
-               defaultDescriptorWrite.dstArrayElement = 0;
                
-               VkWriteDescriptorSet descriptorWrites[4];
+               VkWriteDescriptorSet descriptorWrites[4] = {};
                for (uint32_t j = 0; j < 3; j++)
                {
-                    descriptorWrites[j] = defaultDescriptorWrite;
-                    descriptorWrites[j].dstBinding = j;
-                    descriptorWrites[j].pBufferInfo = &bufferInfos[j];
+                    descriptorWrites[j].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    descriptorWrites[j].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    descriptorWrites[j].descriptorCount = 1;
+                    descriptorWrites[j].dstSet          = data.vkIndirectDescriptorSets[i];
+                    descriptorWrites[j].dstArrayElement = 0;
+                    descriptorWrites[j].dstBinding      = j;
+                    descriptorWrites[j].pBufferInfo     = &bufferInfos[j];
                }
 
                const uint32_t constData[2] = { (uint32_t)resource.transforms.size(), numLODs };
@@ -244,10 +241,12 @@ template<> const GpuData<Model>& GpuDataManager::CreateData(const Model& resourc
                descriptorWriteInlineUniformBlock.dataSize = 2 * sizeof(uint32_t);
                descriptorWriteInlineUniformBlock.pData    = constData;
                
-               descriptorWrites[3] = defaultDescriptorWrite;
+               descriptorWrites[3].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                descriptorWrites[3].descriptorType  = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-               descriptorWrites[3].dstBinding      = 3;
                descriptorWrites[3].descriptorCount = 2 * sizeof(uint32_t);
+               descriptorWrites[3].dstSet          = data.vkIndirectDescriptorSets[i];
+               descriptorWrites[3].dstArrayElement = 0;
+               descriptorWrites[3].dstBinding      = 3;
                descriptorWrites[3].pNext           = &descriptorWriteInlineUniformBlock;
         
                vkUpdateDescriptorSets(vkDevice, 4, descriptorWrites, 0, nullptr);

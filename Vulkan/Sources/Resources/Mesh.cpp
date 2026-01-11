@@ -99,21 +99,25 @@ template<> const GpuArray<Mesh>& GpuDataManager::CreateArray()
 
     // Compute layout.
     {
-        // Set the binding of the draw indirect and indirection offsets buffers.
-        VkDescriptorSetLayoutBinding layoutBindings[2];
-        layoutBindings[0].binding         = 0;
+        // Set the binding of the draw indirect, indirection offsets and LOD distances buffers.
+        VkDescriptorSetLayoutBinding layoutBindings[3];
+        layoutBindings[0].stageFlags      = VK_SHADER_STAGE_ALL;
         layoutBindings[0].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         layoutBindings[0].descriptorCount = 1;
-        layoutBindings[0].stageFlags      = VK_SHADER_STAGE_ALL;
-        layoutBindings[1].binding         = 1;
+        layoutBindings[0].binding         = 0;
+        layoutBindings[1].stageFlags      = VK_SHADER_STAGE_ALL;
         layoutBindings[1].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         layoutBindings[1].descriptorCount = 1;
-        layoutBindings[1].stageFlags      = VK_SHADER_STAGE_ALL;
+        layoutBindings[1].binding         = 1;
+        layoutBindings[2].stageFlags      = VK_SHADER_STAGE_ALL;
+        layoutBindings[2].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        layoutBindings[2].descriptorCount = 1;
+        layoutBindings[2].binding         = 2;
 
         // Create the descriptor set layout.
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 2;
+        layoutInfo.bindingCount = 3;
         layoutInfo.pBindings    = layoutBindings;
         if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &meshesArray.vkComputeDescriptorSetLayout) != VK_SUCCESS) {
             LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
@@ -123,14 +127,14 @@ template<> const GpuArray<Mesh>& GpuDataManager::CreateArray()
         // Set the type and number of descriptors.
         VkDescriptorPoolSize poolSize{};
         poolSize.type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS * 2;
+        poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS * 3;
 
         // Create the descriptor pool.
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes    = &poolSize;
-        poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS * 2;
+        poolInfo.maxSets       = MAX_FRAMES_IN_FLIGHT * Engine::MAX_MODELS * 3;
         if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &meshesArray.vkDescriptorPool) != VK_SUCCESS) {
              LogError(LogType::Vulkan, "Failed to create descriptor pool.");
              throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
@@ -261,6 +265,19 @@ template<> const GpuData<Mesh>& GpuDataManager::CreateData(const Mesh& resource)
                          data.vkIndirectionOffsetsBuffers[i], data.vkIndirectionOffsetsBuffersMemory[i]);
         }
 
+        // Create the buffer to hold LOD distances.
+        {
+            CreateBuffer(vkDevice, vkPhysicalDevice, bufferElemCount * sizeof(float),
+                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         data.vkLodDistancesBuffer, data.vkLodDistancesBufferMemory);
+
+            constexpr float distData[] = { 1.f, 2.5f, 5.f, 7.5f, 10.f, 25.f, 50.f, 100.f };
+            float* distMapped;
+            vkMapMemory(vkDevice, data.vkLodDistancesBufferMemory, 0, bufferElemCount * sizeof(float), 0, (void**)&distMapped);
+            memcpy(distMapped, distData, bufferElemCount * sizeof(float));
+            vkUnmapMemory(vkDevice, data.vkLodDistancesBufferMemory);
+        }
+
         // De-allocate the staging buffer.
         vkDestroyBuffer(vkDevice, stagingBuffer,       nullptr);
         vkFreeMemory   (vkDevice, stagingBufferMemory, nullptr);
@@ -280,15 +297,18 @@ template<> const GpuData<Mesh>& GpuDataManager::CreateData(const Mesh& resource)
         // Populate the descriptor sets.
         for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            VkDescriptorBufferInfo bufferInfos[2] = {};
+            VkDescriptorBufferInfo bufferInfos[3] = {};
             bufferInfos[0].buffer = data.vkDrawIndirectBuffers[i];
             bufferInfos[0].range  = drawIndirectBufferSize;
             bufferInfos[0].offset = 0;
             bufferInfos[1].buffer = data.vkIndirectionOffsetsBuffers[i];
             bufferInfos[1].range  = bufferElemCount * sizeof(uint32_t);
             bufferInfos[1].offset = 0;
+            bufferInfos[2].buffer = data.vkLodDistancesBuffer;
+            bufferInfos[2].range  = bufferElemCount * sizeof(float);
+            bufferInfos[2].offset = 0;
 
-            VkWriteDescriptorSet descriptorWrites[2] = {};
+            VkWriteDescriptorSet descriptorWrites[3] = {};
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = data.vkIndirectDescriptorSets[i];
             descriptorWrites[0].dstBinding      = 0;
@@ -303,8 +323,15 @@ template<> const GpuData<Mesh>& GpuDataManager::CreateData(const Mesh& resource)
             descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             descriptorWrites[1].descriptorCount = 1;
             descriptorWrites[1].pBufferInfo     = &bufferInfos[1];
+            descriptorWrites[2].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[2].dstSet          = data.vkIndirectDescriptorSets[i];
+            descriptorWrites[2].dstBinding      = 2;
+            descriptorWrites[2].dstArrayElement = 0;
+            descriptorWrites[2].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[2].descriptorCount = 1;
+            descriptorWrites[2].pBufferInfo     = &bufferInfos[2];
 
-            vkUpdateDescriptorSets(vkDevice, 2, descriptorWrites, 0, nullptr);
+            vkUpdateDescriptorSets(vkDevice, 3, descriptorWrites, 0, nullptr);
         }
     }
     

@@ -105,7 +105,7 @@ void Engine::Render(Renderer* renderer) const
 {
     // Set the viewProj and viewPos constants in the shaders.
     const GraphicsUtils::ShaderFrameConstants frameConstants = {
-        camera->GetViewMat() * camera->GetProjMat(),
+        camera->ComputeViewProjMat(),
         camera->transform.GetPosition()
     };
     renderer->SetShaderFrameConstants(frameConstants);

@@ -38,6 +38,8 @@ namespace Core
         VkDeviceMemory  vkDrawIndirectBuffersMemory      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
         VkBuffer        vkIndirectionOffsetsBuffers      [GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
         VkDeviceMemory  vkIndirectionOffsetsBuffersMemory[GraphicsUtils::MAX_FRAMES_IN_FLIGHT] = { nullptr };
+        VkBuffer        vkLodDistancesBuffer;
+        VkDeviceMemory  vkLodDistancesBufferMemory;
     };
 
     template<> struct GpuData<Resources::Model>

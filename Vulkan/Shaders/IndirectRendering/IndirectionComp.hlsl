@@ -17,6 +17,8 @@ void main(uint3 threadID : SV_DispatchThreadID)
         return;
 
     const uint selectedSection = selectedSections[instanceID];
+    if (selectedSection == -1u)
+        return;
     
     uint outIndex;
     InterlockedAdd(indirectionOffsets[selectedSection], 1, outIndex);

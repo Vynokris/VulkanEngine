@@ -17,8 +17,10 @@ void main(uint3 threadID : SV_DispatchThreadID)
         return;
 
     const uint selectedSection = selectedSections[instanceID];
+    if (selectedSection == -1u)
+        return;
+
     const uint writeIndex = DRAW_INDIRECT_ARGS_COUNT * selectedSection + 1;
-    
     uint dummyOutput;
     InterlockedAdd(drawIndirect[writeIndex], 1, dummyOutput);
 }

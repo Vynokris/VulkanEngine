@@ -84,6 +84,8 @@ template<> void GpuDataManager::DestroyData(const Mesh& resource)
         if (data.vkDrawIndirectBuffers[i])             vkDestroyBuffer(vkDevice, data.vkDrawIndirectBuffers[i],             nullptr);
         if (data.vkDrawIndirectBuffersMemory[i])       vkFreeMemory   (vkDevice, data.vkDrawIndirectBuffersMemory[i],       nullptr);
     }
+    if (data.vkLodDistancesBuffer      ) vkDestroyBuffer(vkDevice, data.vkLodDistancesBuffer,       nullptr);
+    if (data.vkLodDistancesBufferMemory) vkFreeMemory   (vkDevice, data.vkLodDistancesBufferMemory, nullptr);
     materials.erase(resource.GetID());
 }
 
