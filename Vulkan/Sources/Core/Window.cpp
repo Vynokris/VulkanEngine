@@ -23,13 +23,14 @@ Window::Window(const WindowParams& windowParams)
 {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    // Set the window size to the monitor size if windowWidth and windowHeight are not positive.
-    if (params.width < 0 && params.height < 0)
+    // Set the window size to the monitor size if windowWidth or windowHeight are not positive or zero.
+    const bool autoSizeWindow = (params.width <= 0 || params.height <= 0);
+    if (autoSizeWindow)
     {
               GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
-        params.width = vidMode->width; params.height = vidMode->height - 30; // TODO: check this on different monitor resolutions.
-        params.posX = 0; params.posY = 30;
+        params.width = vidMode->width; params.height = vidMode->height;
+        params.posX = 0; params.posY = 0;
     }
     
     // Create a new glfw window with the given parameters.
@@ -45,8 +46,20 @@ Window::Window(const WindowParams& windowParams)
     // Set the minimum size of the window.
     glfwSetWindowSizeLimits(glfwWindow, 1, 1, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
+    // Resize and move the window so that the top frame isn't offscreen.
+    if (autoSizeWindow)
+    {
+        int frameSizeTop;
+        glfwGetWindowFrameSize(glfwWindow, nullptr, &frameSizeTop, nullptr, nullptr);
+        if (frameSizeTop > 0)
+        {
+            SetHeight(params.height - frameSizeTop);
+            SetPosY(params.posY + frameSizeTop);
+        }
+    }
+
     // Set window user pointer and callbacks.
-    glfwSetWindowUserPointer (glfwWindow, this);
+    glfwSetWindowUserPointer(glfwWindow, this);
     glfwSetFramebufferSizeCallback(glfwWindow, [](GLFWwindow* _glfwWindow, int _width, int _height)
     {
         Window* window = (Window*)glfwGetWindowUserPointer(_glfwWindow);
