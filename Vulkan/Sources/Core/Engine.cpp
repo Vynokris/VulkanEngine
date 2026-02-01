@@ -7,9 +7,7 @@
 #include "Maths/MathConstants.h"
 #include "Maths/AngleAxis.h"
 #include "Resources/Camera.h"
-#include "Resources/Model.h"
 #include "Resources/Mesh.h"
-#include "Resources/Texture.h"
 #include "Core/WavefrontParser.h"
 #include "Resources/Light.h"
 #include <filesystem>
@@ -112,6 +110,14 @@ void Engine::Render(Renderer* renderer) const
         renderer->DrawModel(model);
 }
 
+static bool IsTextureFile(const std::string& extension)
+{
+    return extension == ".jpg"  ||
+           extension == ".png"  ||
+           extension == ".jpeg" ||
+           extension == ".tga";
+}
+
 void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ...)
 {
     va_list args;
@@ -143,16 +149,37 @@ void Engine::LoadFile(const std::string& filename, int additionalParamsCount, ..
         }
         return;
     }
-    if (extension == ".jpg"  ||
-        extension == ".png"  ||
-        extension == ".jpeg" ||
-        extension == ".tga")
+    if (IsTextureFile(extension))
     {
         const std::string pathStr = path.string();
         if (textures.find(pathStr) == textures.end())
             textures[pathStr] = Texture(pathStr, additionalParamsCount > 0 ? va_arg(args, bool) : true);
         else
             LogWarning(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
+        return;
+    }
+    if (filename.back() == '\\')
+    {
+        const std::string pathStr = path.string();
+        uint32_t texCount = 0;
+        std::array<std::string, 6> texPaths;
+        for (const auto& entry : fs::directory_iterator(path))
+        {
+            if (!IsTextureFile(entry.path().extension().string()))
+                continue;
+            if (texCount < 6)
+                texPaths[texCount] = entry.path().string();
+            ++texCount;
+        }
+        if (texCount == 6)
+        {
+            if (cubemaps.find(pathStr) == cubemaps.end())
+                cubemaps[pathStr] = Cubemap(texPaths);
+            else
+                LogWarning(LogType::Resources, "Tried to create " + path.string() + " multiple times.");
+        }
+        else
+            LogWarning(LogType::Resources, "Unable to load cubemap, only found " + std::to_string(texPaths.size()) + " textures in directory " + path.string());
         return;
     }
 }

@@ -438,7 +438,7 @@ void GraphicsUtils::CopyBuffer(const VkDevice& device, const VkCommandPool& comm
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void GraphicsUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory)
+void GraphicsUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels, const VkSampleCountFlagBits& numSamples, const VkFormat& format, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imageMemory, bool isCubemap)
 {    
     // Create a vulkan image.
     VkImageCreateInfo imageInfo{};
@@ -448,14 +448,14 @@ void GraphicsUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& 
     imageInfo.extent.height = (uint32_t)height;
     imageInfo.extent.depth  = 1;
     imageInfo.mipLevels     = mipLevels;
-    imageInfo.arrayLayers   = 1;
+    imageInfo.arrayLayers   = isCubemap ? 6 : 1;
     imageInfo.format        = format;
     imageInfo.tiling        = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage         = usage;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.samples       = numSamples;
-    imageInfo.flags         = 0; // Optional.
+    imageInfo.flags         = isCubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to create texture image.");
         throw std::runtime_error("VULKAN_TEXTURE_IMAGE_ERROR");
@@ -475,13 +475,13 @@ void GraphicsUtils::CreateImage(const VkDevice& device, const VkPhysicalDevice& 
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void GraphicsUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView)
+void GraphicsUtils::CreateImageView(const VkDevice& device, const VkImage& image, const VkFormat& format, const VkImageAspectFlags& aspectFlags, const uint32_t& mipLevels, VkImageView& imageView, bool isCubemap)
 {
     // Set creation information for the image view.
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image    = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.viewType = isCubemap ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format   = format;
 
     // Set color channel swizzling.
@@ -495,7 +495,7 @@ void GraphicsUtils::CreateImageView(const VkDevice& device, const VkImage& image
     viewInfo.subresourceRange.baseMipLevel   = 0;
     viewInfo.subresourceRange.levelCount     = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount     = 1;
+    viewInfo.subresourceRange.layerCount     = isCubemap ? 6 : 1;
 
     // Create the image view.
     if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
@@ -504,7 +504,7 @@ void GraphicsUtils::CreateImageView(const VkDevice& device, const VkImage& image
     }
 }
 
-void GraphicsUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout)
+void GraphicsUtils::TransitionImageLayout(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkImage& image, const VkFormat& format, const uint32_t& mipLevels, const VkImageLayout& oldLayout, const VkImageLayout& newLayout, bool isCubemap)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 
@@ -519,7 +519,7 @@ void GraphicsUtils::TransitionImageLayout(const VkDevice& device, const VkComman
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.layerCount     = isCubemap ? 6 : 1;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -558,7 +558,7 @@ void GraphicsUtils::TransitionImageLayout(const VkDevice& device, const VkComman
     EndSingleTimeCommands(device, commandPool, graphicsQueue, commandBuffer);
 }
 
-void GraphicsUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height)
+void GraphicsUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& graphicsQueue, const VkBuffer& buffer, const VkImage& image, const uint32_t& width, const uint32_t& height, bool isCubemap)
 {
     const VkCommandBuffer commandBuffer = BeginSingleTimeCommands(device, commandPool);
 
@@ -569,7 +569,7 @@ void GraphicsUtils::CopyBufferToImage(const VkDevice& device, const VkCommandPoo
     region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel       = 0;
     region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount     = 1;
+    region.imageSubresource.layerCount     = isCubemap ? 6 : 1;
     region.imageOffset                     = { 0, 0, 0 };
     region.imageExtent                     = { width, height, 1 };
     vkCmdCopyBufferToImage(

@@ -3,7 +3,7 @@
 #include "GraphicsUtils.h"
 #include <unordered_map>
 
-namespace Resources { class Texture; class Material; class Mesh; class Model; class Light; }
+namespace Resources { class Texture; class Cubemap; class Material; class Mesh; class Model; class Light; }
 
 namespace Core
 {
@@ -12,6 +12,14 @@ namespace Core
     template<typename> struct GpuData { GpuData() = delete; };
 
     template<> struct GpuData<Resources::Texture>
+    {
+        VkImage        vkImage       = nullptr;
+        VkDeviceMemory vkImageMemory = nullptr;
+        VkImageView    vkImageView   = nullptr;
+        VkFormat       vkImageFormat;
+    };
+
+    template<> struct GpuData<Resources::Cubemap>
     {
         VkImage        vkImage       = nullptr;
         VkDeviceMemory vkImageMemory = nullptr;
@@ -69,6 +77,7 @@ namespace Core
         GpuArray<Resources::Light>    lightsArray;
         
         std::unordered_map<uid_t, GpuData<Resources::Texture>>  textures;
+        std::unordered_map<uid_t, GpuData<Resources::Cubemap>>  cubemaps;
         std::unordered_map<uid_t, GpuData<Resources::Material>> materials;
         std::unordered_map<uid_t, GpuData<Resources::Mesh>>     meshes;
         std::unordered_map<uid_t, GpuData<Resources::Model>>    models;
@@ -100,6 +109,7 @@ namespace Core
     template<> const GpuArray<Resources::Model   >& GpuDataManager::CreateArray<Resources::Model   >();
     template<> const GpuArray<Resources::Light   >& GpuDataManager::CreateArray<Resources::Light   >();
     template<> const GpuData <Resources::Texture >& GpuDataManager::CreateData(const Resources::Texture&  resource);
+    template<> const GpuData <Resources::Cubemap >& GpuDataManager::CreateData(const Resources::Cubemap&  resource);
     template<> const GpuData <Resources::Material>& GpuDataManager::CreateData(const Resources::Material& resource);
     template<> const GpuData <Resources::Model   >& GpuDataManager::CreateData(const Resources::Model&    resource);
     template<> const GpuData <Resources::Mesh    >& GpuDataManager::CreateData(const Resources::Mesh&     resource);
@@ -108,6 +118,7 @@ namespace Core
     template<> void GpuDataManager::DestroyArray<Resources::Model   >();
     template<> void GpuDataManager::DestroyArray<Resources::Light   >();
     template<> void GpuDataManager::DestroyData(const Resources::Texture&  resource);
+    template<> void GpuDataManager::DestroyData(const Resources::Cubemap&  resource);
     template<> void GpuDataManager::DestroyData(const Resources::Material& resource);
     template<> void GpuDataManager::DestroyData(const Resources::Model&    resource);
     template<> void GpuDataManager::DestroyData(const Resources::Mesh&     resource);
@@ -116,6 +127,7 @@ namespace Core
     template<> bool GpuDataManager::CheckArray<Resources::Model   >() const;
     template<> bool GpuDataManager::CheckArray<Resources::Light   >() const;
     template<> bool GpuDataManager::CheckData(const Resources::Texture&  resource) const;
+    template<> bool GpuDataManager::CheckData(const Resources::Cubemap&  resource) const;
     template<> bool GpuDataManager::CheckData(const Resources::Material& resource) const;
     template<> bool GpuDataManager::CheckData(const Resources::Model&    resource) const;
     template<> bool GpuDataManager::CheckData(const Resources::Mesh&     resource) const;
@@ -124,6 +136,7 @@ namespace Core
     template<> const GpuArray<Resources::Model   >& GpuDataManager::GetArray<Resources::Model   >() const;
     template<> const GpuArray<Resources::Light   >& GpuDataManager::GetArray<Resources::Light   >() const;
     template<> const GpuData <Resources::Texture >* GpuDataManager::GetData(const Resources::Texture&  resource) const;
+    template<> const GpuData <Resources::Cubemap >* GpuDataManager::GetData(const Resources::Cubemap&  resource) const;
     template<> const GpuData <Resources::Material>* GpuDataManager::GetData(const Resources::Material& resource) const;
     template<> const GpuData <Resources::Model   >* GpuDataManager::GetData(const Resources::Model&    resource) const;
     template<> const GpuData <Resources::Mesh    >* GpuDataManager::GetData(const Resources::Mesh&     resource) const;

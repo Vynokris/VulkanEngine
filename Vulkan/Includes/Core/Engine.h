@@ -3,16 +3,13 @@
 #include "Resources/Model.h"
 #include "Resources/Material.h"
 #include "Resources/Texture.h"
+#include "Resources/Cubemap.h"
 #include <string>
 #include <unordered_map>
 
 namespace Resources
 {
 	class Camera;
-	class Model;
-	class Material;
-	class Texture;
-	class Light;
 }
 
 namespace Core
@@ -35,11 +32,14 @@ namespace Core
 		std::unordered_map<std::string, Resources::Model>    models;
 		std::unordered_map<std::string, Resources::Material> materials;
 		std::unordered_map<std::string, Resources::Texture>  textures;
+		std::unordered_map<std::string, Resources::Cubemap>  cubemaps;
 
 	public:
 		float cameraSpeed       = 2;
 		float cameraSensitivity = 5e-3f;
 		const std::vector<std::string> defaultResources = {
+			R"(Resources\Cubemaps\IcelandLake\)",
+			// R"(Resources\Cubemaps\CorsicaMountain\)",
 			// R"(Resources\Models\Stadium\stadium.obj)",
 			// R"(Resources\Meshes\Quad.obj)",
 			R"(Resources\Meshes\Cube.obj)",

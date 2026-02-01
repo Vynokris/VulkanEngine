@@ -14,7 +14,6 @@ using namespace GraphicsUtils;
 
 GpuDataManager::~GpuDataManager()
 {
-    
 }
 
 template<> void GpuDataManager::DestroyArray<Material>()
@@ -49,6 +48,17 @@ template<> void GpuDataManager::DestroyData(const Texture& resource)
     if (data.vkImageMemory) vkFreeMemory      (vkDevice, data.vkImageMemory, nullptr);
     if (data.vkImageView  ) vkDestroyImageView(vkDevice, data.vkImageView,   nullptr);
     textures.erase(resource.GetID());
+}
+
+template<> void GpuDataManager::DestroyData(const Cubemap& resource)
+{
+    if (!CheckData(resource)) return;
+    const VkDevice vkDevice = renderer->GetVkDevice();
+    const GpuData<Cubemap>& data = cubemaps.at(resource.GetID());
+    if (data.vkImage      ) vkDestroyImage    (vkDevice, data.vkImage,       nullptr);
+    if (data.vkImageMemory) vkFreeMemory      (vkDevice, data.vkImageMemory, nullptr);
+    if (data.vkImageView  ) vkDestroyImageView(vkDevice, data.vkImageView,   nullptr);
+    cubemaps.erase(resource.GetID());
 }
 
 template<> void GpuDataManager::DestroyData(const Material& resource)
@@ -91,6 +101,7 @@ template<> bool GpuDataManager::CheckArray<Light>()    const { return lightsArra
                                                                    && lightsArray.vkDescriptorSet && lightsArray.vkBuffer && lightsArray.vkBufferMemory; }
 
 template<> bool GpuDataManager::CheckData(const Texture&  resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && textures .find(id) != textures .end(); }
+template<> bool GpuDataManager::CheckData(const Cubemap&  resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && cubemaps .find(id) != cubemaps .end(); }
 template<> bool GpuDataManager::CheckData(const Material& resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && materials.find(id) != materials.end(); }
 template<> bool GpuDataManager::CheckData(const Mesh&     resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && meshes   .find(id) != meshes   .end(); }
 template<> bool GpuDataManager::CheckData(const Model&    resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && models   .find(id) != models   .end(); }
@@ -108,6 +119,17 @@ template<> const GpuData<Texture>* GpuDataManager::GetData(const Texture& resour
         return nullptr;
     }
     return &textures.at(id);
+}
+
+template<> const GpuData<Cubemap>* GpuDataManager::GetData(const Cubemap& resource) const
+{
+    const uid_t id = resource.GetID();
+    if (id == UniqueID::unassigned || cubemaps.find(id) == cubemaps.end()) {
+        LogError(LogType::Resources, "No cubemap with ID " + std::to_string(id));
+        // throw std::runtime_error("RESOURCE_ID_NOT_FOUND");
+        return nullptr;
+    }
+    return &cubemaps.at(id);
 }
 
 template<> const GpuData<Material>* GpuDataManager::GetData(const Material& resource) const
