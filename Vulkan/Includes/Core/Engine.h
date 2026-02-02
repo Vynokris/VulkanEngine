@@ -21,8 +21,9 @@ namespace Core
 	{
 	public:
 		static constexpr size_t MAX_LIGHTS    = 5;
-		static constexpr size_t MAX_MODELS    = 1000;
-		static constexpr size_t MAX_MATERIALS = 5000;
+		static constexpr size_t MAX_MODELS    = 100;
+		static constexpr size_t MAX_MATERIALS = 100;
+		static constexpr size_t MAX_CUBEMAPS  = 5;
 		
 	private:
         Application*       app    = nullptr;
@@ -38,8 +39,8 @@ namespace Core
 		float cameraSpeed       = 2;
 		float cameraSensitivity = 5e-3f;
 		const std::vector<std::string> defaultResources = {
-			R"(Resources\Cubemaps\IcelandLake\)",
-			// R"(Resources\Cubemaps\CorsicaMountain\)",
+			// R"(Resources\Cubemaps\IcelandLake\)",
+			R"(Resources\Cubemaps\CorsicaMountain\)",
 			// R"(Resources\Models\Stadium\stadium.obj)",
 			// R"(Resources\Meshes\Quad.obj)",
 			R"(Resources\Meshes\Cube.obj)",
@@ -70,10 +71,11 @@ namespace Core
 		void LoadFile(const std::string& filename, int additionalParamsCount = 0, ...);
 
 		Resources::Camera*   GetCamera() const { return camera; }
+		Resources::Light*    GetLight   (const size_t& idx);
 		Resources::Model*    GetModel   (const std::string& name);
 		Resources::Material* GetMaterial(const std::string& name);
 		Resources::Texture*  GetTexture (const std::string& name);
-		Resources::Light*    GetLight   (const size_t& idx);
+		Resources::Cubemap*  GetMainCubemap();
 		
 		void ResizeCamera(const int& width, const int& height) const;
 	};

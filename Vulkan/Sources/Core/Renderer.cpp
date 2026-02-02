@@ -3,6 +3,7 @@
 #include "Core/GpuDataManager.h"
 #include "Core/Logger.h"
 #include "Core/Window.h"
+#include "Core/RendererEnvmap.h"
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Texture.h"
@@ -46,6 +47,7 @@ Renderer::Renderer(Application* application, const char* appName, const char* en
     );
     CreateRenderPass();
     CreateDescriptorLayoutsAndPools();
+    rendererEnvmap = new RendererEnvmap(application, this);
     CreateGraphicsPipeline();
     CreateColorResources();
     CreateDepthResources();
@@ -73,6 +75,7 @@ Renderer::~Renderer()
     vkDestroySampler               (vkDevice, vkTextureSampler,   nullptr);
     vkDestroyCommandPool           (vkDevice, vkCommandPool,      nullptr);
     vkDestroyPipeline              (vkDevice, vkGraphicsPipeline, nullptr);
+    delete rendererEnvmap;
     vkDestroyPipelineLayout        (vkDevice, vkPipelineLayout,   nullptr);
     vkDestroyRenderPass            (vkDevice, vkRenderPass,       nullptr);
     vkDestroyDevice                (vkDevice,                     nullptr);
@@ -139,11 +142,11 @@ void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start,
     vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
 }
 
-void Renderer::BeginRender()
+/*void Renderer::BeginRender()
 {
     NewFrame();
     BeginRenderPass();
-}
+}*/
 
 void Renderer::DrawModel(const Resources::Model& model) const
 {
@@ -176,11 +179,11 @@ void Renderer::DrawModel(const Resources::Model& model) const
     }
 }
 
-void Renderer::EndRender()
+/*void Renderer::EndRender()
 {
     EndRenderPass();
     PresentFrame();
-}
+}*/
 
 void Renderer::WaitUntilIdle() const
 {
@@ -524,8 +527,8 @@ void Renderer::CreateRenderPass()
     depthAttachment.format         = vkDepthImageFormat;
     depthAttachment.samples        = msaaSamples;
     depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // No stencil is used so we don't care.
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -585,8 +588,9 @@ void Renderer::CreateRenderPass()
 void Renderer::CreateDescriptorLayoutsAndPools()
 {
     // Create layouts and pools for lights, models and materials.
-    gpuData->CreateArray<Resources::Model>();
+    gpuData->CreateArray<Resources::Cubemap>();
     gpuData->CreateArray<Resources::Material>();
+    gpuData->CreateArray<Resources::Model>();
     gpuData->CreateArray<Resources::Light>();
 
     // Create layout, pool and descriptor for constant data.
@@ -654,11 +658,6 @@ void Renderer::CreateGraphicsPipeline()
     inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-    // Specify the scissor rectangle (pixels outside it will be discarded).
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = { vkSwapChainWidth, vkSwapChainHeight };
 
     // Create the dynamic states for viewport and scissor.
     std::vector dynamicStates = {
@@ -968,8 +967,9 @@ void Renderer::DestroySwapChain() const
 
 void Renderer::DestroyDescriptorLayoutsAndPools() const
 {
-    gpuData->DestroyArray<Resources::Model>();
+    gpuData->DestroyArray<Resources::Cubemap>();
     gpuData->DestroyArray<Resources::Material>();
+    gpuData->DestroyArray<Resources::Model>();
     gpuData->DestroyArray<Resources::Light>();
 
     if (constDataDescriptorLayout) vkDestroyDescriptorSetLayout(vkDevice, constDataDescriptorLayout, nullptr);
@@ -998,10 +998,7 @@ void Renderer::NewFrame()
 
     // Only reset fences if we are going to be submitting work.
     vkResetFences(vkDevice, 1, &vkInFlightFences[currentFrame]);
-}
-
-void Renderer::BeginRenderPass() const
-{
+    
     // Reset the command buffer.
     vkResetCommandBuffer(vkCommandBuffers[currentFrame],  0);
     
@@ -1012,7 +1009,10 @@ void Renderer::BeginRenderPass() const
         LogError(LogType::Vulkan, "Failed to begin recording command buffer.");
         throw std::runtime_error("VULKAN_BEGIN_COMMAND_BUFFER_ERROR");
     }
+}
 
+void Renderer::BeginRenderPass() const
+{
     // Define the clear color.
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color        = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
@@ -1053,16 +1053,16 @@ void Renderer::EndRenderPass() const
 {
     // End the render pass.
     vkCmdEndRenderPass(vkCommandBuffers[currentFrame]);
+}
 
+void Renderer::PresentFrame()
+{
     // Stop recording the command buffer.
     if (vkEndCommandBuffer(vkCommandBuffers[currentFrame]) != VK_SUCCESS) {
         LogError(LogType::Vulkan, "Failed to record command buffer.");
         throw std::runtime_error("VULKAN_RECORD_COMMAND_BUFFER_ERROR");
     }
-}
-
-void Renderer::PresentFrame()
-{
+    
     // Set the command buffer submit information.
     const VkSemaphore          waitSemaphores  [] = { vkImageAvailableSemaphores[currentFrame] };
     const VkPipelineStageFlags waitStages      [] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };

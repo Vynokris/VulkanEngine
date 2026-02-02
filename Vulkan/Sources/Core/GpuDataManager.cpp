@@ -16,6 +16,13 @@ GpuDataManager::~GpuDataManager()
 {
 }
 
+template<> void GpuDataManager::DestroyArray<Cubemap>()
+{
+    const VkDevice vkDevice = renderer->GetVkDevice();
+    if (cubemapsArray.vkDescriptorSetLayout) vkDestroyDescriptorSetLayout(vkDevice, cubemapsArray.vkDescriptorSetLayout, nullptr);
+    if (cubemapsArray.vkDescriptorPool)      vkDestroyDescriptorPool     (vkDevice, cubemapsArray.vkDescriptorPool,      nullptr);
+}
+
 template<> void GpuDataManager::DestroyArray<Material>()
 {
     const VkDevice vkDevice = renderer->GetVkDevice();
@@ -80,7 +87,7 @@ template<> void GpuDataManager::DestroyData(const Mesh& resource)
     if (data.vkIndexBufferMemory ) vkFreeMemory   (vkDevice, data.vkIndexBufferMemory,  nullptr);
     if (data.vkVertexBuffer      ) vkDestroyBuffer(vkDevice, data.vkVertexBuffer,       nullptr);
     if (data.vkVertexBufferMemory) vkFreeMemory   (vkDevice, data.vkVertexBufferMemory, nullptr);
-    materials.erase(resource.GetID());
+    meshes.erase(resource.GetID());
 }
 
 template<> void GpuDataManager::DestroyData(const Model& resource)
@@ -92,9 +99,10 @@ template<> void GpuDataManager::DestroyData(const Model& resource)
         if (data.vkTransformBuffers[i])       vkDestroyBuffer(vkDevice, data.vkTransformBuffers[i],       nullptr);
         if (data.vkTransformBuffersMemory[i]) vkFreeMemory   (vkDevice, data.vkTransformBuffersMemory[i], nullptr);
     }
-    materials.erase(resource.GetID());
+    models.erase(resource.GetID());
 }
 
+template<> bool GpuDataManager::CheckArray<Cubemap>()  const { return cubemapsArray .vkDescriptorPool && cubemapsArray .vkDescriptorSetLayout; }
 template<> bool GpuDataManager::CheckArray<Material>() const { return materialsArray.vkDescriptorPool && materialsArray.vkDescriptorSetLayout; }
 template<> bool GpuDataManager::CheckArray<Model>()    const { return modelsArray   .vkDescriptorPool && modelsArray   .vkDescriptorSetLayout; }
 template<> bool GpuDataManager::CheckArray<Light>()    const { return lightsArray   .vkDescriptorPool && lightsArray   .vkDescriptorSetLayout
@@ -106,6 +114,7 @@ template<> bool GpuDataManager::CheckData(const Material& resource) const { cons
 template<> bool GpuDataManager::CheckData(const Mesh&     resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && meshes   .find(id) != meshes   .end(); }
 template<> bool GpuDataManager::CheckData(const Model&    resource) const { const uid_t id = resource.GetID(); return id != UniqueID::unassigned && models   .find(id) != models   .end(); }
 
+template<> const GpuArray<Cubemap >& GpuDataManager::GetArray() const { return cubemapsArray;  }
 template<> const GpuArray<Material>& GpuDataManager::GetArray() const { return materialsArray; }
 template<> const GpuArray<Model>&    GpuDataManager::GetArray() const { return modelsArray;    }
 template<> const GpuArray<Light>&    GpuDataManager::GetArray() const { return lightsArray;    }

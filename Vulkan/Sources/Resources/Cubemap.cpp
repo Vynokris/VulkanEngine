@@ -2,6 +2,7 @@
 #include "Core/Application.h"
 #include "Core/Logger.h"
 #include "Core/Renderer.h"
+#include "Core/Engine.h"
 #include "Core/GpuDataManager.h"
 #include <stb_image.h>
 #include <vulkan/vulkan.h>
@@ -15,7 +16,7 @@ Cubemap::Cubemap(std::array<std::string, 6> filenames)
     // Load the texture data.
     for (uint32_t i = 0; i < 6; i++)
     {
-        stbi_set_flip_vertically_on_load_thread(true);
+        stbi_set_flip_vertically_on_load_thread(false);
         pixels[i] = stbi_load(names[i].c_str(), &width, &height, &channels, STBI_rgb_alpha);
         if (!pixels[i]) {
             LogError(LogType::Resources, "Unable to load texture " + names[i]);
@@ -68,6 +69,49 @@ Cubemap::~Cubemap()
     }
 }
 
+
+template<> const GpuArray<Cubemap>& GpuDataManager::CreateArray()
+{
+    if (cubemapsArray.vkDescriptorSetLayout && cubemapsArray.vkDescriptorPool) return cubemapsArray;
+
+    // Get the necessary vulkan resources.
+    const VkDevice vkDevice = renderer->GetVkDevice();
+     
+    // Set the binding of cubemap textures.
+    VkDescriptorSetLayoutBinding layoutBinding{};
+    layoutBinding.binding         = 0;
+    layoutBinding.descriptorCount = 1;
+    layoutBinding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layoutBinding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    // Create the descriptor set layout.
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings    = &layoutBinding;
+    if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &cubemapsArray.vkDescriptorSetLayout) != VK_SUCCESS) {
+        LogError(LogType::Vulkan, "Failed to create descriptor set layout.");
+        throw std::runtime_error("VULKAN_DESCRIPTOR_SET_LAYOUT_ERROR");
+    }
+
+    // Set the type and number of descriptors.
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = Engine::MAX_CUBEMAPS;
+
+    // Create the descriptor pool.
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes    = &poolSize;
+    poolInfo.maxSets       = Engine::MAX_CUBEMAPS;
+    if (vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &cubemapsArray.vkDescriptorPool) != VK_SUCCESS) {
+        LogError(LogType::Vulkan, "Failed to create descriptor pool.");
+        throw std::runtime_error("VULKAN_DESCRIPTOR_POOL_ERROR");
+    }
+
+    return cubemapsArray;
+}
 
 template<> const GpuData<Cubemap>& GpuDataManager::CreateData(const Cubemap& resource)
 {
@@ -203,6 +247,35 @@ template<> const GpuData<Cubemap>& GpuDataManager::CreateData(const Cubemap& res
 
     // Create the texture image view.
     CreateImageView(device, data.vkImage, data.vkImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, data.vkImageView, true);
+
+    // Allocate the descriptor set.
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool     = cubemapsArray.vkDescriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts        = &cubemapsArray.vkDescriptorSetLayout;
+    if (vkAllocateDescriptorSets(device, &allocInfo, &data.vkDescriptorSet) != VK_SUCCESS) {
+        LogError(LogType::Vulkan, "Failed to allocate descriptor sets.");
+        throw std::runtime_error("VULKAN_DESCRIPTOR_SET_ALLOCATION_ERROR");
+    }
+
+    // Populate the descriptor set.
+    VkDescriptorImageInfo imageInfo{};
+    const GpuData<Cubemap>* gpuData = GetData(resource);
+    imageInfo.imageView   = gpuData ? gpuData->vkImageView : VK_NULL_HANDLE;
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.sampler     = renderer->GetVkTextureSampler();
+    
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet          = data.vkDescriptorSet;
+    descriptorWrite.dstBinding      = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pImageInfo      = &imageInfo;
+    
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     
     return data;
 }

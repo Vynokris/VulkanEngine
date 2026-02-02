@@ -7,6 +7,8 @@
 #include "Core/UserInterface.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+
+#include "Core/RendererEnvmap.h"
 using namespace Core;
 
 Application* Application::Create()
@@ -53,12 +55,19 @@ void Application::Run() const
         window->Update();
         engine->Update(window->GetDeltaTime());
         
-        renderer->BeginRender();
-        {
-            engine->Render(renderer);
-            ui->Render();
-        }
-        renderer->EndRender();
+        renderer->NewFrame();
+        
+        renderer->BeginRenderPass();
+        engine->Render(renderer);
+        renderer->EndRenderPass();
+
+        RendererEnvmap* rendererEnvmap = renderer->GetRendererEnvmap();
+        rendererEnvmap->BeginRenderPass();
+        rendererEnvmap->Render();
+        ui->Render();
+        rendererEnvmap->EndRenderPass();
+        
+        renderer->PresentFrame();
         window->EndFrame();
     }
 }

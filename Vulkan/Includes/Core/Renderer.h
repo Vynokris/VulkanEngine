@@ -1,17 +1,21 @@
 ﻿#pragma once
 #include "GraphicsUtils.h"
 
-namespace Resources { class Camera; class Model; }
+namespace Resources { class Camera; class Model; class Cubemap; }
 namespace Core
 {
     class Application;
     class GpuDataManager;
+    class RendererEnvmap;
 
     class Renderer
     {
+        friend RendererEnvmap;
+        
     private:
         Application*                      app;
         GpuDataManager*                   gpuData;
+        RendererEnvmap*                   rendererEnvmap        = nullptr;
         VkInstance                        vkInstance            = nullptr;
         VkDebugUtilsMessengerEXT          vkDebugMessenger      = nullptr;
         VkSurfaceKHR                      vkSurface             = nullptr;
@@ -63,13 +67,19 @@ namespace Core
         void SetShaderFrameConstants(const GraphicsUtils::ShaderFrameConstants& constants) const;
         void SetDistanceFogParams(const Maths::RGB& color, const float& start, const float& end);
 
-        void BeginRender();
+        //void BeginRender();
+        void NewFrame();
+        void BeginRenderPass() const;
         void DrawModel(const Resources::Model& model) const;
-        void EndRender();
+        void EndRenderPass() const;
+        void PresentFrame();
+        //void EndRender();
+
 
         void WaitUntilIdle() const;
         void ResizeSwapChain() { framebufferResized = true; }
 
+        RendererEnvmap*       GetRendererEnvmap()        const { return rendererEnvmap; }
         VkInstance            GetVkInstance()            const { return vkInstance; }
         VkSurfaceKHR          GetVkSurface()             const { return vkSurface; }
         VkPhysicalDevice      GetVkPhysicalDevice()      const { return vkPhysicalDevice; }
@@ -108,10 +118,5 @@ namespace Core
         void RecreateSwapChain();
         void DestroySwapChain() const;
         void DestroyDescriptorLayoutsAndPools() const;
-
-        void NewFrame();
-        void BeginRenderPass() const;
-        void EndRenderPass() const;
-        void PresentFrame();
     };
 }

@@ -212,6 +212,13 @@ Texture* Engine::GetTexture(const std::string& name)
     return nullptr;
 }
 
+Cubemap* Engine::GetMainCubemap()
+{
+    if (cubemaps.empty())
+        return nullptr;
+    return &cubemaps.begin()->second;
+}
+
 void Engine::ResizeCamera(const int& width, const int& height) const
 {
     const CameraParams params = camera->GetParams();

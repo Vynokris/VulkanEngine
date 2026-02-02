@@ -21,10 +21,11 @@ namespace Core
 
     template<> struct GpuData<Resources::Cubemap>
     {
-        VkImage        vkImage       = nullptr;
-        VkDeviceMemory vkImageMemory = nullptr;
-        VkImageView    vkImageView   = nullptr;
-        VkFormat       vkImageFormat;
+        VkDescriptorSet vkDescriptorSet = nullptr;
+        VkImage         vkImage         = nullptr;
+        VkDeviceMemory  vkImageMemory   = nullptr;
+        VkImageView     vkImageView     = nullptr;
+        VkFormat        vkImageFormat;
     };
 
     template<> struct GpuData<Resources::Material>
@@ -72,6 +73,7 @@ namespace Core
     private:
         Renderer* renderer;
         
+        GpuArray<Resources::Cubemap>  cubemapsArray;
         GpuArray<Resources::Material> materialsArray;
         GpuArray<Resources::Model>    modelsArray;
         GpuArray<Resources::Light>    lightsArray;
@@ -105,6 +107,7 @@ namespace Core
         template<typename T> const GpuData<T>*  GetData(const T& resource) const;
     };
     
+    template<> const GpuArray<Resources::Cubemap >& GpuDataManager::CreateArray<Resources::Cubemap >();
     template<> const GpuArray<Resources::Material>& GpuDataManager::CreateArray<Resources::Material>();
     template<> const GpuArray<Resources::Model   >& GpuDataManager::CreateArray<Resources::Model   >();
     template<> const GpuArray<Resources::Light   >& GpuDataManager::CreateArray<Resources::Light   >();
@@ -114,6 +117,7 @@ namespace Core
     template<> const GpuData <Resources::Model   >& GpuDataManager::CreateData(const Resources::Model&    resource);
     template<> const GpuData <Resources::Mesh    >& GpuDataManager::CreateData(const Resources::Mesh&     resource);
     
+    template<> void GpuDataManager::DestroyArray<Resources::Cubemap >();
     template<> void GpuDataManager::DestroyArray<Resources::Material>();
     template<> void GpuDataManager::DestroyArray<Resources::Model   >();
     template<> void GpuDataManager::DestroyArray<Resources::Light   >();
@@ -123,6 +127,7 @@ namespace Core
     template<> void GpuDataManager::DestroyData(const Resources::Model&    resource);
     template<> void GpuDataManager::DestroyData(const Resources::Mesh&     resource);
     
+    template<> bool GpuDataManager::CheckArray<Resources::Cubemap >() const;
     template<> bool GpuDataManager::CheckArray<Resources::Material>() const;
     template<> bool GpuDataManager::CheckArray<Resources::Model   >() const;
     template<> bool GpuDataManager::CheckArray<Resources::Light   >() const;
@@ -132,6 +137,7 @@ namespace Core
     template<> bool GpuDataManager::CheckData(const Resources::Model&    resource) const;
     template<> bool GpuDataManager::CheckData(const Resources::Mesh&     resource) const;
     
+    template<> const GpuArray<Resources::Cubemap >& GpuDataManager::GetArray<Resources::Cubemap >() const;
     template<> const GpuArray<Resources::Material>& GpuDataManager::GetArray<Resources::Material>() const;
     template<> const GpuArray<Resources::Model   >& GpuDataManager::GetArray<Resources::Model   >() const;
     template<> const GpuArray<Resources::Light   >& GpuDataManager::GetArray<Resources::Light   >() const;
