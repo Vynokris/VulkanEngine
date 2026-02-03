@@ -50,11 +50,11 @@ void Engine::Start()
     camera->transform.Move({ 0, .5f, 1 });
     camera->transform.Rotate(Quaternion::FromPitch(-PI * 0.1f));
 
-    // Model& model = models.begin()->second;
-    // model.transform.Scale({.01f});
-    // model.transform.RotateEuler({ 0, PIDIV2, 0 });
-    // model.transform.RotateEuler({ -PI/2.5f, 0, 0 });
-    // model.transform.Move({ 0, -.5f, -2 });
+    Model& model = models.begin()->second;
+    model.transforms.front().Scale({.1f});
+    model.transforms.front().RotateEuler({ PIDIV2, 0, 0 });
+    // model.transforms.front().RotateEuler({ 0, PIDIV2, 0 });
+    // model.transforms.front().Move({ 0, -.5f, -2 });
 
     // model.GetMeshes()[0].SetMaterial(&materials.begin()->second);
     // model.transform.RotateEuler({ 0,PI,0 });
@@ -64,7 +64,7 @@ void Engine::Start()
     // models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_GothicSculptedWall"));
     // models.at("model_Cube").transform.Move({ -1.5f, 1, 0 });
 
-    models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
+    // models.at("model_Cube").GetMeshes()[0].SetMaterial(&materials.at("mt_OilyTubes"));
     // models.at("model_Cube").transforms.front().SetScale({ .25f });
     // materials.at("mt_WornPavement").depthMultiplier = 0.01f;
     // models.at("model_Quad").GetMeshes()[0].SetMaterial(&materials.at("mt_WornPavement"));
@@ -95,7 +95,7 @@ void Engine::Update(const float& deltaTime)
     }
 }
 
-void Engine::Render(Renderer* renderer) const
+void Engine::Render(Renderer* renderer)
 {
     // Set the viewProj and viewPos constants in the shaders.
     const GraphicsUtils::ShaderFrameConstants frameConstants = {
@@ -106,8 +106,9 @@ void Engine::Render(Renderer* renderer) const
     Light::UpdateBufferData(lights);
 
     // Draw all loaded models.
+    const Cubemap* cubemap = GetMainCubemap();
     for (const auto& [name, model] : models)
-        renderer->DrawModel(model);
+        renderer->DrawModel(model, cubemap);
 }
 
 static bool IsTextureFile(const std::string& extension)

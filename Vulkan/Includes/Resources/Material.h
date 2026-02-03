@@ -47,7 +47,7 @@ namespace Resources
         Texture* textures[MaterialTextureType::COUNT] = { nullptr }; // Array of all different textures used by this material.
     
     public:
-        Material(const Maths::RGB& _albedo = 1, const Maths::RGB& _emissive = 0, const float& _metallic = 1, const float& _roughness = 1, const float& _alpha = 1,
+        Material(const Maths::RGB& _albedo = 1, const Maths::RGB& _emissive = 0, const float& _metallic = 0, const float& _roughness = 1, const float& _alpha = 1,
                  Texture* albedoTexture = nullptr, Texture* emissiveTexture = nullptr, Texture* metallicMap = nullptr, Texture* roughnessMap = nullptr, Texture* aoMap = nullptr, Texture* alphaMap = nullptr, Texture* normalMap = nullptr);
         Material(const Material&)            = delete;
         Material(Material&&)                 = delete;

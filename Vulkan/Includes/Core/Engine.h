@@ -40,19 +40,18 @@ namespace Core
 		float cameraSensitivity = 5e-3f;
 		const std::vector<std::string> defaultResources = {
 			// R"(Resources\Cubemaps\IcelandLake\)",
-			R"(Resources\Cubemaps\CorsicaMountain\)",
-			// R"(Resources\Models\Stadium\stadium.obj)",
+			// R"(Resources\Cubemaps\CorsicaMountain\)",
+			R"(Resources\Cubemaps\StudioNeon\)",
+			// R"(Resources\Cubemaps\StudioSaturation\)",
 			// R"(Resources\Meshes\Quad.obj)",
-			R"(Resources\Meshes\Cube.obj)",
+			// R"(Resources\Meshes\Cube.obj)",
 			// R"(Resources\Meshes\SphereLargeUV.obj)",
 			// R"(Resources\Materials\ShadedBasic.mtl)",
 			// R"(Resources\Materials\WornPavement\WornPavement.mtl)",
-			R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
-			// R"(Resources\Models\WeldingDroid\WeldingDroid.obj)",
-			// R"(Resources\Models\GuitarMetal\GuitarMetal.obj)",
+			// R"(Resources\Materials\OilyTubes\OilyTubes.mtl)",
+			R"(Resources\Models\GuitarMetal\GuitarMetal.obj)",
 			// R"(Resources\Models\Headcrab\headcrab.obj)",
-			// R"(Resources\Models\DoomSlayer\doommarine.obj)",
-			// R"(Resources\Models\Sponza\sponza.obj)",
+			// R"(Resources\Models\Stadium\stadium.obj)",
 			// R"(Resources\Models\Gizmo\gizmoTranslation.obj)",
 		};
 		
@@ -66,7 +65,7 @@ namespace Core
 		void Awake();
 		void Start();
 		void Update(const float& deltaTime);
-		void Render(Renderer* renderer) const;
+		void Render(Renderer* renderer);
 
 		void LoadFile(const std::string& filename, int additionalParamsCount = 0, ...);
 

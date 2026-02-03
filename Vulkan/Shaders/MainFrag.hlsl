@@ -87,7 +87,12 @@ struct LightBuffer
 };
 [[vk::binding(0, 3)]] ConstantBuffer<LightBuffer> lights;
 
+// Cubemap texture input.
+[[vk::binding(0, 4)]] TextureCube  cubemapTexture;
+[[vk::binding(0, 4)]] SamplerState cubemapSampler;
+
 float3 ComputeLighting(Light light, float3 fragPos, float3 viewDir, float3 normal, float3 albedo, float metallic, float roughness, float3 reflectance);
+float3 ComputeCubemap (float3 fragPos, float3 viewDir, float3 normal, float3 albedo, float metallic, float roughness, float3 reflectance);
 float2 ParallaxMapping(float2 fragTexCoord, float3 viewDir, float fragDistance);
 
 // Fragment shader main function
@@ -142,20 +147,20 @@ FSOutput main(FSInput input)
     // Determine fragment normal from mesh normal and normal map.
     float3 normal = input.tbnMatrix[2];
     if_HasTexture(NormalMapIdx) {
-        normal = SampleTexture(NormalMapIdx, texCoord).rgb * 2.0 - 1.0;
+        normal = SampleTexture(NormalMapIdx, texCoord).rgb * 2 - 1;
         normal = normalize(input.tbnMatrix * normal);
     }
 
     // Calculate reflectance at normal incidence.
     // For high metalness, use albedo as F0 (metallic workflow)
     // For low metalness, use F0 of 0.04
-    const float3 reflectance = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
+    const float3 reflectance = lerp(0.04, albedo, metallic);
     
-    // Compute sum of lighting contributions for all lights.
-    float3 lightSum = float3(0,0,0);
-    for (int i = 0; i < 5; i++) {
-        lightSum += ComputeLighting(lights.data[i], input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
-    }
+    // Compute sum of lighting contributions for all lights and cubemap.
+    float3 lightSum = ComputeCubemap(input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
+    //for (int i = 0; i < 5; i++) {
+    //    lightSum += ComputeLighting(lights.data[i], input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
+    //}
     output.color.rgb = lightSum * ambientOcclusion;
     
     // Add emissive color from material emissive value and texture.
@@ -170,7 +175,7 @@ FSOutput main(FSInput input)
                         - fogParams.start) * fogParams.invLength);
     
     // Apply gamma correction.
-    output.color.rgb = pow(output.color.rgb, 1.0/1.6);
+    output.color.rgb = pow(output.color.rgb, 1/1.6);
 
     return output;
 }
@@ -179,8 +184,8 @@ float PointAttenuation(Light light, float3 fragPos)
 {
     const float distance = length(light.position - fragPos);
     const float s = distance / light.radius;
-    if (s >= 1.0)
-        return 0.0;
+    if (s >= 1)
+        return 0;
     return pow(1-s*s, 2) / (1 + light.falloff * s);
 }
 
@@ -188,7 +193,7 @@ float SpotAttenuation(Light light, float3 fragPos, float3 fragToLight)
 {
     const float cutoff = dot(fragToLight, -light.direction) * 0.5 + 0.5;
     if (cutoff <= 1-light.outerCutoff)
-        return 0.0;
+        return 0;
 
     const float intensity = ((1-cutoff) - light.outerCutoff) / (light.innerCutoff - light.outerCutoff);
     return PointAttenuation(light, fragPos) * intensity;
@@ -198,11 +203,11 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 {
     const float a  = roughness*roughness;
     const float a2 = a*a;
-    const float NdotH  = max(dot(N, H), 0.0);
+    const float NdotH  = max(dot(N, H), 0);
     const float NdotH2 = NdotH*NdotH;
 
     const float numerator = a2;
-    float denominator = (NdotH2 * (a2 - 1.0) + 1.0);
+    float denominator = (NdotH2 * (a2 - 1) + 1);
     denominator = PI * denominator * denominator;
 
     return numerator / denominator;
@@ -210,19 +215,19 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
-    const float r = (roughness + 1.0);
-    const float k = (r*r) / 8.0;
+    const float r = (roughness + 1);
+    const float k = (r*r) / 8;
 
     const float numerator   = NdotV;
-    const float denominator = NdotV * (1.0 - k) + k;
+    const float denominator = NdotV * (1 - k) + k;
 
     return numerator / denominator;
 }
 
 float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 {
-    const float NdotV = max(dot(N, V), 0.0);
-    const float NdotL = max(dot(N, L), 0.0);
+    const float NdotV = max(dot(N, V), 0);
+    const float NdotL = max(dot(N, L), 0);
     const float ggx2 = GeometrySchlickGGX(NdotV, roughness);
     const float ggx1 = GeometrySchlickGGX(NdotL, roughness);
 
@@ -231,17 +236,22 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 
 float3 FresnelSchlick(float cosTheta, float3 F0)
 {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return F0 + (1 - F0) * pow(clamp(1 - cosTheta, 0, 1), 5);
+}
+
+float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
+{
+    return F0 + (max(1 - roughness, F0) - F0) * pow(clamp(1 - cosTheta, 0, 1), 5);
 }
 
 float3 ComputeLighting(Light light, float3 fragPos, float3 viewDir, float3 normal, float3 albedo, float metallic, float roughness, float3 reflectance)
 {
-    if (light.type != DirLightType && light.type != PointLightType && light.type != SpotLightType)
-    return float3(0,0,0);
+    if (all(light.albedo == 0) || (light.type != DirLightType && light.type != PointLightType && light.type != SpotLightType))
+        return 0;
 
     const float3 fragToLight = light.type == DirLightType ? normalize(-light.direction) : normalize(light.position - fragPos);
     const float3 height      = normalize(viewDir + fragToLight);
-    float  attenuation = 1.0;
+    float  attenuation = 1;
     switch (light.type)
     {
         case PointLightType: attenuation = PointAttenuation(light, fragPos); break;
@@ -252,16 +262,43 @@ float3 ComputeLighting(Light light, float3 fragPos, float3 viewDir, float3 norma
 
     const float  NDF      = DistributionGGX(normal, height, roughness);
     const float  geoSmith = GeometrySmith  (normal, viewDir, fragToLight, roughness);
-    const float3 fresnel  = FresnelSchlick(max(dot(height, viewDir), 0.0), reflectance);
+    const float3 fresnel  = FresnelSchlick(max(dot(height, viewDir), 0), reflectance);
 
-    const float  normalPolarity = max(dot(normal, fragToLight), 0.0);
+    const float  normalPolarity = max(dot(normal, fragToLight), 0);
     const float3 numerator      = NDF * geoSmith * fresnel;
-    const float  denominator    = 4.0 * max(dot(normal, viewDir), 0.0) * normalPolarity + 0.0001; // + 0.0001 to prevent divide by zero
+    const float  denominator    = 4 * max(dot(normal, viewDir), 0) * normalPolarity + 0001; // + 0001 to prevent divide by zero
     const float3 specular       = numerator / denominator;
-    const float3 diffuse        = (float3(1,1,1) - fresnel) * (1.0 - metallic);
+    const float3 diffuse        = (1 - fresnel) * (1 - metallic);
     
-    // TODO: The diffuse term is broken.
     return (diffuse * albedo / PI + specular) * radiance * normalPolarity;
+}
+
+float3 ComputeCubemap(float3 fragPos, float3 viewDir, float3 normal, float3 albedo, float metallic, float roughness, float3 reflectance)
+{
+    uint texWidth, texHeight, texLevelCount;
+    cubemapTexture.GetDimensions(0, texWidth, texHeight, texLevelCount);
+    if (texWidth == 0)
+        return 0;
+
+    const float3 fragToLight = reflect(-viewDir, normal);
+    const float3 height      = normalize(viewDir + fragToLight);
+    const float  roughExp    = 1 - pow(1 - roughness, 4);
+    const float  NDF         = DistributionGGX(normal, height, roughExp);
+    const float  geoSmith    = GeometrySmith  (normal, viewDir, fragToLight, roughExp);
+    const float3 fresnel     = FresnelSchlickRoughness(max(dot(height, viewDir), 0), reflectance, roughExp);
+
+    const float  normalPolarity = max(dot(normal, fragToLight), 0);
+    const float3 numerator      = NDF * geoSmith * fresnel;
+    const float  denominator    = 4 * max(dot(normal, viewDir), 0) * normalPolarity + 0001; // + 0001 to prevent divide by zero
+    const float3 specular       = numerator / denominator;
+    const float3 diffuse        = (1 - fresnel) * (1 - metallic);
+    
+    const uint   maxLevel    = texLevelCount - 1;
+    const float  roughLod    = maxLevel * roughness;
+    const float3 skyDiffuse  = cubemapTexture.SampleLevel(cubemapSampler, normal, maxLevel).rgb;
+    const float3 skySpecular = cubemapTexture.SampleLevel(cubemapSampler, fragToLight, roughLod).rgb;
+    
+    return skyDiffuse * diffuse * albedo / PI + skySpecular * specular;
 }
 
 float2 ParallaxMapping(float2 fragTexCoord, float3 viewDir, float fragDistance)
@@ -275,7 +312,7 @@ float2 ParallaxMapping(float2 fragTexCoord, float3 viewDir, float fragDistance)
 
     float2 curTexCoord   = fragTexCoord;
     float  curDepthVal   = 1 - materialTextures[DepthMapIdx].Sample(materialSamplers[DepthMapIdx], curTexCoord).r;
-    float  curLayerDepth = 0.0;
+    float  curLayerDepth = 0;
 
     for (uint i = 0; i < 32; i++)
     {

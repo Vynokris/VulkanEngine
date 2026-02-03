@@ -70,7 +70,7 @@ namespace Core
         //void BeginRender();
         void NewFrame();
         void BeginRenderPass() const;
-        void DrawModel(const Resources::Model& model) const;
+        void DrawModel(const Resources::Model& model, const Resources::Cubemap* cubemap = nullptr) const;
         void EndRenderPass() const;
         void PresentFrame();
         //void EndRender();

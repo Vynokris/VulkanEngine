@@ -17,15 +17,16 @@ using namespace Maths;
 Model::Model(std::string _name)
      : name(std::move(_name))
 {
+     transforms.resize(1);
      // TODO: Instance matrices shouldn't be hardcoded
-     transforms.resize(10000);
+     /*transforms.resize(10000);
      for (size_t i = 0; i < transforms.size(); i++)
      {
           Transform& t = transforms[i];
           t.SetPosition({ (float)(i / 100), 0, -(float)(i % 100) });
           t.SetRotation({ 0, 1, 0, 0 });
           t.SetScale({ 0.25f });
-     }
+     }*/
      Application::Get()->GetGpuData()->CreateData(*this);
 }
 

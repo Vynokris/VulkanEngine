@@ -148,11 +148,12 @@ void Renderer::SetDistanceFogParams(const Maths::RGB& color, const float& start,
     BeginRenderPass();
 }*/
 
-void Renderer::DrawModel(const Resources::Model& model) const
+void Renderer::DrawModel(const Resources::Model& model, const Resources::Cubemap* cubemap) const
 {
     // Get the light array as well as the model's GPU data and update it.
-    const GpuArray<Resources::Light>& lightArray = gpuData->GetArray<Resources::Light>();
-    const GpuData <Resources::Model>* modelData  = gpuData->GetData(model);
+    const GpuArray<Resources::Light>&   lightArray  = gpuData->GetArray<Resources::Light>();
+    const GpuData <Resources::Model>*   modelData   = gpuData->GetData(model);
+    const GpuData <Resources::Cubemap>* cubemapData = cubemap ? gpuData->GetData(*cubemap) : nullptr;
     if (!modelData) return;
     model.UpdateMvpBuffer(currentFrame, modelData);
 
@@ -173,8 +174,8 @@ void Renderer::DrawModel(const Resources::Model& model) const
         vkCmdBindIndexBuffer  (vkCommandBuffers[currentFrame], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         // Bind the descriptor sets and draw.
-        const VkDescriptorSet descriptorSets[4] = { modelData->vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet };
-        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 4, descriptorSets, 0, nullptr);
+        const VkDescriptorSet descriptorSets[5] = { modelData->vkDescriptorSets[currentFrame], constDataDescriptorSet, materialData->vkDescriptorSet, lightArray.vkDescriptorSet, cubemapData ? cubemapData->vkDescriptorSet : nullptr };
+        vkCmdBindDescriptorSets(vkCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 5, descriptorSets, 0, nullptr);
         vkCmdDrawIndexed(vkCommandBuffers[currentFrame], mesh.GetIndexCount(), (uint32_t)model.transforms.size(), 0, 0, 0);
     }
 }
@@ -756,17 +757,18 @@ void Renderer::CreateGraphicsPipeline()
 
     // Define push constants and descriptor set layouts.
     const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_ALL, 0, sizeof(ShaderFrameConstants) };
-    const VkDescriptorSetLayout setLayouts[4] = {
+    const VkDescriptorSetLayout setLayouts[5] = {
         gpuData->GetArray<Resources::Model>().vkDescriptorSetLayout,
         constDataDescriptorLayout,
         gpuData->GetArray<Resources::Material>().vkDescriptorSetLayout,
         gpuData->GetArray<Resources::Light>().vkDescriptorSetLayout,
+        gpuData->GetArray<Resources::Cubemap>().vkDescriptorSetLayout,
     };
 
     // Set the pipeline layout creation information.
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount         = 4;
+    pipelineLayoutInfo.setLayoutCount         = 5;
     pipelineLayoutInfo.pSetLayouts            = setLayouts;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
