@@ -48,7 +48,7 @@ void Light::UpdateBufferData(const std::vector<Light>& lights, const GpuArray<Li
         lightsArray = &app->GetGpuData()->GetArray<Light>();
     }
     
-    memcpy(lightsArray->vkBufferMapped, lights.data(), sizeof(Light) * Engine::MAX_LIGHTS);
+    memcpy(lightsArray->vkBufferMapped, lights.data(), sizeof(Light) * lights.size());
 }
 
 

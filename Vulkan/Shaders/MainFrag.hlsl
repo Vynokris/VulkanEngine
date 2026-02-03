@@ -158,9 +158,9 @@ FSOutput main(FSInput input)
     
     // Compute sum of lighting contributions for all lights and cubemap.
     float3 lightSum = ComputeCubemap(input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
-    //for (int i = 0; i < 5; i++) {
-    //    lightSum += ComputeLighting(lights.data[i], input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
-    //}
+    for (int i = 0; i < 5; i++) {
+        lightSum += ComputeLighting(lights.data[i], input.fragPos, viewDir, normal, albedo, metallic, roughness, reflectance);
+    }
     output.color.rgb = lightSum * ambientOcclusion;
     
     // Add emissive color from material emissive value and texture.

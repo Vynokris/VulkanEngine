@@ -38,10 +38,10 @@ void Engine::Awake()
         LoadFile(filename);
 
     // Add default directional light.
-    lights.emplace_back(Light::Directional(Vector3(-1, -1, -1).GetNormalized(), RGBA(1, 1.8f)));
+    // lights.emplace_back(Light::Directional(Vector3(-1, -1, -1).GetNormalized(), RGBA(1, 1.8f)));
     // lights.emplace_back(Light::Spot(Vector3(1, 1, 1).GetNormalized(), Vector3(-1, -1, -1).GetNormalized(), RGBA(1), 10, 4, 0.1f, 0.05f));
     // lights.emplace_back(Light::Point(Vector3(0), RGBA(1, 2), 8, 4));
-    Light::UpdateBufferData(lights);
+    // Light::UpdateBufferData(lights);
 }
 
 void Engine::Start()
